@@ -1,4 +1,3 @@
-import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Action, PointVigilance } from '../api/modeles';
@@ -9,7 +8,6 @@ import { fD, fJ, fP, fSigned, largeur, sgn } from '../etat/formats';
 import { SuiviEtat } from '../etat/suivi.etat';
 import { EtatUi, UiEtat } from '../etat/ui.etat';
 import { atHoraire } from '../etat/vue';
-import { Carte } from '../ui/cartes';
 import { Fx } from '../ui/fx';
 import { GraphiqueAxes, GraphiqueMois } from '../ui/graphiques';
 import { Barre } from '../ui/petits';
@@ -38,7 +36,7 @@ const RANG: Record<ElementATraiter['niveau'], number> = { crit: 0, warn: 1, ia: 
  */
 @Component({
   selector: 'app-tableau-de-bord',
-  imports: [NgTemplateOutlet, RouterLink, Carte, Fx, GraphiqueAxes, GraphiqueMois, Barre],
+  imports: [RouterLink, Fx, GraphiqueAxes, GraphiqueMois, Barre],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (vue(); as v) {
@@ -68,26 +66,8 @@ const RANG: Record<ElementATraiter['niveau'], number> = { crit: 0, warn: 1, ia: 
         </div>
       }
 
-      <!-- les 4 indicateurs essentiels : l'état du projet en quelques secondes -->
-      @let consoPct = t.prevu ? t.conso / t.prevu : 0;
+      <!-- les 3 indicateurs essentiels : l'état du projet en quelques secondes (l'avancement est dans « Avancement par axe ») -->
       <div class="kpis essentiels">
-        <div class="kpi">
-          <div class="l">Avancement</div>
-          <div class="v">{{ fP(consoPct) }}<small>de la charge</small></div>
-          <div class="duo" aria-hidden="true">
-            <div class="bar"><i [style.width]="largeur(consoPct)"></i></div>
-            @if (c.debut && c.finPrevue) {
-              <div class="bar temps"><i [style.width]="largeur(c.tempsPct)"></i></div>
-            }
-          </div>
-          <div class="s">
-            @if (c.debut && c.finPrevue) {
-              Temps écoulé : <b [class.neg]="consoPct - (c.tempsPct || 0) > 0.1">{{ fP(c.tempsPct) }}</b>
-            } @else {
-              Charge consommée sur la charge prévue
-            }
-          </div>
-        </div>
         <div class="kpi">
           <div class="l">Atterrissage</div>
           <div class="v">{{ fJ(t.atterrissage) }}<small>JH</small></div>
@@ -177,58 +157,111 @@ const RANG: Record<ElementATraiter['niveau'], number> = { crit: 0, warn: 1, ia: 
         </section>
 
         <div class="c-5 tdb-col">
-          <app-carte titre="Points de vigilance" [sousTitre]="vigilance().ko.length ? vigilance().ko.length + ' point(s) à surveiller, calculés à chaque saisie.' : 'Tout est au vert.'">
-            <div class="vig">
-              @for (p of vigilanceVisibles(); track p.cle) {
-                <div class="row">
-                  <span>{{ p.label }}</span><span class="pill" [class]="'pill lv-' + p.niveau">{{ valeurVigilance(p) }}</span>
-                  @if (p.detail) {
-                    <small>{{ p.detail }}</small>
+          @let vg = vigilance();
+          @let nCrit = nbCritiques();
+          <section class="tdb-carte tdb-vig" aria-labelledby="tdb-vig-t">
+            <details class="vig-plie" [open]="ui.ui().vigOuverte" (toggle)="basculerVigilance($event)">
+              <summary>
+                <span id="tdb-vig-t" class="vig-titre">Points de vigilance</span>
+                <span class="vig-resume">
+                  @if (vg.ko.length) {
+                    @if (nCrit) {
+                      <span class="pill lv-critique">{{ nCrit }} critique{{ nCrit > 1 ? 's' : '' }}</span>
+                    }
+                    @if (vg.ko.length - nCrit) {
+                      <span class="pill lv-attention">{{ vg.ko.length - nCrit }} à surveiller</span>
+                    }
+                  } @else {
+                    <span class="pill lv-ok">Tout est au vert</span>
                   }
-                </div>
+                  <span class="vig-ouvrir"><span class="vo-o">Voir le détail ›</span><span class="vo-f">Réduire</span></span>
+                </span>
+              </summary>
+              <p class="sub">{{ vg.ko.length ? vg.ko.length + ' point(s) à surveiller, calculés à chaque saisie.' : 'Tout est au vert.' }} <app-fx cle="vigilance" /></p>
+              <div class="vig">
+                @for (p of vg.ko; track p.cle) {
+                  <div class="row">
+                    <span>{{ p.label }}</span><span class="pill" [class]="'pill lv-' + p.niveau">{{ valeurVigilance(p) }}</span>
+                    @if (p.detail) {
+                      <small>{{ p.detail }}</small>
+                    }
+                  </div>
+                }
+              </div>
+              @if (vg.ok.length) {
+                <details class="vig-ok">
+                  <summary>{{ vg.ok.length }} indicateur(s) au vert</summary>
+                  <div class="vig">
+                    @for (p of vg.ok; track p.cle) {
+                      <div class="row">
+                        <span>{{ p.label }}</span><span class="pill lv-ok">{{ valeurVigilance(p) }}</span>
+                      </div>
+                    }
+                  </div>
+                </details>
               }
-            </div>
-            @if (vigilance().ko.length > maxVigilance) {
-              <button type="button" class="btn sm ghost tdb-plus" (click)="vigilanceOuverte.set(!vigilanceOuverte())">
-                {{ vigilanceOuverte() ? 'Réduire' : 'Afficher les ' + vigilance().ko.length + ' points' }}
-              </button>
-            }
-            @if (vigilance().ok.length) {
-              <details class="vig-ok">
-                <summary>{{ vigilance().ok.length }} indicateur(s) au vert</summary>
-                <div class="vig">
-                  @for (p of vigilance().ok; track p.cle) {
-                    <div class="row">
-                      <span>{{ p.label }}</span><span class="pill lv-ok">{{ valeurVigilance(p) }}</span>
-                    </div>
-                  }
+            </details>
+          </section>
+          <section class="tdb-carte" aria-labelledby="tdb-livrables">
+            <header>
+              <h2 id="tdb-livrables">Livrables et ateliers <app-fx cle="livrables" /></h2>
+              <span class="tdb-resume">Réalisé = statut « Validé »</span>
+            </header>
+            @for (x of v.m.ateliers.parType; track x.id) {
+              <div class="tdb-type">
+                <div class="tdb-type-l">
+                  <span class="tdb-type-nom">{{ x.nom }}</span>
+                  <span class="tdb-type-n"><b>{{ x.realises }}</b> / {{ x.prevus }} réalisés{{ x.restants ? ' · ' + x.restants + ' restant' + (x.restants > 1 ? 's' : '') : '' }}</span>
                 </div>
-              </details>
+                <app-barre [valeur]="x.taux" classe="ok" />
+              </div>
+            } @empty {
+              <p class="tdb-vide">Aucun type de tâche suivi. Les types se gèrent dans <a routerLink="../parametres">⚙ Paramètres du projet</a>.</p>
             }
-          </app-carte>
+            <footer><a routerLink="../ateliers">Voir les ateliers et livrables →</a></footer>
+          </section>
         </div>
       </div>
 
-      <!-- avancement et livrables -->
+      <!-- avancement par axe, pleine largeur -->
       <div class="s-grille">
-        <ng-container *ngTemplateOutlet="avancementAxes; context: { $implicit: v, classe: 'c-7' }" />
-        <section class="tdb-carte c-5" aria-labelledby="tdb-livrables">
+        <section class="tdb-carte c-12" aria-labelledby="tdb-axes">
           <header>
-            <h2 id="tdb-livrables">Livrables et ateliers <app-fx cle="livrables" /></h2>
-            <span class="tdb-resume">Réalisé = statut « Validé »</span>
+            <h2 id="tdb-axes">Avancement par {{ v.dimLl }} <app-fx cle="atter" /></h2>
+            <span class="tdb-entete-droite">
+              <span class="tdb-resume">Tâches validées et suivi de la charge</span>
+              <button type="button" class="btn sm tdb-imprimer" (click)="etat.ouvrirAvancement()" title="Avancement détaillé et charges, dans le panneau de droite">Détail ›</button>
+            </span>
           </header>
-          @for (x of v.m.ateliers.parType; track x.id) {
-            <div class="tdb-type">
-              <div class="tdb-type-l">
-                <span class="tdb-type-nom">{{ x.nom }}</span>
-                <span class="tdb-type-n"><b>{{ x.realises }}</b> / {{ x.prevus }} réalisés{{ x.restants ? ' · ' + x.restants + ' restant' + (x.restants > 1 ? 's' : '') : '' }}</span>
+          <div>
+            @for (a of v.m.axes; track a.id + $index; let k = $index) {
+              @let couleur = 'var(--ax' + (k % 8) + ')';
+              @let consoPct = a.prevu ? a.conso / a.prevu : 0;
+              <div class="tdb-axe tdb-axe2">
+                @if (v.m.dim.key === 'phase' && a.id) {
+                  <button type="button" class="nom nom-lien" [attr.data-openph]="a.id" [title]="'Ouvrir la phase ' + a.nom"
+                    ><span class="puce" [style.background]="couleur"></span><span>{{ a.nom }}</span></button
+                  >
+                } @else {
+                  <span class="nom" [title]="a.nom"><span class="puce" [style.background]="couleur"></span><span>{{ a.nom }}</span></span>
+                }
+                <span class="barres">
+                  <span class="tdb-b-l"><span>Avancement</span><small>{{ a.valides }} / {{ a.actives }} tâche{{ a.actives > 1 ? 's' : '' }} validée{{ a.actives > 1 ? 's' : '' }}</small></span>
+                  <span class="bar" [title]="'Avancement : JH des tâches validées ÷ JH prévus = ' + fP(a.avancement || 0)"><i [style.width]="largeur(a.avancement || 0)" [style.background]="couleur"></i></span>
+                  <span class="tdb-b-l tdb-b-charge"><span>Suivi de la charge</span><small>{{ fJ(a.conso) }} JH consommés · atterrissage {{ fJ(a.atterrissage) }} JH</small></span>
+                  <span class="bar tdb-conso" [title]="'Consommé ÷ prévu = ' + fP(consoPct)"><i [style.width]="largeur(consoPct)"></i></span>
+                </span>
+                <span class="pct" title="Avancement : JH des tâches validées ÷ JH prévus">{{ fP(a.avancement || 0) }}</span>
+                @if (a.ecart > 0.001) {
+                  <span class="pill st-bloque" title="Atterrissage supérieur au prévu : dépassement anticipé ou constaté.">Dépassement</span>
+                } @else if (a.ecart < -0.001) {
+                  <span class="pill st-valide" title="Atterrissage inférieur au prévu : gain (tâches finies sous le budget, enveloppe IA non consommée…).">Optimisation</span>
+                } @else {
+                  <span class="pill tdb-conforme" title="Atterrissage = prévu.">Conforme</span>
+                }
               </div>
-              <app-barre [valeur]="x.taux" classe="ok" />
-            </div>
-          } @empty {
-            <p class="tdb-vide">Aucun type de tâche suivi. Les types se gèrent dans <a routerLink="../parametres">⚙ Paramètres du projet</a>.</p>
-          }
-          <footer><a routerLink="../ateliers">Voir les ateliers et livrables →</a></footer>
+            }
+          </div>
         </section>
       </div>
 
@@ -246,55 +279,23 @@ const RANG: Record<ElementATraiter['niveau'], number> = { crit: 0, warn: 1, ia: 
             <app-graphique-axes [axes]="v.m.axes" [dimension]="v.dimLl" />
           </div>
           <div class="subchart">
-            <h3>Charge mensuelle — référence vs consommé saisi</h3>
-            <app-graphique-mois [mensuel]="v.m.mensuel" [moisCourant]="v.moisCourant" />
+            <h3>Charge mensuelle — prévisionnel et consommé saisi</h3>
+            <app-graphique-mois [mensuel]="v.m.mensuel" [moisCourant]="v.moisCourant" [replanifie]="!!v.m.replanifie" />
           </div>
         </div>
         <p class="caption">
-          Référence initiale : <b>{{ fJ(v.m.refTotal) }} JH</b> ventilés sur <b>{{ fJ(t.prevu) }} JH</b> prévus{{
-            abs(t.prevu - v.m.refTotal) > 0.001 ? ' — ' + fJ(t.prevu - v.m.refTotal) + ' JH non ventilés dans le planning du TSP' : ''
-          }}
-          · <a class="linkbtn" routerLink="../planning">voir Annexes › Planning</a>.
+          @let ecartRef = t.prevu - v.m.refTotal;
+          Prévisionnel de charge : <b>{{ fJ(v.m.refTotal) }} JH</b> ventilés sur <b>{{ fJ(t.prevu) }} JH</b> prévus
+          @if (abs(ecartRef) > 0.001) {
+            — {{ fJ(abs(ecartRef)) }} JH {{ ecartRef > 0 ? 'restent à placer' : 'de trop' }} @if (v.droits.voitMontants) {
+              (<a class="linkbtn" routerLink="../plan-de-charge" (click)="ui.maj({ pc: 'prev' })">Plan de charge › Prévisionnel</a>)
+            }
+          }
+          · TSP vendu : {{ fJ(v.m.tspTotal ?? v.m.refTotal) }} JH{{ v.m.replanifie ? ' (différent du prévisionnel, en pointillé)' : '' }} ·
+          <a class="linkbtn" routerLink="../planning">voir Annexes › Planning</a>.
         </p>
       </section>
 
-      <!-- avancement par axe (réutilisé selon le rôle) -->
-      <ng-template #avancementAxes let-v let-classe="classe">
-        <section class="tdb-carte" [class]="'tdb-carte ' + classe" aria-labelledby="tdb-axes">
-          <header>
-            <h2 id="tdb-axes">Avancement par {{ v.dimLl }} <app-fx cle="atter" /></h2>
-            <span class="tdb-entete-droite">
-              <span class="tdb-resume">Consommé / prévu et projection</span>
-              <button type="button" class="btn sm tdb-imprimer" (click)="etat.ouvrirAvancement()" title="Charges, atterrissage et planning détaillés, avec le total">Détail ›</button>
-            </span>
-          </header>
-          <div>
-            @for (a of v.m.axes; track a.id + $index; let k = $index) {
-              <div class="tdb-axe">
-                @if (v.m.dim.key === 'phase' && a.id) {
-                  <button type="button" class="nom nom-lien" [attr.data-openph]="a.id" [title]="'Ouvrir la phase ' + a.nom"
-                    ><span class="puce" [style.background]="'var(--ax' + (k % 8) + ')'"></span><span>{{ a.nom }}</span></button
-                  >
-                } @else {
-                  <span class="nom" [title]="a.nom"><span class="puce" [style.background]="'var(--ax' + (k % 8) + ')'"></span><span>{{ a.nom }}</span></span>
-                }
-                <span class="barres">
-                  <span class="bar"><i [style.width]="largeur(a.prevu ? a.conso / a.prevu : 0)" [style.background]="'var(--ax' + (k % 8) + ')'"></i></span>
-                  <small>{{ fJ(a.conso) }} / {{ fJ(a.prevu) }} JH · atterrissage {{ fJ(a.atterrissage) }}</small>
-                </span>
-                <span class="pct">{{ fP(a.prevu ? a.conso / a.prevu : 0) }}</span>
-                @if (a.ecart > 0.001) {
-                  <span class="pill st-bloque">Dépassement</span>
-                } @else if (a.ecart < -0.001) {
-                  <span class="pill st-valide">Optimisation</span>
-                } @else {
-                  <span class="pill tdb-conforme">Conforme</span>
-                }
-              </div>
-            }
-          </div>
-        </section>
-      </ng-template>
     }
   `,
 })
@@ -416,10 +417,13 @@ export class TableauDeBord {
     ko.sort((a, b) => (a.p.niveau === 'critique' ? 0 : 1) - (b.p.niveau === 'critique' ? 0 : 1) || a.i - b.i);
     return { ko: ko.map((x) => x.p), ok: l.filter((p) => p.niveau === 'ok') };
   });
-  /** Nombre de points de vigilance affichés avant « Afficher tout ». */
-  protected readonly maxVigilance = 6;
-  protected readonly vigilanceOuverte = signal(false);
-  protected readonly vigilanceVisibles = computed(() => (this.vigilanceOuverte() ? this.vigilance().ko : this.vigilance().ko.slice(0, this.maxVigilance)));
+  protected readonly nbCritiques = computed(() => this.vigilance().ko.filter((p) => p.niveau === 'critique').length);
+
+  /** Points de vigilance repliés par défaut : l'état ouvert / fermé est gardé pendant la session. */
+  protected basculerVigilance(e: Event): void {
+    const ouvert = (e.target as HTMLDetailsElement).open;
+    if (ouvert !== this.ui.ui().vigOuverte) this.ui.maj({ vigOuverte: ouvert });
+  }
 
   protected valeurVigilance(p: PointVigilance): string {
     if (p.unite) return fJ(+p.valeur) + ' ' + p.unite;
