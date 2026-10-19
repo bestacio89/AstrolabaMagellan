@@ -37,6 +37,7 @@ public sealed class TransformationGroupesEntra(IConfiguration configuration) : I
 
         var identite = principal.Identities.FirstOrDefault(i => i.IsAuthenticated);
         if (identite is null) return Task.FromResult(principal);
+        var capacitesAjoutees = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var groupe in principal.FindAll(TypeGroupe).Select(c => c.Value).Distinct(StringComparer.OrdinalIgnoreCase))
         {
@@ -45,7 +46,8 @@ public sealed class TransformationGroupesEntra(IConfiguration configuration) : I
 
             foreach (var capacite in capacites)
             {
-                identite.AddClaim(new Claim(TypeCapacite, capacite));
+                if (capacitesAjoutees.Add(capacite))
+                    identite.AddClaim(new Claim(TypeCapacite, capacite));
             }
         }
 
