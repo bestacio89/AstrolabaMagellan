@@ -38,6 +38,7 @@ public sealed class FabriqueApi : WebApplicationFactory<Program>
         var capacitesChef = new[] { "projets.lire", "projets.creer", "projets.modifier", "consomme.saisir", "exports.financiers" };
         var capacitesConsultant = new[] { "projets.lire", "consomme.saisir" };
         var capacitesPilotage = new[] { "projets.lire", "projets.lire-tous", "exports.financiers" };
+        var capacitesLectureSeule = new[] { "projets.lire" };
         var utilisateurs = new[]
         {
             (Cle: "chef", Oid: "oid-chef", Prenom: "Camille", Nom: "Martin", Role: "ChefDeProjet", Capacites: capacitesChef),
