@@ -161,7 +161,7 @@ export class GraphiqueAxes extends AvecBulle {
   template: `
     @let g = geo();
     <div class="chart" (mouseleave)="quitter()">
-      <svg [attr.viewBox]="'0 0 ' + g.W + ' ' + g.H" role="img" aria-label="Charge mensuelle : référence initiale et consommé saisi">
+      <svg [attr.viewBox]="'0 0 ' + g.W + ' ' + g.H" role="img" aria-label="Charge mensuelle : prévisionnel et consommé saisi">
         @if (survol(); as s) {
           <rect class="hl" [attr.x]="s.rect.x" [attr.y]="s.rect.y" [attr.width]="s.rect.w" [attr.height]="s.rect.h" />
         }
@@ -178,6 +178,9 @@ export class GraphiqueAxes extends AvecBulle {
         @if (g.xAujourdhui != null) {
           <line [attr.x1]="g.xAujourdhui" [attr.x2]="g.xAujourdhui" [attr.y1]="g.T" [attr.y2]="g.H - g.B" stroke="var(--today)" stroke-dasharray="3 3" stroke-width="1.5" />
           <text class="axis" [attr.x]="g.xAujourdhui + 4" [attr.y]="g.T + 9" style="fill: var(--today)">aujourd’hui</text>
+        }
+        @if (g.tsp) {
+          <polyline fill="none" stroke-width="1.5" stroke-dasharray="2 4" stroke-linecap="round" stroke-linejoin="round" style="stroke: var(--faint)" [attr.points]="g.tsp" />
         }
         @for (c of g.courbes; track c.couleur) {
           @if (c.points) {
@@ -211,13 +214,18 @@ export class GraphiqueAxes extends AvecBulle {
     </div>
     <div class="legend center">
       <span><i class="line" style="background: var(--c-conso)"></i>Consommé saisi</span>
-      <span><i class="line" style="background: var(--c-prevu)"></i>Référence initiale</span>
+      <span><i class="line" style="background: var(--c-prevu)"></i>{{ replanifie() ? 'Prévisionnel (replanifié)' : 'Prévisionnel (= TSP vendu)' }}</span>
+      @if (replanifie()) {
+        <span><i class="line tsp-tir"></i>TSP vendu</span>
+      }
     </div>
   `,
 })
 export class GraphiqueMois extends AvecBulle {
   readonly mensuel = input.required<MoisCalcule[]>();
   readonly moisCourant = input.required<string>();
+  /** Le prévisionnel de charge diffère du TSP vendu : le TSP vendu est tracé en pointillé gris. */
+  readonly replanifie = input(false);
 
   /**
    * Dernier mois affiché pour le consommé : jusqu'au mois écoulé (pas de chute à 0 sur le mois en cours tant que rien n'y est saisi),
@@ -240,7 +248,7 @@ export class GraphiqueMois extends AvecBulle {
       T = 12,
       B = 36,
       H = 262;
-    const maxV = Math.max(1, ...data.map((d) => Math.max(d.conso, d.ref)));
+    const maxV = Math.max(1, ...data.map((d) => Math.max(d.conso, d.ref, d.tsp ?? 0)));
     const step = niceStep(maxV / 4),
       top = Math.ceil(maxV / step) * step;
     const bw = (W - L - R) / Math.max(1, data.length);
@@ -268,6 +276,7 @@ export class GraphiqueMois extends AvecBulle {
         return { mois: d.mois, cx: cx(i), xHot: L + bw * i, court: MOIS[+mm - 1].replace('.', ''), annee: i === 0 || mm === '01' ? yy : null };
       }),
       courbes: [courbe('ref', 'var(--c-prevu)', data.length), courbe('conso', 'var(--c-conso)', upto + 1)],
+      tsp: this.replanifie() ? data.map((d, i) => `${cx(i)},${y(d.tsp ?? 0)}`).join(' ') : null,
     };
   });
 
@@ -276,11 +285,12 @@ export class GraphiqueMois extends AvecBulle {
     return this.mensuel().map((d, i) => ({
       titre: fML(d.mois),
       lignes: [
-        { libelle: 'Référence initiale', valeur: fJ(d.ref) + ' JH', couleur: 'var(--c-prevu)' },
+        { libelle: this.replanifie() ? 'Prévisionnel (replanifié)' : 'Prévisionnel (= TSP)', valeur: fJ(d.ref) + ' JH', couleur: 'var(--c-prevu)' },
+        ...(this.replanifie() ? [{ libelle: 'TSP vendu', valeur: fJ(d.tsp ?? 0) + ' JH', couleur: 'var(--faint)' }] : []),
         ...(i <= upto
           ? [
               { libelle: 'Consommé saisi', valeur: fJ(d.conso) + ' JH', couleur: 'var(--c-conso)' },
-              { libelle: 'Écart', valeur: fSigned(d.conso - d.ref) + ' JH', couleur: null },
+              { libelle: 'Écart / prévisionnel', valeur: fSigned(d.conso - d.ref) + ' JH', couleur: null },
             ]
           : [{ libelle: 'Consommé', valeur: 'à venir', couleur: null }]),
       ],

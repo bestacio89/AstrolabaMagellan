@@ -1,13 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { EcheanceCalculee } from '../api/modeles';
 import { SuiviApi } from '../api/suivi.api';
 import { fD, fE, fJ, fP, fSignedE } from '../etat/formats';
 import { sum } from '../etat/outils';
 import { SuiviEtat } from '../etat/suivi.etat';
+import { UiEtat } from '../etat/ui.etat';
 import { echEtat, Vue } from '../etat/vue';
 import { Carte } from '../ui/cartes';
 import { MiniBarre } from '../ui/petits';
+import { Triable } from '../ui/triable';
 
 /**
  * Facturation : échéances du contrat (date prévue, facture émise, paiement reçu, périmètre qui conditionne la facture)
@@ -15,7 +18,7 @@ import { MiniBarre } from '../ui/petits';
  */
 @Component({
   selector: 'app-facturation',
-  imports: [RouterLink, Carte, MiniBarre],
+  imports: [NgTemplateOutlet, Carte, MiniBarre, Triable],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="sechead">
@@ -63,7 +66,7 @@ import { MiniBarre } from '../ui/petits';
             ></span
           >
           <div class="tw">
-            <table class="echt fixw">
+            <table appTriable class="echt fixw">
               <colgroup>
                 @for (w of largeurs; track $index) {
                   <col [style.width.%]="w" />
@@ -197,59 +200,106 @@ import { MiniBarre } from '../ui/petits';
               >FAE à date <b [class]="classeFae(Sy?.faeADate)">{{ fE(Sy?.faeADate) }}</b></span
             ></span
           >
+          <div class="toolbar fae-barre">
+            <button type="button" class="btn sm" (click)="toutBasculerFae(m.fae)">{{ faeTous(m.fae) ? 'Replier tous les détails' : 'Déplier tous les détails' }}</button>
+          </div>
+          <!-- 7 colonnes : l'essentiel ; sous chaque échéance, le détail du calcul (prévu et réel), dépliable : aucune information retirée -->
           <div class="tw">
-            <table>
+            <table class="fae-t fixw">
+              <colgroup>
+                @for (w of [5, 33, 12, 13, 14, 14, 9]; track $index) {
+                  <col [style.width.%]="w" />
+                }
+              </colgroup>
               <thead>
                 <tr>
                   <th class="n">N°</th>
                   <th>Échéance</th>
                   <th>Date prévue</th>
                   <th class="n">Montant</th>
-                  <th class="n">Facturé cumulé prévu</th>
-                  <th class="n">Produit prévu</th>
                   <th class="n">FAE prévue</th>
-                  <th class="n">FAE prévue (%)</th>
-                  <th class="n">Facturé réel</th>
-                  <th class="n">Produit réel</th>
                   <th class="n">FAE réelle</th>
-                  <th class="n">FAE réelle (%)</th>
+                  <th class="ctr"></th>
                 </tr>
               </thead>
               <tbody>
                 @for (e of m.fae; track e.n) {
-                  <tr>
+                  @let o = !!faeOuv()[e.n];
+                  <tr class="fae-l">
                     <td class="n">{{ e.n }}</td>
                     <td class="lbl wrap-t">{{ e.nom }}</td>
                     <td>{{ fD(e.datePrevue) }}</td>
                     <td class="n">{{ fE(e.montant) }}</td>
-                    <td class="n">{{ fE(e.factCum) }}</td>
-                    <td class="n">{{ e.prodPlan == null ? '—' : fE(e.prodPlan) }}</td>
                     <td class="n">
-                      <span [class]="classeFae(e.faePlan)">{{ e.faePlan == null ? '—' : fE(e.faePlan) }}</span>
+                      <ng-container *ngTemplateOutlet="faeE; context: { $implicit: e.faePlan }" /><small class="fae-sous"
+                        ><ng-container *ngTemplateOutlet="faeP; context: { $implicit: e.faePlanPct }"
+                      /></small>
                     </td>
                     <td class="n">
-                      <span class="fae-pct" [class]="'fae-pct ' + classePct(e.faePlanPct)" [title]="titrePct(e.faePlanPct)">{{ pct(e.faePlanPct) }}</span>
+                      <ng-container *ngTemplateOutlet="faeE; context: { $implicit: e.faeReel }" /><small class="fae-sous"
+                        ><ng-container *ngTemplateOutlet="faeP; context: { $implicit: e.faeReelPct }"
+                      /></small>
                     </td>
-                    <td class="n">{{ e.factReel == null ? '—' : fE(e.factReel) }}</td>
-                    <td class="n">{{ e.prodReel == null ? '—' : fE(e.prodReel) }}</td>
-                    <td class="n">
-                      <span [class]="classeFae(e.faeReel)">{{ e.faeReel == null ? '—' : fE(e.faeReel) }}</span>
+                    <td class="ctr">
+                      <button
+                        type="button"
+                        class="fae-tog"
+                        [attr.aria-expanded]="o"
+                        [attr.aria-controls]="'fae-d-' + e.n"
+                        [title]="(o ? 'Masquer' : 'Afficher') + ' le détail du calcul'"
+                        (click)="basculerFae(e.n)"
+                      >
+                        Détail <span aria-hidden="true">{{ o ? '▴' : '▾' }}</span>
+                      </button>
                     </td>
-                    <td class="n">
-                      <span class="fae-pct" [class]="'fae-pct ' + classePct(e.faeReelPct)" [title]="titrePct(e.faeReelPct)">{{ pct(e.faeReelPct) }}</span>
+                  </tr>
+                  <tr class="detail fae-det" [id]="'fae-d-' + e.n" [hidden]="!o">
+                    <td colspan="7">
+                      <div class="fae-det-b">
+                        <b>Prévu</b><span>Facturé cumulé <em>{{ fE(e.factCum) }}</em></span><span>Valeur produite <em>{{ e.prodPlan == null ? '—' : fE(e.prodPlan) }}</em></span
+                        ><span>FAE <em><ng-container *ngTemplateOutlet="faeE; context: { $implicit: e.faePlan }" /></em></span
+                        ><span>FAE (%) <em><ng-container *ngTemplateOutlet="faeP; context: { $implicit: e.faePlanPct }" /></em></span>
+                      </div>
+                      <div class="fae-det-b">
+                        <b>Réel</b><span>Facturé cumulé <em>{{ e.factReel == null ? '—' : fE(e.factReel) }}</em></span
+                        ><span>Valeur produite <em>{{ e.prodReel == null ? '—' : fE(e.prodReel) }}</em></span
+                        ><span>FAE <em><ng-container *ngTemplateOutlet="faeE; context: { $implicit: e.faeReel }" /></em></span
+                        ><span>FAE (%) <em><ng-container *ngTemplateOutlet="faeP; context: { $implicit: e.faeReelPct }" /></em></span>
+                      </div>
                     </td>
                   </tr>
                 }
               </tbody>
             </table>
           </div>
+          <ng-template #faeE let-x>
+            @if (x == null) {
+              —
+            } @else {
+              <span [class]="classeFae(x)">{{ fE(x) }}</span>
+            }
+          </ng-template>
+          <ng-template #faeP let-x>
+            @if (x == null) {
+              —
+            } @else {
+              <span class="fae-pct" [class]="'fae-pct ' + classePct(x)" [title]="titrePct(x)">{{ pct(x) }}</span>
+            }
+          </ng-template>
           <p class="note">
-            « Produit prévu » : planning du TSP valorisé au TJM. « Produit réel » : consommé saisi valorisé au TJM. « FAE (%) » = − FAE ÷ montant total des échéances, même
+            « Valeur produite prévue » : {{ v.m.replanifie ? 'prévisionnel de charge replanifié (Plan de charge › Prévisionnel)' : 'planning du TSP' }} valorisé au TJM.
+            « Valeur produite réelle » : consommé saisi valorisé au TJM. « FAE (%) » = − FAE ÷ montant total des échéances, même
             base pour toutes les lignes (le TSP change de base à partir de la 4ᵉ ligne). Couleurs : <span class="fae-e f-warn">orange</span> = production en avance, factures à
             établir ; <span class="fae-e f-ok">vert</span> = facturation en avance sur la production.
             @if (abs(v.m.total.prevu - v.m.refTotal) > 0.001) {
-              Le planning du TSP ne ventile que {{ fJ(v.m.refTotal) }} JH sur {{ fJ(v.m.total.prevu) }} JH prévus : les {{ fJ(v.m.total.prevu - v.m.refTotal) }} JH non
-              ventilés n’entrent pas dans le « produit prévu », d’où une FAE prévue négative en fin de projet (<a class="linkbtn" routerLink="../planning">Annexes › Planning</a>).
+              Le {{ v.m.replanifie ? 'prévisionnel' : 'planning du TSP' }} ne ventile que {{ fJ(v.m.refTotal) }} JH sur {{ fJ(v.m.total.prevu) }} JH prévus : les
+              {{ fJ(v.m.total.prevu - v.m.refTotal) }} JH non ventilés n’entrent pas dans le « produit prévu », d’où une FAE prévue négative en fin de projet (<button
+                type="button"
+                class="linkbtn"
+                (click)="allerPrevisionnel()"
+              >
+                Plan de charge › Prévisionnel</button
+              >).
             }
           </p>
         </app-carte>
@@ -264,6 +314,31 @@ import { MiniBarre } from '../ui/petits';
 })
 export class Facturation {
   protected readonly etat = inject(SuiviEtat);
+  private readonly uiEtat = inject(UiEtat);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  /** Détails de FAE dépliés (par numéro d'échéance). */
+  protected readonly faeOuv = signal<Record<number, boolean>>({});
+
+  protected basculerFae(n: number): void {
+    this.faeOuv.update((o) => ({ ...o, [n]: !o[n] }));
+  }
+
+  protected faeTous(liste: readonly { n: number }[]): boolean {
+    const o = this.faeOuv();
+    return liste.length > 0 && liste.every((e) => o[e.n]);
+  }
+
+  protected toutBasculerFae(liste: readonly { n: number }[]): void {
+    if (this.faeTous(liste)) this.faeOuv.set({});
+    else this.faeOuv.set(Object.fromEntries(liste.map((e) => [e.n, true])));
+  }
+
+  /** Plan de charge › Prévisionnel. */
+  protected allerPrevisionnel(): void {
+    this.uiEtat.maj({ pc: 'prev' });
+    void this.router.navigate(['..', 'plan-de-charge'], { relativeTo: this.route });
+  }
   private readonly api = inject(SuiviApi);
   protected readonly fD = fD;
   protected readonly fE = fE;

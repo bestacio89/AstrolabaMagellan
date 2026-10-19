@@ -1,9 +1,10 @@
 import { afterRenderEffect, ChangeDetectionStrategy, Component, computed, ElementRef, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { SuiviApi } from '../api/suivi.api';
 import { ecartCls, ecartMark, fD, fDi, fE, fE2, fJ, fJz, fM, fP, fP2, fSigned } from '../etat/formats';
 import { num, sum } from '../etat/outils';
 import { SuiviEtat } from '../etat/suivi.etat';
+import { UiEtat } from '../etat/ui.etat';
 import { defaultAxeName, Vue } from '../etat/vue';
 import { Carte, CarteRepliable } from '../ui/cartes';
 import { Fx } from '../ui/fx';
@@ -539,7 +540,7 @@ export class Ventilation {
                 <th>Étape</th>
                 <th class="n">% théorique</th>
                 <th class="n">Charge théorique</th>
-                <th class="n">Charge propale</th>
+                <th class="n">Charge vendue</th>
                 <th class="n">% projet</th>
                 <th class="n">Écart</th>
               </tr>
@@ -589,12 +590,21 @@ export class Metrique {
   template: `
     <div class="sechead">
       <div>
-        <h2>Planning</h2>
-        <p>Les deux tableaux de l’onglet PLANNING du TSP, tels qu’ils ont été saisis au chiffrage. En lecture seule : pour les corriger, modifiez le TSP puis réimportez-le.</p>
+        <h2>Planning du TSP</h2>
+        <p>Ce qui a été vendu : les deux tableaux de l’onglet PLANNING du TSP, tels qu’ils ont été saisis au chiffrage. Ils ne se modifient pas ici et servent de référence initiale.</p>
       </div>
     </div>
     @if (vm(); as m) {
       @let v = m.v;
+      @if (v.droits.voitMontants) {
+        <div class="s-notif info pv-renvoi" role="note">
+          <div class="s-notif-txt">
+            <b>{{ v.m.replanifie ? 'Le prévisionnel de charge a été replanifié.' : 'Besoin de décaler des jours d’un mois sur l’autre ?' }}</b>
+            {{ v.m.replanifie ? 'Le suivi utilise désormais le prévisionnel ajusté ; ce planning vendu reste la référence.' : 'Replanifiez dans Finances › Plan de charge : le TSP vendu reste intact.' }}
+          </div>
+          <button class="btn sm" type="button" (click)="allerPrevisionnel()">{{ v.m.replanifie ? 'Voir le prévisionnel' : 'Replanifier la charge' }}</button>
+        </div>
+      }
       <app-carte titre="Planning par profil">
         <span sous-titre
           >Jours prévus par profil et par mois, saisis dans le TSP{{ v.projet.planningSource ? ' (onglet ' + v.projet.planningSource + ')' : '' }}. C’est la référence initiale du
@@ -616,7 +626,7 @@ export class Metrique {
                 @if (v.droits.voitMontants) {
                   <th class="n">TJM</th>
                 }
-                <th class="n">Ecart ?</th>
+                <th class="n">Écart ?</th>
                 @for (x of m.mois; track x.mois) {
                   <th class="n" [class.m-cur]="x.mois === v.moisCourant">
                     @if (x.dansProjet) {
@@ -675,7 +685,7 @@ export class Metrique {
               </tr>
               @if (v.droits.voitMontants) {
                 <tr class="money">
-                  <td>COUT MENSUEL (au TJM)</td>
+                  <td>VALEUR MENSUELLE (au TJM)</td>
                   <td></td>
                   <td></td>
                   <td></td>
@@ -684,7 +694,7 @@ export class Metrique {
                   }
                 </tr>
                 <tr class="money">
-                  <td>COUT MENSUEL CUMULE (au TJM)</td>
+                  <td>VALEUR MENSUELLE CUMULÉE (au TJM)</td>
                   <td></td>
                   <td></td>
                   <td></td>
@@ -697,9 +707,9 @@ export class Metrique {
           </table>
         </div>
         <p class="sub" style="margin-top: 8px">
-          « Ecart ? » = total ventilé sur les mois − charge du profil : ✓ quand toute la charge est ventilée.{{
+          « Écart ? » = total ventilé sur les mois − charge du profil : ✓ quand toute la charge est ventilée.{{
             v.droits.voitMontants
-              ? ' « TJM » : TJM du profil' + (v.projet.remise ? ' remisé' : '') + ' ; les lignes « COUT MENSUEL » sont donc la valeur vendue du mois (JH × TJM), comme dans le TSP.'
+              ? ' « TJM » : TJM du profil' + (v.projet.remise ? ' remisé' : '') + ' ; les lignes « VALEUR MENSUELLE » sont donc la valeur vendue du mois (JH × TJM), comme dans le TSP.'
               : ''
           }}
         </p>
@@ -723,7 +733,7 @@ export class Metrique {
                   <th>Phases</th>
                   <th class="n">Charge par phase</th>
                   <th class="n">TJM</th>
-                  <th class="n">Ecart ?</th>
+                  <th class="n">Écart ?</th>
                   @for (x of m.mois; track x.mois) {
                     <th class="n" [class.m-cur]="x.mois === v.moisCourant">
                       @if (x.dansProjet) {
@@ -796,6 +806,15 @@ export class Metrique {
 })
 export class Planning {
   private readonly etat = inject(SuiviEtat);
+  private readonly ui = inject(UiEtat);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+
+  /** Finances › Plan de charge › Prévisionnel. */
+  protected allerPrevisionnel(): void {
+    this.ui.maj({ pc: 'prev' });
+    void this.router.navigate(['..', 'plan-de-charge'], { relativeTo: this.route });
+  }
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly fE = fE;
   protected readonly fJ = fJ;
@@ -809,7 +828,8 @@ export class Planning {
   protected readonly vm = computed(() => {
     const v = this.etat.vue();
     if (!v) return null;
-    const pr = v.projet.planningRef;
+    // le planning vendu (TSP), figé : jamais le prévisionnel replanifié
+    const pr = v.projet.planningTsp ?? v.projet.planningRef;
     const mois = v.m.months;
     const valeur = (i: number, mk: string) => {
       const k = pr.months.indexOf(mk);
