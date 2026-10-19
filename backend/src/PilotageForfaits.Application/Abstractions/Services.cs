@@ -28,6 +28,17 @@ public static class RolesGlobaux
     public const string Administrateur = "Administrateur";
 }
 
+/// <summary>Identifiants de capacités utilisés par les cas d'usage applicatifs.</summary>
+public static class CapacitesAcces
+{
+    public const string ProjetsLire = "projets.lire";
+    public const string ProjetsLireTous = "projets.lire-tous";
+    public const string ProjetsCreer = "projets.creer";
+    public const string ProjetsModifier = "projets.modifier";
+    public const string ConsommeSaisir = "consomme.saisir";
+    public const string ExportsFinanciers = "exports.financiers";
+}
+
 /// <summary>Date et heure du jour. Remplaçable dans les tests pour obtenir des résultats reproductibles.</summary>
 public interface IHorloge
 {
