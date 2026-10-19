@@ -2,6 +2,11 @@
 # on compile tout et on lance tous les tests. Une étape rouge = on ne fusionne pas.
 name: Intégration continue
 
+# Do not queue a full matrix for every intermediate commit on the same branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
   pull_request:
@@ -40,8 +45,13 @@ jobs:
           node-version: 22
       # « npm ci » dès que package-lock.json est enregistré dans le dépôt (installation reproductible)
       - run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
-      - run: npm run build
-      - run: npm test
+      - name: Build production application
+        run: npm run build -- --configuration production
+      - name: Verify production build artifact
+        run: test -s dist/pilotage-forfaits/browser/index.html
+      # Unit tests compile source with the Angular test builder's configured development buildTarget.
+      - name: Run Angular unit tests
+        run: npm test
 
   reference:
     name: Données de référence (moteur de la version de référence)
