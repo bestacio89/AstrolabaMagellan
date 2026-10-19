@@ -22,15 +22,21 @@ public sealed class TransformationGroupesEntra(IConfiguration configuration) : I
 
     public Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
     {
-        if (principal.Identity?.IsAuthenticated != true || GroupesEnDepassement(principal))
+        if (principal.Identity?.IsAuthenticated != true)
+            return Task.FromResult(principal);
+
+        // Never trust capability claims supplied by the token itself; rebuild them from the server-side group mapping.
+        foreach (var identiteExistante in principal.Identities)
+        {
+            foreach (var claim in identiteExistante.FindAll(TypeCapacite).ToArray())
+                identiteExistante.RemoveClaim(claim);
+        }
+
+        if (GroupesEnDepassement(principal))
             return Task.FromResult(principal);
 
         var identite = principal.Identities.FirstOrDefault(i => i.IsAuthenticated);
         if (identite is null) return Task.FromResult(principal);
-
-        var capacitesExistantes = principal.FindAll(TypeCapacite)
-            .Select(c => c.Value)
-            .ToHashSet(StringComparer.Ordinal);
 
         foreach (var groupe in principal.FindAll(TypeGroupe).Select(c => c.Value).Distinct(StringComparer.OrdinalIgnoreCase))
         {
@@ -39,8 +45,7 @@ public sealed class TransformationGroupesEntra(IConfiguration configuration) : I
 
             foreach (var capacite in capacites)
             {
-                if (capacitesExistantes.Add(capacite))
-                    identite.AddClaim(new Claim(TypeCapacite, capacite));
+                identite.AddClaim(new Claim(TypeCapacite, capacite));
             }
         }
 
