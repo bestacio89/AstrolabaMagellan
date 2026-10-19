@@ -10,14 +10,17 @@ import { NomIcone } from '../../shared/ui/icone';
 import { SuiviApi } from './api/suivi.api';
 import { calculerAlertes } from './etat/alertes';
 import { messageErreurFichier, telecharger } from './etat/fichiers';
-import { ONGLETS } from './etat/constantes';
+import { Onglet, ONGLETS } from './etat/constantes';
+import { cheminEntree, ecranDeMontants, entreeActive, groupeEcran, groupesVisibles, libelleEcran } from './etat/navigation.logique';
 import { fD } from './etat/formats';
-import { PANNEAU_AVANCEMENT, PANNEAU_MARGE, SuiviEtat } from './etat/suivi.etat';
+import { PANNEAU_AVANCEMENT, PANNEAU_MARGE, PANNEAU_PLANNING, PANNEAU_REGISTRE, SuiviEtat } from './etat/suivi.etat';
 import { UiEtat } from './etat/ui.etat';
 import { Fenetres } from './fenetres/fenetres';
 import { PanneauAvancement } from './panneaux/panneau-avancement';
 import { PanneauMarge } from './panneaux/panneau-marge';
 import { PanneauPhase } from './panneaux/panneau-phase';
+import { PanneauPlanning } from './panneaux/panneau-planning';
+import { PanneauRegistre } from './panneaux/panneau-registre';
 import { PanneauTache } from './panneaux/panneau-tache';
 import { ConfirmationFenetre, Toasts } from './ui/messages';
 
@@ -26,6 +29,7 @@ const ICONES: Record<string, NomIcone> = {
   'tableau-de-bord': 'tableau-de-bord',
   workload: 'liste',
   gantt: 'gantt',
+  absences: 'conge',
   ateliers: 'personnes',
   actions: 'bulle',
   rentabilite: 'tendance',
@@ -60,7 +64,7 @@ const REGROUPEMENTS: { cle: 'id' | 'lot' | 'phase'; libelle: string; colonne: st
  */
 @Component({
   selector: 'app-projet-suivi',
-  imports: [RouterOutlet, RouterLink, PanneauTache, PanneauPhase, PanneauAvancement, PanneauMarge, Fenetres, Toasts, ConfirmationFenetre],
+  imports: [RouterOutlet, RouterLink, PanneauTache, PanneauPhase, PanneauAvancement, PanneauMarge, PanneauPlanning, PanneauRegistre, Fenetres, Toasts, ConfirmationFenetre],
   providers: [SuiviEtat, UiEtat],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -82,6 +86,14 @@ const REGROUPEMENTS: { cle: 'id' | 'lot' | 'phase'; libelle: string; colonne: st
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
             Mes projets
           </a>
+          @if (groupeAriane(); as g) {
+            <span aria-hidden="true">/</span>
+            <span>{{ g }}</span>
+          }
+          @if (onglet() === 'point-hebdo') {
+            <span aria-hidden="true">/</span>
+            <a [routerLink]="['/projets', id(), 'tableau-de-bord']">Tableau de bord</a>
+          }
           <span aria-hidden="true">/</span>
           <span aria-current="page">{{ libelleOnglet() }}</span>
         </nav>
@@ -214,6 +226,16 @@ const REGROUPEMENTS: { cle: 'id' | 'lot' | 'phase'; libelle: string; colonne: st
           </div>
         }
         <div class="s-panel" [class]="'s-panel g-' + groupeCourant()">
+          @if (entreeGroupee(); as x) {
+            <nav class="sous-nav" [attr.aria-label]="x.libelle">
+              <span class="sous-nav-l">{{ x.libelle }}</span>
+              <div class="seg" role="group">
+                @for (s of x.sous; track s.chemin) {
+                  <button type="button" [attr.aria-pressed]="onglet() === s.chemin" (click)="router.navigate(['/projets', id(), s.chemin])">{{ s.libelle }}</button>
+                }
+              </div>
+            </nav>
+          }
           <router-outlet />
         </div>
       </main>
@@ -225,6 +247,10 @@ const REGROUPEMENTS: { cle: 'id' | 'lot' | 'phase'; libelle: string; colonne: st
           <app-panneau-avancement />
         } @else if (p.startsWith(panneauMarge)) {
           <app-panneau-marge [cle]="p.slice(panneauMarge.length)" />
+        } @else if (p.startsWith(panneauRegistre)) {
+          <app-panneau-registre [spec]="p.slice(panneauRegistre.length)" />
+        } @else if (p.startsWith(panneauPlanning)) {
+          <app-panneau-planning [cle]="p.slice(panneauPlanning.length)" />
         } @else {
           <app-panneau-tache [uid]="p" />
         }
@@ -249,6 +275,8 @@ const REGROUPEMENTS: { cle: 'id' | 'lot' | 'phase'; libelle: string; colonne: st
 export class ProjetSuivi {
   protected readonly panneauAvancement = PANNEAU_AVANCEMENT;
   protected readonly panneauMarge = PANNEAU_MARGE;
+  protected readonly panneauPlanning = PANNEAU_PLANNING;
+  protected readonly panneauRegistre = PANNEAU_REGISTRE;
   private readonly projetsApi = inject(ProjetsApi);
   /** Restauration d'un projet archivé en cours (bouton du bandeau). */
   protected readonly restauration = signal(false);
@@ -257,7 +285,7 @@ export class ProjetSuivi {
   protected readonly etat = inject(SuiviEtat);
   protected readonly ui = inject(UiEtat);
   private readonly api = inject(SuiviApi);
-  private readonly router = inject(Router);
+  protected readonly router = inject(Router);
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly nav = inject(NavigationService);
 
@@ -281,14 +309,23 @@ export class ProjetSuivi {
   private readonly tacheDemandee = computed(() => this.router.parseUrl(this.url()).queryParamMap.get('tache'));
 
   /** Onglets visibles selon le rôle (les écrans de montants sont réservés à ceux qui les voient). */
-  protected readonly groupes = computed(() => {
-    const voit = this.etat.vue()?.droits.voitMontants ?? false;
-    return ONGLETS.map((g) => ({ ...g, onglets: g.onglets.filter((o) => voit || !o.montants) })).filter((g) => g.onglets.length > 0);
+  protected readonly groupes = computed(() => groupesVisibles(this.etat.vue()?.droits.voitMontants ?? false));
+
+  protected readonly groupeCourant = computed(() => groupeEcran(this.onglet())?.groupe.classe ?? 'pil');
+
+  /** Entrée du menu qui regroupe l'écran affiché (Dépenses, Fiche & synthèse) : ses sous-onglets s'affichent en haut de l'écran. */
+  protected readonly entreeGroupee = computed(() => {
+    const o = this.onglet();
+    return this.groupes().flatMap((g) => g.onglets).find((x) => x.sous?.some((y) => y.chemin === o)) ?? null;
   });
 
-  protected readonly groupeCourant = computed(() => {
+  /** Fil d'Ariane : le groupe de l'écran (« Finances », « Annexes du TSP »…), avant son nom. */
+  protected readonly groupeAriane = computed(() => {
     const o = this.onglet();
-    return ONGLETS.find((g) => g.onglets.some((x) => x.chemin === o) || g.annexes?.some((x) => x.chemin === o))?.classe ?? 'pil';
+    if (o === 'point-hebdo') return 'Pilotage';
+    const g = groupeEcran(o);
+    if (!g) return '';
+    return g.annexe ? 'Annexes du TSP' : (NOMS_GROUPES[g.groupe.classe] ?? g.groupe.groupe);
   });
 
   protected readonly annexeCourante = computed(() => ONGLETS.flatMap((g) => g.annexes ?? []).find((a) => a.chemin === this.onglet()) ?? null);
@@ -303,7 +340,7 @@ export class ProjetSuivi {
   protected readonly libelleOnglet = computed(() => {
     const o = this.onglet();
     if (o === 'point-hebdo') return 'Point hebdo'; // ouvert depuis le tableau de bord, hors barre latérale
-    return ONGLETS.flatMap((g) => [...g.onglets, ...(g.annexes ?? [])]).find((x) => x.chemin === o)?.libelle ?? '';
+    return libelleEcran(o);
   });
 
   /** Rubriques du projet pour la barre latérale, avec le nombre de points à traiter de chacune. */
@@ -318,11 +355,12 @@ export class ProjetSuivi {
       actions: [al.actions.length, al.actionsRetard > 0],
       facturation: [al.echeances.length, al.echeancesRetard > 0],
     };
-    const lien = (x: { chemin: string; libelle: string }) => ({
+    // une entrée regroupée (Dépenses, Fiche & synthèse) mène à son premier sous-onglet et reste active sur chacun
+    const lien = (x: Onglet) => ({
       libelle: x.libelle,
-      chemin: x.chemin,
+      chemin: cheminEntree(x),
       icone: ICONES[x.chemin] ?? 'fiche',
-      actif: o === x.chemin,
+      actif: entreeActive(x, o),
       badge: badges[x.chemin]?.[0] ?? 0,
       retard: badges[x.chemin]?.[1] ?? false,
     });
@@ -367,7 +405,7 @@ export class ProjetSuivi {
       const v = this.etat.vue();
       const o = this.onglet();
       if (!v || v.droits.voitMontants) return;
-      if (ONGLETS.some((g) => g.onglets.some((x) => x.chemin === o && x.montants))) {
+      if (ecranDeMontants(o)) {
         untracked(() => void this.router.navigate(['/projets', this.id(), 'tableau-de-bord'], { replaceUrl: true }));
       }
     });

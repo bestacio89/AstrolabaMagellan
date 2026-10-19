@@ -60,11 +60,11 @@ const PROJETS_LISTES = 8;
 
     <nav id="navigation-principale" class="corps" aria-label="Navigation principale">
       <div class="general">
-      <a routerLink="/projets" class="lien" [class.actif]="surAccueil()" [attr.aria-current]="surAccueil() ? 'page' : null">
-        <app-icone nom="accueil" [taille]="18" [epaisseur]="1.75" />Accueil
+       <a routerLink="/projets" class="lien" [attr.title]="replie() ? 'Accueil' : null" [class.actif]="surAccueil()" [attr.aria-current]="surAccueil() ? 'page' : null">
+        <app-icone nom="accueil" [taille]="18" [epaisseur]="1.75" /><span class="libelle">Accueil</span>
       </a>
       @if (prefs.preferences().monTravail) {
-      <a routerLink="/mon-travail" class="lien" [class.actif]="surPage('/mon-travail')" [attr.aria-current]="surPage('/mon-travail') ? 'page' : null">
+      <a routerLink="/mon-travail" class="lien" [attr.title]="replie() ? 'Mon travail' : null" [class.actif]="surPage('/mon-travail')" [attr.aria-current]="surPage('/mon-travail') ? 'page' : null">
         <app-icone nom="travail" [taille]="18" [epaisseur]="1.75" /><span class="libelle">Mon travail</span>
         @if (nav.aMonTravail(); as n) {
           <span class="badge" [class.retard]="nav.aMonTravailRetard()" [title]="n + ' élément(s) à traiter'">{{ n }}</span>
@@ -72,7 +72,7 @@ const PROJETS_LISTES = 8;
       </a>
       }
       @if (prefs.preferences().portefeuille) {
-      <a routerLink="/portefeuille" class="lien" [class.actif]="surPage('/portefeuille')" [attr.aria-current]="surPage('/portefeuille') ? 'page' : null">
+      <a routerLink="/portefeuille" class="lien" [attr.title]="replie() ? 'Portefeuille' : null" [class.actif]="surPage('/portefeuille')" [attr.aria-current]="surPage('/portefeuille') ? 'page' : null">
         <app-icone nom="portefeuille" [taille]="18" [epaisseur]="1.75" /><span class="libelle">Portefeuille</span>
       </a>
       }
@@ -103,7 +103,7 @@ const PROJETS_LISTES = 8;
                 @if (l.intertitre) {
                   <span class="intertitre">{{ l.intertitre }}</span>
                 }
-                <a class="lien" [routerLink]="lienRubrique(p, l.chemin)" [class.actif]="l.actif" [attr.aria-current]="l.actif ? 'page' : null">
+                <a class="lien" [routerLink]="lienRubrique(p, l.chemin)" [attr.title]="replie() ? l.libelle : null" [class.actif]="l.actif" [attr.aria-current]="l.actif ? 'page' : null">
                   @if (l.etat) {
                     <span class="etat-r" [attr.data-etat]="l.etat" [title]="libelleEtat[l.etat]"></span>
                     <span class="visuellement-cache">{{ libelleEtat[l.etat] }} :</span>
@@ -140,9 +140,9 @@ const PROJETS_LISTES = 8;
     </nav>
 
     <div class="pied">
-      <button type="button" class="lien" (click)="ouvrirReperes()"><app-icone nom="aide" [taille]="18" [epaisseur]="1.75" />Lexique</button>
-      <button type="button" class="lien" (click)="parametresOuverts.set(true); menuOuvert.set(false)">
-        <app-icone nom="preferences" [taille]="18" [epaisseur]="1.75" />Préférences
+      <button type="button" class="lien" [attr.title]="replie() ? 'Lexique' : null" (click)="ouvrirReperes()"><app-icone nom="aide" [taille]="18" [epaisseur]="1.75" /><span class="libelle">Lexique</span></button>
+      <button type="button" class="lien" [attr.title]="replie() ? 'Préférences' : null" (click)="parametresOuverts.set(true); menuOuvert.set(false)">
+        <app-icone nom="preferences" [taille]="18" [epaisseur]="1.75" /><span class="libelle">Préférences</span>
       </button>
       @if (auth.modeDev) {
         <label class="dev" title="Mode développement : changer d'utilisateur fictif">
@@ -155,7 +155,7 @@ const PROJETS_LISTES = 8;
         </label>
       }
       @if (session.moi(); as moi) {
-        <div class="compte">
+        <div class="compte" [attr.title]="replie() ? session.nomComplet() : null">
           <span class="avatar" aria-hidden="true">{{ initialesDe(moi.prenom, moi.nom) }}</span>
           <span class="identite">
             <b>{{ session.nomComplet() }}</b>
@@ -673,6 +673,43 @@ const PROJETS_LISTES = 8;
         border-bottom: 1px solid var(--c-separateur);
       }
     }
+
+    /* ---- Charte v2 (version HTML du 15 au 18/10/2026) : panneau plus dense ; replié, une colonne d'icônes (nom au survol) ---- */
+    :host { --line: #eef0f5; --line-strong: #e3e6ee; --surface-2: #f6f7fb; --ink-2: #3d4152; --muted: #676b80; --faint: #767a8f; --accent: var(--c-primaire); --accent-soft: var(--c-primaire-pale); }
+    @media (min-width: 901px) {
+      :host(:not(.repliee)) { width: 232px; }
+      :host { background: #fff; border-right: 1px solid var(--line-strong); }
+      :host .tete { height: 54px; padding-left: 16px; }
+      :host .corps { padding: 8px 10px 10px; gap: 10px; }
+      :host .lien { height: 30px; font-size: 13px; padding: 0 9px; gap: 9px; border-radius: 7px; color: var(--ink-2); }
+      :host .lien .ico svg { width: 16px; height: 16px; }
+      :host .etiquette { font-size: 10.5px; padding-bottom: 3px; letter-spacing: .08em; color: var(--faint); }
+      :host .projet { padding-top: 10px; }
+      :host .projet-nom { font: 600 12.5px/17px var(--police-titre); padding-bottom: 4px; }
+      :host .groupe-bloc { margin-top: 4px; }
+      :host .pied { padding: 8px 10px; gap: 4px; }
+    }
+    :host .lien.actif { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+    :host .lien.actif .ico { color: var(--accent); }
+    @media (min-width: 901px) {
+      :host(.repliee) { width: 60px; }
+      :host(.repliee) .corps { display: block; padding: 6px 8px 10px; overflow-x: hidden; }
+      :host(.repliee) .pied { display: flex; flex-direction: column; align-items: center; padding: 8px 6px; gap: 4px; }
+      :host(.repliee) .libelle, :host(.repliee) .etiquette:not(.pliable), :host(.repliee) .projet-nom span:last-child,
+      :host(.repliee) .intertitre, :host(.repliee) .identite, :host(.repliee) .etat-r, :host(.repliee) .visu, :host(.repliee) .note-r { display: none; }
+      :host(.repliee) .projet { padding: 6px 0; display: flex; justify-content: center; }
+      :host(.repliee) .projet-nom { padding: 0; justify-content: center; }
+      :host(.repliee) .lien { width: 44px; height: 36px; justify-content: center; padding: 0; margin: 0 auto; position: relative; gap: 0; }
+      :host(.repliee) .lien .badge { position: absolute; top: 2px; right: 2px; min-width: 15px; height: 15px; padding: 0 3px; font-size: 9.5px; line-height: 15px; margin: 0; }
+      :host(.repliee) .groupe-bloc { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line); }
+      :host(.repliee) .etiquette.pliable { font-size: 0; height: 20px; justify-content: center; padding: 0; }
+      :host(.repliee) .etiquette.pliable svg { width: 14px; height: 14px; }
+      :host(.repliee) .compte { justify-content: center; }
+      :host(.repliee) .dev { display: none; }
+      :host(.repliee) .deplier { position: static; inset: auto; display: flex; justify-content: center; width: 100%; height: 54px; align-items: center; background: none; border-bottom: 1px solid var(--line-strong); }
+      :host(.repliee) .deplier:hover { background: var(--surface-2); }
+      :host(.repliee) .deplier .disque { position: static; }
+    }
   `,
 })
 export class BarreLaterale implements OnInit {
@@ -690,6 +727,8 @@ export class BarreLaterale implements OnInit {
   protected readonly reperesOuverts = signal(false);
   protected readonly parametresOuverts = signal(false);
   protected readonly prefs = inject(PreferencesService);
+  /** Panneau replié en colonne d'icônes : le nom de chaque rubrique s'affiche au survol. */
+  protected readonly replie = computed(() => this.prefs.preferences().barreRepliee);
   protected readonly initialesDe = initiales;
   /** Utilisateurs fictifs déclarés dans appsettings.Development.json de l'API. */
   protected readonly utilisateursDev = [
