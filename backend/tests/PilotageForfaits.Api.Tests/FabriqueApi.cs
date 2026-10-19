@@ -35,24 +35,32 @@ public sealed class FabriqueApi : WebApplicationFactory<Program>
             ["ConnectionStrings:Pilotage"] = "Server=localhost;Database=unused_tests;User Id=unused;Password=unused;TrustServerCertificate=True",
         };
 
+        var capacitesChef = new[] { "projets.lire", "projets.creer", "projets.modifier", "consomme.saisir", "exports.financiers" };
+        var capacitesConsultant = new[] { "projets.lire", "consomme.saisir" };
+        var capacitesPilotage = new[] { "projets.lire", "projets.lire-tous", "exports.financiers" };
+        var capacitesLectureSeule = new[] { "projets.lire" };
         var utilisateurs = new[]
         {
-            ("chef", "oid-chef", "Camille", "Martin", "ChefDeProjet"),
-            ("chef2", "oid-chef-2", "Alex", "Durand", "ChefDeProjet"),
-            ("consultant", "oid-consultant", "Sam", "Petit", ""),
-            ("pilotage", "oid-pilotage", "Lou", "Bernard", "Pilotage"),
+            (Cle: "chef", Oid: "oid-chef", Prenom: "Camille", Nom: "Martin", Role: "ChefDeProjet", Capacites: capacitesChef),
+            (Cle: "chef2", Oid: "oid-chef-2", Prenom: "Alex", Nom: "Durand", Role: "ChefDeProjet", Capacites: capacitesChef),
+            (Cle: "consultant", Oid: "oid-consultant", Prenom: "Sam", Nom: "Petit", Role: "", Capacites: capacitesConsultant),
+            (Cle: "pilotage", Oid: "oid-pilotage", Prenom: "Lou", Nom: "Bernard", Role: "Pilotage", Capacites: capacitesPilotage),
+            (Cle: "sans-capacite", Oid: "oid-sans-capacite", Prenom: "Noa", Nom: "Test", Role: "", Capacites: Array.Empty<string>()),
         };
 
         for (var i = 0; i < utilisateurs.Length; i++)
         {
-            var (cle, oid, prenom, nom, role) = utilisateurs[i];
+            var u = utilisateurs[i];
             var prefixe = $"Authentification:UtilisateursDev:{i}:";
-            configuration[prefixe + "Cle"] = cle;
-            configuration[prefixe + "Oid"] = oid;
-            configuration[prefixe + "Prenom"] = prenom;
-            configuration[prefixe + "Nom"] = nom;
-            configuration[prefixe + "Email"] = $"{cle}@exemple.fr";
-            if (role.Length > 0) configuration[$"{prefixe}Roles:0"] = role;
+            configuration[prefixe + "Cle"] = u.Cle;
+            configuration[prefixe + "TenantId"] = "tenant-tests";
+            configuration[prefixe + "Oid"] = u.Oid;
+            configuration[prefixe + "Prenom"] = u.Prenom;
+            configuration[prefixe + "Nom"] = u.Nom;
+            configuration[prefixe + "Email"] = $"{u.Cle}@exemple.fr";
+            if (u.Role.Length > 0) configuration[$"{prefixe}Roles:0"] = u.Role;
+            for (var j = 0; j < u.Capacites.Length; j++)
+                configuration[$"{prefixe}Capacites:{j}"] = u.Capacites[j];
         }
 
         return configuration;

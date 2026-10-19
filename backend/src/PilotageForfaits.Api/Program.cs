@@ -107,8 +107,8 @@ static void ValiderConfigurationEntraId(IConfiguration configuration)
     if (!Uri.TryCreate(instance, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
         throw new InvalidOperationException("La configuration AzureAd:Instance doit être une URL HTTPS valide.");
 
-    if (!EstValeurConfiguree(tenantId))
-        throw new InvalidOperationException("AzureAd:TenantId doit être défini via la configuration de l'environnement ou le magasin de secrets.");
+    if (!Guid.TryParse(tenantId, out _))
+        throw new InvalidOperationException("AzureAd:TenantId doit contenir l'identifiant de tenant Entra ID (GUID).");
 
     if (!Guid.TryParse(clientId, out _))
         throw new InvalidOperationException("AzureAd:ClientId doit contenir l'identifiant d'application Entra ID (GUID).");
