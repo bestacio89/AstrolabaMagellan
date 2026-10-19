@@ -20,7 +20,7 @@ public sealed class ProjetsService(
     public async Task<IReadOnlyList<ProjetResumeDto>> ListerAsync(bool archives, CancellationToken annulation = default)
     {
         var utilisateur = await acces.UtilisateurAsync(annulation);
-        if (!acces.PeutLireProjets) throw new AccesRefuseException("Vous n'avez pas la capacité de consulter les projets.");
+        if (!acces.PeuttLireProjets) throw new AccesRefuseException("Vous n'avez pas la capacité de consulter les projets.");
         var roles = await db.Habilitations.AsNoTracking()
             .Where(h => h.UtilisateurId == utilisateur.Id)
             .ToDictionaryAsync(h => h.ProjetId, h => h.Role, annulation);
@@ -46,7 +46,7 @@ public sealed class ProjetsService(
         {
             var role = roles.TryGetValue(projet.Id, out var r) ? r : RoleProjet.Pilotage;
             var calcul = MoteurCalcul.Calculer(await constructeur.ChargerAsync(projet.Id, annulation), horloge.Aujourdhui);
-            var voitMontants = acces.PeuVoirMontants(role);
+            var voitMontants = acces.PeutVoirMontants(role);
             var aTraiter = PointsATraiter(calcul);
             if (calcul.Tasks.Count == 0)
                 aTraiter.Add(new PointATraiterDto("preparation", "Projet vide : aucune tâche saisie", "neutre",
@@ -71,7 +71,7 @@ public sealed class ProjetsService(
     public async Task<Guid> CreerVideAsync(CreerProjetVideCommande commande, CancellationToken annulation = default)
     {
         var utilisateur = await acces.UtilisateurAsync(annulation);
-        if (!acces.PeutCreerUnProjet) throw new AccesRefuseException("Vous n'avez pas le droit de créer un projet.");
+        if (!acces.PeuttCreerUnProjet) throw new AccesRefuseException("Vous n'avez pas le droit de créer un projet.");
         await unicite.ExigerLibreAsync(commande.Reference, commande.Client, commande.Nom, null, annulation);
         var projet = Projet.CreerVide(commande.Client, commande.Nom, commande.Reference, commande.Debut, commande.FinContractuelle,
             commande.TypeContrat, utilisateur.Id, horloge.Maintenant);
@@ -92,7 +92,7 @@ public sealed class ProjetsService(
     public async Task ArchiverAsync(Guid projetId, ArchivageCommande commande, CancellationToken annulation = default)
     {
         var role = await acces.ExigerAccesAsync(projetId, annulation);
-        if (!acces.PeuModifierSurProjet(role)) throw new AccesRefuseException("Seul le chef de projet peut archiver ou restaurer ce projet.");
+        if (!acces.PeutModifierSurProjet(role)) throw new AccesRefuseException("Seul le chef de projet peut archiver ou restaurer ce projet.");
         var u = await acces.UtilisateurAsync(annulation);
         var projet = await db.Projets.FirstAsync(p => p.Id == projetId, annulation);
         var avant = projet.Statut;
@@ -115,7 +115,7 @@ public sealed class ProjetsService(
     public async Task SupprimerAsync(Guid projetId, SuppressionCommande commande, CancellationToken annulation = default)
     {
         var role = await acces.ExigerAccesAsync(projetId, annulation);
-        if (!acces.PeuModifierSurProjet(role)) throw new AccesRefuseException("Seul le chef de projet peut supprimer ce projet.");
+        if (!acces.PeutModifierSurProjet(role)) throw new AccesRefuseException("Seul le chef de projet peut supprimer ce projet.");
         var u = await acces.UtilisateurAsync(annulation);
         var projet = await db.Projets.AsNoTracking().FirstAsync(p => p.Id == projetId, annulation);
         if (!string.Equals(SaisieTexte(commande.Confirmation), SaisieTexte(projet.Nom), StringComparison.OrdinalIgnoreCase))
@@ -139,7 +139,7 @@ public sealed class ProjetsService(
     public async Task<ProjetDetailDto> ObtenirAsync(Guid projetId, CancellationToken annulation = default)
     {
         var role = await acces.ExigerAccesAsync(projetId, annulation);
-        var voitMontants = acces.PeuVoirMontants(role);
+        var voitMontants = acces.PeutVoirMontants(role);
         var projet = await db.Projets.AsNoTracking().FirstAsync(p => p.Id == projetId, annulation);
         var fiche = await db.ChampsFiche.AsNoTracking().Where(c => c.ProjetId == projetId).OrderBy(c => c.Ordre)
             .Select(x => new ChampFicheDto(x.Libelle, x.Valeur)).ToListAsync(annulation);
@@ -155,7 +155,7 @@ public sealed class ProjetsService(
         return new ProjetDetailDto(
             projet.Id, projet.Nom, projet.Client, projet.Reference, Libelles.De(statut), statut.ToString(),
             Libelles.De(projet.Origine),
-            Libelles.De(role), role.ToString(), voitMontants, acces.PeuModifierSurProjet(role) && projet.Statut != StatutProjet.Archive, c.Tasks.Count == 0,
+            Libelles.De(role), role.ToString(), voitMontants, acces.PeutModifierSurProjet(role) && projet.Statut != StatutProjet.Archive, c.Tasks.Count == 0,
             projet.Debut, projet.FinContractuelle, projet.FinPrevue, fiche,
             new IndicateursDto(
                 c.Total.Actives, c.Total.Valides, c.Total.Avancement, c.Total.Prevu, c.Total.PrevuTSP, c.Total.Conso, c.Total.Raf,
