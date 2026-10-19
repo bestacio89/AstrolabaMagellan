@@ -45,7 +45,7 @@ public sealed class ProjetsService(
         {
             var role = roles.TryGetValue(projet.Id, out var r) ? r : RoleProjet.Pilotage;
             var calcul = MoteurCalcul.Calculer(await constructeur.ChargerAsync(projet.Id, annulation), horloge.Aujourdhui);
-            var voitMontants = ServiceAcces.VoitMontants(role);
+            var voitMontants = acces.PeuVoirMontants(role);
             var aTraiter = PointsATraiter(calcul);
             if (calcul.Tasks.Count == 0)
                 aTraiter.Add(new PointATraiterDto("preparation", "Projet vide : aucune tâche saisie", "neutre",
@@ -138,7 +138,7 @@ public sealed class ProjetsService(
     public async Task<ProjetDetailDto> ObtenirAsync(Guid projetId, CancellationToken annulation = default)
     {
         var role = await acces.ExigerAccesAsync(projetId, annulation);
-        var voitMontants = ServiceAcces.VoitMontants(role);
+        var voitMontants = acces.PeuVoirMontants(role);
         var projet = await db.Projets.AsNoTracking().FirstAsync(p => p.Id == projetId, annulation);
         var fiche = await db.ChampsFiche.AsNoTracking().Where(c => c.ProjetId == projetId).OrderBy(c => c.Ordre)
             .Select(x => new ChampFicheDto(x.Libelle, x.Valeur)).ToListAsync(annulation);
