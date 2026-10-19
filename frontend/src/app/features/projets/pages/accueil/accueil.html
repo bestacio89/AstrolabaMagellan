@@ -1,0 +1,182 @@
+<!-- sélecteur de fichier caché, ouvert par les boutons « Importer un TSP » -->
+<input #selecteurFichier type="file" accept=".xlsx,.xlsm" class="visuellement-cache" tabindex="-1" aria-hidden="true" (change)="surFichierChoisi($event)" />
+
+@if (etat.chargement()) {
+  <main class="page" aria-busy="true">
+    <p class="chargement">Chargement de vos projets…</p>
+  </main>
+} @else if (etat.enErreur()) {
+  <main class="page">
+    <div class="encart" role="alert">
+      <app-icone nom="info" />
+      <p>Vos projets n'ont pas pu être chargés. <button type="button" class="btn" (click)="etat.charger()">Réessayer</button></p>
+    </div>
+  </main>
+} @else if (etat.aucunProjet()) {
+  <main>
+    @if (brouillons().length) {
+      <div class="page page-brouillons">
+        <ng-container *ngTemplateOutlet="listeBrouillons" />
+      </div>
+    }
+    <app-premier-lancement
+      [prenom]="session.moi()?.prenom ?? ''"
+      [peutCreer]="session.moi()?.peutCreerUnProjet ?? false"
+      (choisirFichier)="choisirTsp()"
+      (fichierChoisi)="fichierTsp.set($event)"
+      (rediger)="creationOuverte.set(true)"
+    />
+    @if (archives()?.length) {
+      <div class="page page-archives">
+        <ng-container *ngTemplateOutlet="projetsArchives" />
+      </div>
+    }
+  </main>
+} @else {
+  <main class="page">
+    <div class="titre-page">
+      <div class="titres">
+        <h1>Mes projets</h1>
+        <p>
+          {{ etat.compteurs().actifs }} projet{{ etat.compteurs().actifs > 1 ? 's' : '' }} actif{{ etat.compteurs().actifs > 1 ? 's' : '' }}
+          vous {{ etat.compteurs().actifs > 1 ? 'sont ouverts' : 'est ouvert' }} · situation au {{ aujourdhui | dateFr }}
+        </p>
+      </div>
+      @if (session.moi()?.peutCreerUnProjet) {
+        <div class="boutons">
+          <button type="button" class="btn primaire" (click)="creationOuverte.set(true)"><app-icone nom="plus" />Nouveau projet</button>
+        </div>
+      }
+    </div>
+
+    @if (brouillons().length) {
+      <ng-container *ngTemplateOutlet="listeBrouillons" />
+    }
+
+    @let c = etat.chiffres();
+    <div class="chiffres" aria-label="Chiffres clés">
+      <div class="chiffre">
+        <span class="pictogramme bleu"><app-icone nom="tableau-de-bord" [taille]="20" /></span>
+        <span><b class="num">{{ c.actifs }}</b><span>projet{{ c.actifs > 1 ? 's' : '' }} actif{{ c.actifs > 1 ? 's' : '' }}</span></span>
+      </div>
+      <div class="chiffre">
+        <span class="pictogramme rouge"><app-icone nom="info" [taille]="20" /></span>
+        <span><b class="num">{{ etat.nombrePointsATraiter() }}</b><span>point{{ etat.nombrePointsATraiter() > 1 ? 's' : '' }} à traiter</span></span>
+      </div>
+      <div class="chiffre">
+        <span class="pictogramme vert"><app-icone nom="coche" [taille]="20" /></span>
+        <span><b class="num">{{ c.dansLaCible }}</b><span>dans la cible</span></span>
+      </div>
+      <div class="chiffre">
+        <span class="pictogramme violet"><app-icone nom="calendrier" [taille]="20" /></span>
+        <span><b class="num">{{ c.consomme | jh }} / {{ c.prevu | jh }} JH</b><span>consommés, projets suivis</span></span>
+      </div>
+    </div>
+
+    <app-a-traiter [points]="etat.pointsATraiter()" [total]="etat.nombrePointsATraiter()" />
+
+    <app-liste-projets
+      [projets]="etat.projetsAffiches()"
+      [compteurs]="etat.compteurs()"
+      [filtre]="etat.filtre()"
+      [recherche]="etat.recherche()"
+      [tri]="etat.tri()"
+      (filtreChange)="etat.filtre.set($event)"
+      (rechercheChange)="etat.recherche.set($event)"
+      (triChange)="etat.tri.set($event)"
+      (archiver)="aArchiver.set($event)"
+    />
+
+    <ng-container *ngTemplateOutlet="projetsArchives" />
+  </main>
+}
+
+<app-fenetre titre="Archiver le projet" [ouverte]="!!aArchiver()" (fermee)="aArchiver.set(null)">
+  @if (aArchiver(); as p) {
+    <p class="confirmer">
+      <b>{{ p.client }} — {{ p.nom }}</b> quitte les listes et passe en lecture seule pour toute l’équipe.
+      Rien n’est perdu : il reste consultable dans « Projets archivés », en bas de l’accueil, et se restaure à tout moment.
+    </p>
+  }
+  <div pied>
+    <button type="button" class="btn" (click)="aArchiver.set(null)">Annuler</button>
+    <button type="button" class="btn primaire" [disabled]="archivage()" (click)="archiver()">{{ archivage() ? 'Archivage…' : 'Archiver' }}</button>
+  </div>
+</app-fenetre>
+
+<app-fenetre-importer-tsp
+  [fichier]="fichierTsp()"
+  (fermee)="fichierTsp.set(null)"
+  (changerFichier)="choisirTsp()"
+  (importe)="projetImporte($event)"
+/>
+<app-fenetre-nouveau-projet
+  [ouverte]="creationOuverte()"
+  [projets]="etat.projets()"
+  (fermee)="creationOuverte.set(false)"
+  (importer)="importerDepuisNouveau()"
+  (cree)="brouillonCree($event)"
+/>
+
+<!-- brouillons de projet : visibles de leur auteur et de leur co-rédacteur seulement -->
+<ng-template #listeBrouillons>
+  <section class="brouillons carte" aria-labelledby="titre-brouillons">
+    <div class="brouillons-tete">
+      <h2 id="titre-brouillons">Mes brouillons</h2>
+      <span>projets en cours de création · visibles de vous seul et de votre co-rédacteur, jamais dans le portefeuille</span>
+    </div>
+    <ul>
+      @for (b of brouillons(); track b.id) {
+        <li>
+          <a [routerLink]="['/brouillons', b.id]">
+            <span class="b-puce" aria-hidden="true"></span>
+            <span class="b-texte">
+              <b>{{ b.client || 'Client à renseigner' }} — {{ b.nom || 'Projet à renseigner' }}</b>
+              <span>
+                {{ b.origine }} · modifié {{ depuis(dateDe(b.modifieLe), maintenant) }}{{ b.modifiePar ? ' par ' + b.modifiePar : '' }}
+                @if (!b.estCreateur) {
+                  · rédigé par {{ b.createur }}
+                } @else if (b.coRedacteur) {
+                  · avec {{ b.coRedacteur }}
+                }
+              </span>
+            </span>
+            <span class="b-reprendre">Reprendre<app-icone nom="chevron" [taille]="16" /></span>
+          </a>
+        </li>
+      }
+    </ul>
+  </section>
+</ng-template>
+
+<!-- projets archivés : en bas de l'accueil, et aussi sur le premier lancement s'il n'en reste que d'archivés -->
+<ng-template #projetsArchives>
+  @if (archives()?.length) {
+  <section class="archives" aria-labelledby="titre-archives">
+    <button type="button" class="btn discret" [attr.aria-expanded]="archivesOuvertes()" (click)="basculerArchives()">
+      <app-icone nom="chevron" [taille]="16" [class.ouvert]="archivesOuvertes()" />
+      <span id="titre-archives">Projets archivés · {{ archives()?.length }}</span>
+    </button>
+    @if (archivesOuvertes()) {
+      @if (archives(); as liste) {
+        @if (liste.length) {
+          <ul class="carte liste-archives">
+            @for (p of liste; track p.id) {
+              <li>
+                <a [routerLink]="['/projets', p.id]" title="Ouvrir en consultation (le chef de projet peut le restaurer depuis le bandeau)">
+                  <span class="nom">{{ p.client }} — {{ p.nom }}</span>
+                  <span class="discret">{{ p.reference ?? '' }} · {{ p.monRole }}</span>
+                </a>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="discret">Aucun projet archivé.</p>
+        }
+      } @else {
+        <p class="discret">Chargement…</p>
+      }
+    }
+  </section>
+  }
+</ng-template>

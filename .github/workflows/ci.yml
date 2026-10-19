@@ -1,0 +1,59 @@
+# Intégration continue : à chaque envoi (push) et à chaque demande de fusion (pull request),
+# on compile tout et on lance tous les tests. Une étape rouge = on ne fusionne pas.
+name: Intégration continue
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  serveur:
+    name: Serveur .NET (compilation et tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: backend/global.json
+      - run: dotnet restore PilotageForfaits.sln
+      - run: dotnet build PilotageForfaits.sln --no-restore --configuration Release
+      - run: dotnet test PilotageForfaits.sln --no-build --configuration Release --logger "trx;LogFileName=resultats.trx" --results-directory resultats-tests
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: resultats-tests-serveur
+          path: backend/resultats-tests
+
+  interface:
+    name: Interface Angular (compilation et tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # « npm ci » dès que package-lock.json est enregistré dans le dépôt (installation reproductible)
+      - run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - run: npm run build
+      - run: npm test
+
+  reference:
+    name: Données de référence (moteur de la version de référence)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Recalcule les résultats attendus avec le moteur du POC et vérifie qu'ils sont identiques à ceux du dépôt.
+      - run: TODAY=2026-10-06 node outils/reference-poc/scenarios.cjs "$RUNNER_TEMP/reference"
+      - run: |
+          for f in "$RUNNER_TEMP"/reference/*.json; do
+            diff -q "$f" "backend/tests/Donnees/$(basename "$f")"
+          done

@@ -1,0 +1,67 @@
+<div class="contenu">
+  <div class="intro">
+    @if (peutCreer()) {
+      <h1>Bonjour{{ prenom() ? ' ' + prenom() : '' }}, démarrons votre premier projet</h1>
+      <p>Aucun projet ne vous est encore ouvert. Partez du TSP vendu, ou rédigez-le ici si vous n’avez pas le fichier.</p>
+    } @else {
+      <h1>Bonjour{{ prenom() ? ' ' + prenom() : '' }}</h1>
+      <p>Aucun projet ne vous est encore ouvert.</p>
+    }
+  </div>
+
+  @if (peutCreer()) {
+    <div class="choix">
+      <section class="option recommandee" aria-labelledby="choix-tsp">
+        <div class="haut">
+          <span class="icone bleue"><app-icone nom="fichier" [taille]="24" [epaisseur]="1.8" /></span>
+          <span class="badge">Recommandé</span>
+        </div>
+        <div class="texte">
+          <h2 id="choix-tsp">Importer un TSP</h2>
+          <p>Le TSP vendu est repris dans un brouillon : vous le relisez, puis vous lancez le projet.</p>
+        </div>
+        <ul>
+          <li><app-icone nom="coche" [taille]="16" [epaisseur]="2.4" />Fiche projet, dates et profils (TJM, CJM)</li>
+          <li><app-icone nom="coche" [taille]="16" [epaisseur]="2.4" />Tâches et charges du WORKLOAD</li>
+          <li><app-icone nom="coche" [taille]="16" [epaisseur]="2.4" />Échéancier de facturation et planning</li>
+        </ul>
+        <div
+          class="depot"
+          [class.survol]="survol()"
+          (dragover)="survoler($event, true)"
+          (dragleave)="survoler($event, false)"
+          (drop)="deposer($event)"
+        >
+          <span>Glissez le fichier TSP ici<br /><small>.xlsm ou .xlsx</small></span>
+          <button type="button" class="btn grand primaire" (click)="choisirFichier.emit()">
+            <app-icone nom="importer" />Choisir le fichier TSP
+          </button>
+        </div>
+      </section>
+
+      <section class="option" aria-labelledby="choix-rediger">
+        <span class="icone grise"><app-icone nom="crayon" [taille]="24" [epaisseur]="1.8" /></span>
+        <div class="texte">
+          <h2 id="choix-rediger">Rédiger le TSP ici</h2>
+          <p>Pas de fichier ? Saisissez le TSP dans l’application, rubrique par rubrique. Les totaux et la marge se calculent en direct.</p>
+        </div>
+        <ul>
+          <li><app-icone nom="coche" [taille]="16" [epaisseur]="2.4" />Fiche, profils, workload, planning, échéancier</li>
+          <li><app-icone nom="coche" [taille]="16" [epaisseur]="2.4" />Brouillon privé, enregistré au fil de la saisie</li>
+          <li><app-icone nom="coche" [taille]="16" [epaisseur]="2.4" />Exportable en Excel, lancé quand vous êtes prêt</li>
+        </ul>
+        <div class="bas">
+          <button type="button" class="btn grand" (click)="rediger.emit()"><app-icone nom="crayon" />Rédiger le TSP</button>
+        </div>
+      </section>
+    </div>
+  }
+
+  <div class="encart-acces carte">
+    <app-icone nom="personne-ajout" [taille]="20" />
+    <p>
+      <b>On vous a confié un projet existant ?</b> Il apparaîtra ici dès que son chef de projet vous y aura donné accès. Rien à
+      importer de votre côté.
+    </p>
+  </div>
+</div>

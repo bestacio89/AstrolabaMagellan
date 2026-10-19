@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Couche Domaine : entités, règles métier et moteur de calcul. Aucune dépendance externe. -->
+  <PropertyGroup>
+    <RootNamespace>PilotageForfaits.Domain</RootNamespace>
+  </PropertyGroup>
+</Project>

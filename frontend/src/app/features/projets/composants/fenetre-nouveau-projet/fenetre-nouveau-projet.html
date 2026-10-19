@@ -1,0 +1,74 @@
+<app-fenetre titre="Nouveau projet" [ouverte]="ouverte()" [large]="true" (fermee)="fermee.emit()">
+  <p class="intro">
+    Un projet gagné. Il reste un <b>brouillon privé</b>, enregistré au fil de la saisie, jusqu’à ce que vous le lanciez.
+  </p>
+
+  <div class="choix" role="group" aria-label="Point de départ">
+    <button type="button" class="choix-c" (click)="importer.emit()">
+      <span class="choix-i"><app-icone nom="fichier-excel" [taille]="22" [epaisseur]="1.7" /></span>
+      <b>Importer un TSP Excel</b>
+      <span>Tout le fichier est repris. Vous le relisez, le complétez, puis vous lancez.</span>
+    </button>
+    <button type="button" class="choix-c" [class.actif]="depart() === 'rediger'" [attr.aria-pressed]="depart() === 'rediger'" (click)="depart.set('rediger')">
+      <span class="choix-i"><app-icone nom="crayon" [taille]="22" [epaisseur]="1.7" /></span>
+      <b>Rédiger le TSP ici</b>
+      <span>Rubrique par rubrique, dans l’ordre que vous voulez. Les totaux se calculent en direct.</span>
+    </button>
+    <button
+      type="button"
+      class="choix-c"
+      [class.actif]="depart() === 'copie'"
+      [attr.aria-pressed]="depart() === 'copie'"
+      [disabled]="!sources().length"
+      [title]="sources().length ? '' : 'Aucun projet dont vous voyez les prix'"
+      (click)="depart.set('copie')"
+    >
+      <span class="choix-i"><app-icone nom="copier" [taille]="22" [epaisseur]="1.7" /></span>
+      <b>Repartir d’un projet</b>
+      <span>Reprend lots, tâches, profils, prix et échéancier. Ni dates, ni suivi, ni équipe.</span>
+    </button>
+  </div>
+
+  <form id="formulaire-nouveau-projet" class="grille" (submit)="$event.preventDefault(); creer()" novalidate>
+    @if (depart() === 'copie') {
+      <label class="champ pleine-largeur">
+        <span>Projet dont repartir <span class="obligatoire" aria-hidden="true">*</span></span>
+        <select (change)="source.set(valeur($event))" [attr.aria-invalid]="tentative() && !source()">
+          <option value="" [selected]="!source()">Choisir un projet…</option>
+          @for (p of sources(); track p.id) {
+            <option [value]="p.id" [selected]="p.id === source()">{{ p.client }} — {{ p.nom }}</option>
+          }
+        </select>
+      </label>
+    }
+    <label class="champ">
+      <span>Client <span class="obligatoire" aria-hidden="true">*</span></span>
+      <input [value]="client()" (input)="client.set(valeur($event))" autocomplete="off" maxlength="200" [attr.aria-invalid]="tentative() && !client().trim()" />
+    </label>
+    <label class="champ">
+      <span>Nom du projet <span class="obligatoire" aria-hidden="true">*</span></span>
+      <input [value]="projet()" (input)="projet.set(valeur($event))" autocomplete="off" maxlength="200" [attr.aria-invalid]="tentative() && !projet().trim()" />
+    </label>
+    <label class="champ pleine-largeur">
+      <span>Référence de la proposition <small>Facultatif. Avec le numéro d’opportunité (OP…), elle garantit qu’un forfait n’est créé qu’une fois.</small></span>
+      <input [value]="reference()" (input)="reference.set(valeur($event))" autocomplete="off" maxlength="100" placeholder="OP0012345 - CLIENT - Projet - TSP - V1" />
+    </label>
+  </form>
+
+  @if (tentative() && manque().length) {
+    <p class="manque" role="alert">À renseigner : {{ manque().join(', ') }}.</p>
+  }
+  @if (erreur()) {
+    <div class="encart erreur" role="alert">
+      <app-icone nom="info" />
+      <p>{{ erreur() }}</p>
+    </div>
+  }
+
+  <div pied>
+    <button type="button" class="btn grand" (click)="fermee.emit()">Annuler</button>
+    <button type="submit" form="formulaire-nouveau-projet" class="btn grand primaire" [disabled]="envoi()">
+      {{ envoi() ? 'Création…' : 'Créer le brouillon' }}
+    </button>
+  </div>
+</app-fenetre>

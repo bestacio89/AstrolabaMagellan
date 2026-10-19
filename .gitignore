@@ -1,0 +1,28 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+resultats-tests/
+*.trx
+appsettings.*.local.json
+
+# Angular / Node
+node_modules/
+dist/
+.angular/
+out-tsc/
+coverage/
+
+# Éditeurs et système
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+
+# Données réelles : jamais dans le dépôt (seuls les TSP anonymisés de tests/Donnees le sont)
+*.xlsm
+*.remplacements.json

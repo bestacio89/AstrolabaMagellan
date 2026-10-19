@@ -1,0 +1,58 @@
+<app-fenetre titre="Importer un TSP" [ouverte]="!!fichier()" (fermee)="fermee.emit()">
+  <p class="intro">
+    Choisissez le TSP vendu. Il est repris dans un <b>brouillon privé</b> : vous le relisez, le complétez si besoin, puis vous lancez
+    le projet, dont vous devenez le chef de projet.
+  </p>
+
+  @if (fichier(); as f) {
+    <div class="fichier" [class.refuse]="etape() === 'refuse'">
+      <span class="icone"><app-icone nom="fichier-excel" [taille]="22" [epaisseur]="1.8" /></span>
+      <span class="infos">
+        <span class="nom">{{ f.name }}</span>
+        <span class="etat" role="status">
+          @switch (etape()) {
+            @case ('lecture') { Lecture du fichier… }
+            @case ('pret') { {{ apercu()?.projetExistant ? 'Forfait déjà suivi : import impossible' : 'Fichier prêt à être importé' }} }
+            @case ('import') { Import en cours… }
+            @case ('refuse') { Fichier non importable }
+          }
+        </span>
+      </span>
+      <button type="button" class="btn changer" [disabled]="etape() === 'import'" (click)="changerFichier.emit()">Changer</button>
+    </div>
+  }
+
+  @if (etape() === 'refuse') {
+    <div class="encart erreur" role="alert">
+      <app-icone nom="info" />
+      <p>{{ erreur() }}</p>
+    </div>
+  }
+
+  @if (apercu()?.projetExistant; as existant) {
+    <div class="encart erreur" role="alert">
+      <app-icone nom="info" />
+      <div>
+        <p><b>Import impossible.</b> {{ existant.message }}</p>
+        @if (existant.id) {
+          <p>
+            <a class="btn" [routerLink]="existant.archive ? ['/projets', existant.id, 'parametres'] : ['/projets', existant.id]" (click)="fermee.emit()">
+              {{ existant.archive ? 'Ouvrir ses paramètres pour le restaurer' : 'Ouvrir le projet' }}
+            </a>
+          </p>
+        }
+      </div>
+    </div>
+  }
+
+  <div pied>
+    <button type="button" class="btn grand" (click)="fermee.emit()">Annuler</button>
+    <button type="button" class="btn grand primaire" [disabled]="etape() !== 'pret' || !!apercu()?.projetExistant" (click)="importer()">
+      @if (etape() === 'import') {
+        Import en cours…
+      } @else {
+        Importer dans un brouillon
+      }
+    </button>
+  </div>
+</app-fenetre>

@@ -1,0 +1,153 @@
+<section class="carte" aria-labelledby="titre-liste">
+  <div class="barre-outils">
+    <div class="groupe">
+      <h2 id="titre-liste">Projets</h2>
+      <div class="segments" role="group" aria-label="Filtrer par statut">
+        @for (f of filtres; track f.code) {
+          <button type="button" [attr.aria-pressed]="filtre() === f.code" (click)="filtreChange.emit(f.code)">
+            {{ f.libelle }} · {{ compteurs()[f.code] }}
+          </button>
+        }
+      </div>
+    </div>
+    <div class="groupe">
+      <label class="recherche">
+        <span class="loupe"><app-icone nom="recherche" [taille]="16" /></span>
+        <input
+          type="search"
+          placeholder="Projet, client ou référence"
+          aria-label="Rechercher un projet"
+          [value]="recherche()"
+          (input)="saisirRecherche($event)"
+        />
+      </label>
+      <label class="tri">
+        Trier par
+        <select (change)="choisirTri($event)">
+          @for (t of tris; track t.code) {
+            <option [value]="t.code" [selected]="t.code === tri()">{{ t.libelle }}</option>
+          }
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <div class="defilement">
+    <div class="tableau" role="table" aria-label="Projets">
+      <div class="ligne entete" role="row">
+        <span role="columnheader">Projet</span>
+        <span role="columnheader">Mon rôle</span>
+        <span role="columnheader">Avancement</span>
+        <span role="columnheader">Consommé</span>
+        <span role="columnheader">Atterrissage</span>
+        <span role="columnheader" title="Marge nette (production, achats et frais) attendue à la fin du projet, et celle du TSP signé">Marge nette à terminaison</span>
+        <span role="columnheader">Fin prévue</span>
+        <span role="columnheader">À traiter</span>
+        <span role="columnheader"><span class="visuellement-cache">Actions</span></span>
+      </div>
+
+      @for (p of projets(); track p.id) {
+        <!-- toute la ligne ouvre le projet (lien étiré sur la ligne) ; le menu ⋯ passe au-dessus -->
+        <div class="ligne" role="row" [class.vide]="p.estVide" [class.menu-actif]="menuOuvert() === p.id" [style.--repere]="couleur(p.id)">
+          <span role="cell" class="projet">
+            <a class="nom lien-ligne" [routerLink]="['/projets', p.id]">{{ p.client }} — {{ p.nom }}</a>
+            <span class="sous-titre">
+              @if (p.estVide) {
+                Créé vide le {{ p.creeLe | dateFr }}
+              } @else if (p.monRoleCode !== 'ChefDeProjet' && p.chefDeProjet) {
+                Chef de projet : {{ p.chefDeProjet }}
+              } @else {
+                {{ p.reference ?? '' }}
+              }
+            </span>
+          </span>
+          <span role="cell"><span class="role">{{ p.monRole }}</span></span>
+
+          @if (p.estVide) {
+            <span role="cell"><span class="pastille neutre">{{ p.statut }}</span></span>
+            <span role="cell" class="discret">Aucune tâche</span>
+            <span role="cell" class="discret">
+              @if (p.debut) {
+                Démarre le {{ p.debut | dateFr }}
+              }
+            </span>
+            <span role="cell" class="double">
+              <span class="fort num">—</span>
+              <span class="discret">sans TSP vendu</span>
+            </span>
+          } @else {
+            <span role="cell" class="avancement">
+              <span class="barre"><b [style.width.%]="largeurBarre(p)"></b></span>
+              <span class="num pourcent">{{ p.avancement | pourcent }}</span>
+            </span>
+            <span role="cell" class="num">
+              <b>{{ p.consomme | jh }}</b> <span class="discret">/ {{ p.prevu | jh }} JH</span>
+            </span>
+            <span role="cell" class="double">
+              @let l = lecture(p.ecart, p.prevu);
+              <span class="pastille" [class]="'pastille ' + l.ton">{{ l.libelle }}</span>
+              <span class="num discret">écart {{ p.ecart | ecart }} JH</span>
+            </span>
+            <span role="cell">
+              @if (p.voitMontants) {
+                <span class="double">
+                  <span class="fort num">{{ p.tauxMargeAtterrissage | pourcent: 2 }}</span>
+                  @if (p.tauxMargeVendue != null) {
+                    <span class="num discret">vendue {{ p.tauxMargeVendue | pourcent: 2 }}</span>
+                  }
+                </span>
+              } @else {
+                <span class="reservee"><app-icone nom="cadenas" [taille]="15" />Réservée au chef de projet</span>
+              }
+            </span>
+          }
+
+          <span role="cell" class="double">
+            <span class="num moyen">{{ (p.finPrevue ?? p.finContractuelle) | dateFr }}</span>
+            <span class="discret">
+              @if (p.estVide) {
+                fin contractuelle
+              } @else if (p.joursOuvresRestants != null) {
+                {{ p.joursOuvresRestants }} jours ouvrés
+              }
+            </span>
+          </span>
+          <span role="cell">
+            @if (p.nombreATraiter > 0) {
+              <span class="compteur-rond num" [class.attention]="!(p.aTraiter.length && p.aTraiter[0].niveau === 'critique')">{{ p.nombreATraiter }}</span>
+            } @else {
+              <span class="discret">Rien</span>
+            }
+          </span>
+          <span role="cell" class="actions">
+            <button
+              type="button"
+              class="menu-btn"
+              aria-haspopup="menu"
+              [attr.aria-expanded]="menuOuvert() === p.id"
+              [attr.aria-label]="'Actions sur ' + p.client + ' — ' + p.nom"
+              title="Actions"
+              (click)="basculerMenu(p.id, $event)"
+            >
+              ⋯
+            </button>
+            @if (menuOuvert() === p.id) {
+              <span class="menu" role="menu" [style.top.px]="positionMenu().haut" [style.right.px]="positionMenu().droite" (click)="$event.stopPropagation()">
+                <a role="menuitem" [routerLink]="['/projets', p.id]">Ouvrir le projet</a>
+                <a role="menuitem" [routerLink]="['/projets', p.id, 'parametres']">Paramètres du projet</a>
+                @if (p.monRoleCode === 'ChefDeProjet') {
+                  <button type="button" role="menuitem" (click)="menuOuvert.set(null); archiver.emit(p)">Archiver…</button>
+                }
+              </span>
+            }
+          </span>
+        </div>
+      } @empty {
+        <p class="aucun">Aucun projet ne correspond à ce filtre ou à cette recherche.</p>
+      }
+    </div>
+  </div>
+  <p class="note">
+    Vous voyez les projets sur lesquels vous avez un accès. Un projet manque ? Demandez à son chef de projet de vous l'ouvrir.
+  </p>
+</section>

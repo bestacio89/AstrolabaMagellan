@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Couche Application : cas d'usage (services), transactions, contrôle des droits. -->
+  <PropertyGroup>
+    <RootNamespace>PilotageForfaits.Application</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PilotageForfaits.Domain\PilotageForfaits.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Choix assumé : les services utilisent directement les requêtes EF Core (pas de couche « dépôt » en plus). -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+  </ItemGroup>
+</Project>

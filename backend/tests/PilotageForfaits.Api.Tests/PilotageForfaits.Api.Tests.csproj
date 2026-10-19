@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\PilotageForfaits.Api\PilotageForfaits.Api.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Données de référence (scénarios produits par le moteur de la version de référence, TSP anonymisés). -->
+    <None Include="..\Donnees\**\*" LinkBase="Donnees" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\Commun\*.cs" Link="Commun\%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- SQLite ne sert qu'aux tests (base en mémoire), jamais en production. Aucune version corrigée publiée à ce jour :
+         avertissement accepté. À retirer dès qu'une version corrigée de SQLitePCLRaw existe. -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2m69-gcr7-jv3q" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="PilotageForfaits.Tests.Commun" />
+  </ItemGroup>
+</Project>

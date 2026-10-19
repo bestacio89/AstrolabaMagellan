@@ -1,0 +1,18 @@
+# Base de données de DÉVELOPPEMENT (SQL Server 2022 dans un conteneur Docker).
+# Démarrer : docker compose up -d     Arrêter : docker compose down
+# Le mot de passe ci-dessous ne sert qu'en local ; il ne doit jamais être utilisé ailleurs.
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: pilotage-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Dev_Pilotage_2026!"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - donnees-sqlserver:/var/opt/mssql
+
+volumes:
+  donnees-sqlserver:

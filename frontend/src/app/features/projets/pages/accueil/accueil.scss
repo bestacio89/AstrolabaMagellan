@@ -1,0 +1,243 @@
+.titre-page {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.titres {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  h1 {
+    font: var(--texte-titre-page);
+    letter-spacing: -0.01em;
+  }
+  p {
+    margin: 0;
+    font-size: 15px;
+    color: var(--c-texte-discret);
+  }
+}
+
+.boutons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chargement {
+  color: var(--c-texte-discret);
+}
+
+/* chiffres clés : l'état des projets en un coup d'œil */
+.chiffres {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.chiffre {
+  background: var(--c-surface);
+  border-radius: var(--rayon-carte);
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  > span:last-child {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  b {
+    font-size: 22px;
+    font: 600 22px/28px var(--police-titre);
+  }
+  span span {
+    font-size: 13px;
+    color: var(--c-texte-discret);
+  }
+}
+.pictogramme {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+
+  &.bleu {
+    background: var(--c-primaire-clair);
+    color: var(--c-primaire);
+  }
+  &.rouge {
+    background: var(--c-critique-fond);
+    color: var(--c-critique);
+  }
+  &.vert {
+    background: var(--c-ok-fond);
+    color: var(--c-ok);
+  }
+  &.violet {
+    background: var(--c-violet-fond);
+    color: var(--c-violet);
+  }
+}
+@media (max-width: 1100px) {
+  .chiffres {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .chiffres {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* projets archivés : repliés, en bas de page */
+.archives {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+
+  > .btn {
+    padding: 0 8px;
+    color: var(--c-texte-discret);
+  }
+  app-icone {
+    transition: transform var(--transition);
+  }
+  app-icone.ouvert {
+    transform: rotate(90deg);
+  }
+}
+.liste-archives {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+
+  li + li {
+    border-top: 1px solid var(--c-separateur);
+  }
+  a {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 20px;
+    color: var(--c-texte);
+    text-decoration: none;
+  }
+  a:hover {
+    background: var(--c-survol);
+  }
+  .nom {
+    font-weight: 500;
+  }
+}
+.discret {
+  color: var(--c-texte-discret);
+  font-size: 13px;
+}
+
+/* brouillons de projet (en cours de création) */
+.page-brouillons {
+  padding-bottom: 0;
+}
+.brouillons {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-color: color-mix(in srgb, var(--c-violet) 30%, var(--c-separateur));
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  li + li {
+    border-top: 1px solid var(--c-separateur);
+  }
+  a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 8px;
+    margin: 0 -8px;
+    border-radius: var(--rayon);
+    color: var(--c-texte);
+    transition: background var(--transition);
+
+    &:hover {
+      background: var(--c-violet-fond);
+    }
+  }
+}
+.brouillons-tete {
+  display: flex;
+  align-items: baseline;
+  gap: 6px 12px;
+  flex-wrap: wrap;
+
+  h2 {
+    font: var(--texte-titre-carte);
+  }
+  span {
+    font-size: 13px;
+    color: var(--c-texte-discret);
+  }
+}
+.b-puce {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--c-violet);
+  flex: none;
+}
+.b-texte {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  b {
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+  span {
+    font-size: 13px;
+    color: var(--c-texte-discret);
+  }
+}
+.b-reprendre {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 13.5px;
+  color: var(--c-primaire);
+  white-space: nowrap;
+
+}
+
+/* premier lancement : les projets archivés restent accessibles s'il n'en reste pas d'autres */
+.page-archives {
+  /* aligné sur le contenu du premier lancement */
+  max-width: 1040px;
+  margin: -40px auto 0;
+  padding: 0 32px 64px;
+}
+
+/* fenêtre de confirmation d'archivage */
+.confirmer {
+  margin: 0;
+  line-height: 1.5;
+}

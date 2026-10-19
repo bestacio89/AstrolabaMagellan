@@ -1,0 +1,43 @@
+# Même intégration continue que .github/workflows/ci.yml, pour Azure DevOps (à garder si c'est l'outil retenu).
+trigger:
+  branches:
+    include: ['*']
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: Verification
+    displayName: Compilation et tests
+    jobs:
+      - job: Serveur
+        displayName: Serveur .NET
+        steps:
+          - task: UseDotNet@2
+            inputs:
+              useGlobalJson: true
+              workingDirectory: backend
+          - script: dotnet restore PilotageForfaits.sln
+            workingDirectory: backend
+          - script: dotnet build PilotageForfaits.sln --no-restore --configuration Release
+            workingDirectory: backend
+          - script: dotnet test PilotageForfaits.sln --no-build --configuration Release --logger trx --results-directory $(Agent.TempDirectory)/tests
+            workingDirectory: backend
+          - task: PublishTestResults@2
+            condition: always()
+            inputs:
+              testResultsFormat: VSTest
+              testResultsFiles: '$(Agent.TempDirectory)/tests/*.trx'
+
+      - job: Interface
+        displayName: Interface Angular
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '22.x'
+          - script: if [ -f package-lock.json ]; then npm ci; else npm install; fi
+            workingDirectory: frontend
+          - script: npm run build
+            workingDirectory: frontend
+          - script: npm test
+            workingDirectory: frontend

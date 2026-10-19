@@ -1,0 +1,2786 @@
+{
+ "schema": 2,
+ "fiche": {
+  "champs": [
+   {
+    "label": "Nom du client",
+    "value": "CLIENT EXEMPLE",
+    "key": "client"
+   },
+   {
+    "label": "Auteur",
+    "value": "MARTIN Alex",
+    "key": "auteur"
+   },
+   {
+    "label": "Projet",
+    "value": "Projet exemple",
+    "key": "projet"
+   },
+   {
+    "label": "Date",
+    "value": "2026-08-07",
+    "key": "date"
+   },
+   {
+    "label": "Référence propale",
+    "value": "OP00000 - CLIENT EXEMPLE - TSP - V3",
+    "key": "reference"
+   },
+   {
+    "label": "Contact client",
+    "value": "Camille CLIENT",
+    "key": "contact"
+   },
+   {
+    "label": "Agence",
+    "value": "Agence Ouest",
+    "key": "agence"
+   },
+   {
+    "label": "Service line",
+    "value": "Modern Workplace",
+    "key": "serviceLine"
+   },
+   {
+    "label": "Directeur agence",
+    "value": "Directeur AGENCE",
+    "key": "directeur"
+   },
+   {
+    "label": "Responsable SL",
+    "value": "Responsable SL",
+    "key": "responsableSL"
+   },
+   {
+    "label": "Commercial",
+    "value": "Commercial EXEMPLE",
+    "key": "commercial"
+   },
+   {
+    "label": "Type de contrat",
+    "value": "Forfait",
+    "key": "typeContrat"
+   },
+   {
+    "label": "Période (jj/mm/aaaa au jj/mm/aaaa)",
+    "value": "07/09/2026 au 07/04/2027",
+    "key": "periode"
+   }
+  ],
+  "client": "CLIENT EXEMPLE",
+  "auteur": "MARTIN Alex",
+  "projet": "Projet exemple",
+  "date": "2026-08-07",
+  "reference": "OP00000 - CLIENT EXEMPLE - TSP - V3",
+  "contact": "Camille CLIENT",
+  "agence": "Agence Ouest",
+  "serviceLine": "Modern Workplace",
+  "directeur": "Directeur AGENCE",
+  "responsableSL": "Responsable SL",
+  "commercial": "Commercial EXEMPLE",
+  "typeContrat": "Forfait",
+  "periode": "07/09/2026 au 07/04/2027"
+ },
+ "periode": {
+  "start": "2026-09-07",
+  "end": "2027-04-07"
+ },
+ "remise": 0,
+ "remiseSaisie": false,
+ "caInitial": null,
+ "pctPilotage": 20,
+ "pctProvision": 5,
+ "profiles": [
+  {
+   "nom": "Chef de Projet",
+   "entite": "FO",
+   "tjm": 800,
+   "cjm": 378,
+   "prcs": null,
+   "frais": 0,
+   "collaborateur": "CDP"
+  },
+  {
+   "nom": "Expert IA",
+   "entite": "FO",
+   "tjm": 800,
+   "cjm": 405,
+   "prcs": null,
+   "frais": 0,
+   "collaborateur": "Lou BERNARD"
+  },
+  {
+   "nom": "Architecte Sécurité/MW",
+   "entite": "FO",
+   "tjm": 900,
+   "cjm": 690,
+   "prcs": null,
+   "frais": 0,
+   "collaborateur": "Alex MARTIN"
+  },
+  {
+   "nom": "Consultant Sécurité",
+   "entite": "FO",
+   "tjm": 750,
+   "cjm": 330,
+   "prcs": null,
+   "frais": 0,
+   "collaborateur": "Sam PETIT"
+  },
+  {
+   "nom": "Agent IA",
+   "entite": "FO",
+   "tjm": 800,
+   "cjm": 50,
+   "prcs": null,
+   "frais": 0,
+   "collaborateur": ""
+  },
+  {
+   "nom": "Consultant IA Change",
+   "entite": "FO",
+   "tjm": 800,
+   "cjm": 405,
+   "prcs": null,
+   "frais": 0,
+   "collaborateur": "Noa DURAND"
+  },
+  {
+   "nom": "",
+   "entite": "FO",
+   "tjm": 0,
+   "cjm": 0,
+   "prcs": null,
+   "frais": 0,
+   "collaborateur": ""
+  }
+ ],
+ "grille": [
+  {
+   "profil": "Consultant Junior",
+   "tjmParis": 500,
+   "cjmParis": 300,
+   "tjmRegion": 418.33333333333337,
+   "cjmRegion": 251
+  },
+  {
+   "profil": "Consultant",
+   "tjmParis": 575,
+   "cjmParis": 345,
+   "tjmRegion": 458.33333333333337,
+   "cjmRegion": 275
+  },
+  {
+   "profil": "Consultant confirmé",
+   "tjmParis": 708.3333333333334,
+   "cjmParis": 425,
+   "tjmRegion": 558.3333333333334,
+   "cjmRegion": 335
+  },
+  {
+   "profil": "Expert",
+   "tjmParis": 733.3333333333334,
+   "cjmParis": 440,
+   "tjmRegion": 633.3333333333334,
+   "cjmRegion": 380
+  },
+  {
+   "profil": "Expert senior",
+   "tjmParis": 833.3333333333334,
+   "cjmParis": 500,
+   "tjmRegion": 733.3333333333334,
+   "cjmRegion": 440
+  },
+  {
+   "profil": "Architecte",
+   "tjmParis": 816.6666666666667,
+   "cjmParis": 490,
+   "tjmRegion": 658.3333333333334,
+   "cjmRegion": 395
+  },
+  {
+   "profil": "Architecte Senior",
+   "tjmParis": 916.6666666666667,
+   "cjmParis": 550,
+   "tjmRegion": 766.6666666666667,
+   "cjmRegion": 460
+  },
+  {
+   "profil": "Chef de Projet",
+   "tjmParis": 733.3333333333334,
+   "cjmParis": 440,
+   "tjmRegion": 616.6666666666667,
+   "cjmRegion": 370
+  },
+  {
+   "profil": "Chef de Projet Senior",
+   "tjmParis": 808.3333333333334,
+   "cjmParis": 485,
+   "tjmRegion": 683.3333333333334,
+   "cjmRegion": 410
+  },
+  {
+   "profil": "Directeur de projet",
+   "tjmParis": 966.6666666666667,
+   "cjmParis": 580,
+   "tjmRegion": 833.3333333333334,
+   "cjmRegion": 500
+  },
+  {
+   "profil": "Consultant Fonctionnel",
+   "tjmParis": 583.3333333333334,
+   "cjmParis": 350,
+   "tjmRegion": 491.6666666666667,
+   "cjmRegion": 295
+  },
+  {
+   "profil": "Consultant Fonctionnel Senior",
+   "tjmParis": 650,
+   "cjmParis": 390,
+   "tjmRegion": 575,
+   "cjmRegion": 345
+  },
+  {
+   "profil": "Expert Fonctionnel",
+   "tjmParis": 775,
+   "cjmParis": 465,
+   "tjmRegion": 683.3333333333334,
+   "cjmRegion": 410
+  },
+  {
+   "profil": "Référent",
+   "tjmParis": 1066.6666666666667,
+   "cjmParis": 640,
+   "tjmRegion": 766.6666666666667,
+   "cjmRegion": 460
+  },
+  {
+   "profil": "Manager",
+   "tjmParis": 1033.3333333333335,
+   "cjmParis": 620,
+   "tjmRegion": 816.6666666666667,
+   "cjmRegion": 490
+  }
+ ],
+ "tasks": [
+  {
+   "uid": "r5",
+   "ligne": 5,
+   "id": "0",
+   "lot": "0",
+   "phase": "PILOTAGE",
+   "etape": "Pilotage projet",
+   "label": "KickOff",
+   "charges": [
+    1,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r6",
+   "ligne": 6,
+   "id": "",
+   "lot": "",
+   "phase": "",
+   "etape": "",
+   "label": "Socle Sécurité",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": true,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r7",
+   "ligne": 7,
+   "id": "AXE1",
+   "lot": "1.1",
+   "phase": "PILOTAGE",
+   "etape": "Pilotage projet",
+   "label": "Pilotage chantier Sécurité IA",
+   "charges": [
+    2,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r8",
+   "ligne": 8,
+   "id": "AXE1",
+   "lot": "1.1",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Atelier] Cadrage sécurisation IA & garde-fous Copilot",
+   "charges": [
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r9",
+   "ligne": 9,
+   "id": "AXE1",
+   "lot": "1.1",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Audit - Analyse de l'existant (Paramétrage Tenant / Architecture / Prérequis) x2",
+   "charges": [
+    0,
+    0,
+    0,
+    1.5,
+    0.5,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r10",
+   "ligne": 10,
+   "id": "AXE1",
+   "lot": "1.1",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Audit - DataAssement ( Analyses des espaces et des data existantes)",
+   "charges": [
+    0,
+    0,
+    0,
+    1.5,
+    0.5,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r11",
+   "ligne": 11,
+   "id": "AXE1",
+   "lot": "1.1",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Atelier/Restitution] - Cartographie des risques IA",
+   "charges": [
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r12",
+   "ligne": 12,
+   "id": "AXE1",
+   "lot": "1.1",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrables]  Baseline de configuration groupe - IA",
+   "charges": [
+    0,
+    0,
+    0,
+    1.5,
+    0.5,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r13",
+   "ligne": 13,
+   "id": "AXE1",
+   "lot": "1.1",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Atelier x2] Mise en œuvre RCS SharePoint",
+   "charges": [
+    0,
+    0,
+    2,
+    1,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r14",
+   "ligne": 14,
+   "id": "",
+   "lot": "",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Mise en œuvre de la Baseline de configuration - IA + RCS SharePoint SAM",
+   "charges": [
+    0,
+    0,
+    0,
+    2,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r15",
+   "ligne": 15,
+   "id": "AXE1",
+   "lot": "1.1",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Atelier/Restitution] Analyse et retour des paramétrages et prérequis techniques / Plan d'action + Restitution feuille de route/remédiation",
+   "charges": [
+    0,
+    0,
+    0.5,
+    0.5,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r16",
+   "ligne": 16,
+   "id": "AXE1",
+   "lot": "1.2",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Feuille de route - Gouvernance/AccessReview/Remédiation/Baseline",
+   "charges": [
+    0,
+    0,
+    1,
+    1,
+    1,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r17",
+   "ligne": 17,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Classification et protection des données",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": true,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r18",
+   "ligne": 18,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Pilotage chantier - Classification",
+   "charges": [
+    3.5,
+    0,
+    0,
+    0,
+    1.5,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r19",
+   "ligne": 19,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Atelier] Lancement sécurité & parties prenantes (RSSI / DPO / DSI)",
+   "charges": [
+    0,
+    0,
+    0.5,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r20",
+   "ligne": 20,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Ateliers métiers x2] Découverte des données sensibles",
+   "charges": [
+    0,
+    0,
+    2,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r21",
+   "ligne": 21,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Atelier] Présentation & mise en place de la SI Factory",
+   "charges": [
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r22",
+   "ligne": 22,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Ateliers x2] Gouvernance, RACI Purview & SIT Factory",
+   "charges": [
+    0,
+    0,
+    1.5,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r23",
+   "ligne": 23,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Kits & procédures de la SI Factory",
+   "charges": [
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r24",
+   "ligne": 24,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Ateliers x2] Définition des étiquettes de sensibilité",
+   "charges": [
+    0,
+    0,
+    2,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r25",
+   "ligne": 25,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Ateliers x2] Choix des SIT sur étagère",
+   "charges": [
+    0,
+    0,
+    2,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r26",
+   "ligne": 26,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Ateliers x4] Conception des règles DLP (≤ 15) - (Copilot,Endpoint,Collab)",
+   "charges": [
+    0,
+    0,
+    2,
+    0,
+    1,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r27",
+   "ligne": 27,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Atelier] Conception IRM & scénarios de risque interne",
+   "charges": [
+    0,
+    0,
+    1.5,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r28",
+   "ligne": 28,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Atelier] Stratégie de classification de l'historique",
+   "charges": [
+    0,
+    0,
+    0.5,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r29",
+   "ligne": 29,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Atelier x1] Restitution Générale des mécanismes de sécurité & Feuille de route",
+   "charges": [
+    0,
+    0,
+    1.5,
+    0.5,
+    0.5,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r30",
+   "ligne": 30,
+   "id": "",
+   "lot": "",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Atelier x1] Stratégie d'accompagnement au changement / Population",
+   "charges": [
+    0,
+    0,
+    0.5,
+    0,
+    0,
+    1.5,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r31",
+   "ligne": 31,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Mise en œuvre des étiquettes de confidentialité",
+   "charges": [
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r32",
+   "ligne": 32,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Déploiement des SIT personnalisés (≤ 5)",
+   "charges": [
+    0,
+    0,
+    0,
+    3,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r33",
+   "ligne": 33,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Déploiement des règles DLP",
+   "charges": [
+    0,
+    0,
+    0,
+    3,
+    2,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r34",
+   "ligne": 34,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Mise en œuvre IRM (≤ 10)",
+   "charges": [
+    0,
+    0,
+    0,
+    3,
+    1,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r35",
+   "ligne": 35,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Tests d'intégration & recette (DLP, SIT, étiquettes, IRM)",
+   "charges": [
+    0,
+    0,
+    0,
+    2,
+    2,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r36",
+   "ligne": 36,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Rédaction du cahier de recette",
+   "charges": [
+    0,
+    0,
+    0,
+    0.5,
+    1.5,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r37",
+   "ligne": 37,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Matrices DLP & runbook d'exception",
+   "charges": [
+    0,
+    0,
+    0.5,
+    0,
+    0.5,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r38",
+   "ligne": 38,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Pilote - 200 utilisateurs (3 semaines)",
+   "charges": [
+    0,
+    0,
+    0,
+    3,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r39",
+   "ligne": 39,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Recette de la production",
+   "charges": [
+    0,
+    0,
+    0,
+    0.5,
+    0.5,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r40",
+   "ligne": 40,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Transfert de compétences N3",
+   "charges": [
+    0,
+    0,
+    0,
+    2,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r41",
+   "ligne": 41,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Spécifications techniques Purview",
+   "charges": [
+    0,
+    0,
+    0,
+    0.5,
+    0.5,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r42",
+   "ligne": 42,
+   "id": "AXE1",
+   "lot": "1.2",
+   "phase": "PROVISION",
+   "etape": "Provision pour risque",
+   "label": "Provision pour risque — Axe 1",
+   "charges": [
+    1,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r43",
+   "ligne": 43,
+   "id": "AXE1",
+   "lot": "1.3",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Gouvernance",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": true,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r44",
+   "ligne": 44,
+   "id": "",
+   "lot": "",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Pilotage chantier Gouvernance",
+   "charges": [
+    3,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r45",
+   "ligne": 45,
+   "id": "AXE2",
+   "lot": "2.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Atelier] Cadrage stratégique « Frontier Firm » & vision agentique",
+   "charges": [
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r46",
+   "ligne": 46,
+   "id": "AXE2",
+   "lot": "2.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Atelier] Agent 365 - Observe / Govern / Secure",
+   "charges": [
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r47",
+   "ligne": 47,
+   "id": "AXE2",
+   "lot": "2.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Atelier x2] « Which tool for which task » (Chat / M365 / Studio / Agents)",
+   "charges": [
+    0,
+    2,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r48",
+   "ligne": 48,
+   "id": "AXE2",
+   "lot": "2.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Guide « quel outil pour quel usage »",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0.25,
+    0.75,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r49",
+   "ligne": 49,
+   "id": "AXE2",
+   "lot": "2.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Inventaire & découverte des agents (Copilot Studio, Power Platform, agents Copilot)",
+   "charges": [
+    0,
+    0,
+    0,
+    1.5,
+    0.5,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r50",
+   "ligne": 50,
+   "id": "AXE2",
+   "lot": "2.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Cardre de gouvernance IA & agents + RACI + Comitologie",
+   "charges": [
+    0,
+    1,
+    0,
+    0.5,
+    1,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r51",
+   "ligne": 51,
+   "id": "AXE2",
+   "lot": "2.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Atelier] Cycle de vie des agents (émergence → build → run → décommission)",
+   "charges": [
+    0,
+    1,
+    0.5,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r52",
+   "ligne": 52,
+   "id": "AXE2",
+   "lot": "2.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Modèle de gestion du cycle de vie des agents",
+   "charges": [
+    0,
+    1,
+    0.5,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r53",
+   "ligne": 53,
+   "id": "AXE2",
+   "lot": "2.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Politique d'approbation & publication des agents (gating)",
+   "charges": [
+    0,
+    0,
+    0.5,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r54",
+   "ligne": 54,
+   "id": "AXE2",
+   "lot": "2.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Mise en œuvre Agent 365 (règles, politiques, paramétrages)",
+   "charges": [
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r55",
+   "ligne": 55,
+   "id": "AXE2",
+   "lot": "2.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Monitoring & observabilité des agents (dashboards, télémétrie)",
+   "charges": [
+    0,
+    0,
+    0,
+    0.5,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r56",
+   "ligne": 56,
+   "id": "AXE2",
+   "lot": "2.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Sécurisation des agents (DLP for agents, data boundaries)",
+   "charges": [
+    0,
+    0,
+    0,
+    0.5,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r57",
+   "ligne": 57,
+   "id": "AXE2",
+   "lot": "2.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Gestion des identités des agents (NHI), RBAC & least privilege",
+   "charges": [
+    0,
+    0,
+    0,
+    0.5,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r58",
+   "ligne": 58,
+   "id": "AXE2",
+   "lot": "2.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Atelier] FinOps IA & planification des licences",
+   "charges": [
+    0,
+    0.5,
+    1,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r59",
+   "ligne": 59,
+   "id": "AXE2",
+   "lot": "2.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Cadre FinOps IA (quotas, message capacity, refacturation)",
+   "charges": [
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r60",
+   "ligne": 60,
+   "id": "AXE2",
+   "lot": "2.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Framework de mesure & KPIs de gouvernance",
+   "charges": [
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r61",
+   "ligne": 61,
+   "id": "AXE2",
+   "lot": "2.0",
+   "phase": "PROVISION",
+   "etape": "Provision pour risque",
+   "label": "Provision pour risque — Axe 2",
+   "charges": [
+    0,
+    1,
+    0,
+    2,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r62",
+   "ligne": 62,
+   "id": "AXE2",
+   "lot": "2.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Socle change",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": true,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r63",
+   "ligne": 63,
+   "id": "AXE3",
+   "lot": "3.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Pilotage Projet",
+   "charges": [
+    4,
+    0,
+    0,
+    0,
+    2,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r64",
+   "ligne": 64,
+   "id": "AXE3",
+   "lot": "3.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Atelier] Définition des KPI",
+   "charges": [
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r65",
+   "ligne": 65,
+   "id": "AXE3",
+   "lot": "3.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Atelier] Stratégie d'accompagnement au changement",
+   "charges": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r66",
+   "ligne": 66,
+   "id": "AXE3",
+   "lot": "3.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Plan d'accompagnement au changement",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r67",
+   "ligne": 67,
+   "id": "AXE3",
+   "lot": "3.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Atelier] Restitution et adaptation du plan d'accompagnement au changement",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r68",
+   "ligne": 68,
+   "id": "AXE3",
+   "lot": "3.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Identité graphique",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    2,
+    1,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r69",
+   "ligne": 69,
+   "id": "AXE3",
+   "lot": "3.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Mail d'annonce",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0.5,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r70",
+   "ligne": 70,
+   "id": "AXE3",
+   "lot": "3.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Guide utilisateur",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0.5,
+    0.5,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r71",
+   "ligne": 71,
+   "id": "AXE3",
+   "lot": "3.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Analyse \"Audit de la maturité\" x2",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r72",
+   "ligne": 72,
+   "id": "AXE3",
+   "lot": "3.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] SharePoint site avec FAQ",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r73",
+   "ligne": 73,
+   "id": "AXE3",
+   "lot": "3.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] VIP Hypercare - 30 coachings indviduels",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    6,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r74",
+   "ligne": 74,
+   "id": "AXE3",
+   "lot": "3.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Plénière VIP",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    2,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r75",
+   "ligne": 75,
+   "id": "AXE3",
+   "lot": "3.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Préparation sessions onboarding",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r76",
+   "ligne": 76,
+   "id": "AXE3",
+   "lot": "3.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Préparation sessions formations avancées",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r77",
+   "ligne": 77,
+   "id": "AXE3",
+   "lot": "3.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Calendrier éditorial animation",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r78",
+   "ligne": 78,
+   "id": "AXE3",
+   "lot": "3.0",
+   "phase": "PROVISION",
+   "etape": "Provision pour risque",
+   "label": "Provision pour risque — Axe 3",
+   "charges": [
+    1,
+    0,
+    1.5,
+    0,
+    0,
+    2,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r79",
+   "ligne": 79,
+   "id": "AXE4",
+   "lot": "4.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Vague",
+   "charges": [
+    2,
+    0,
+    0,
+    0,
+    2,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r80",
+   "ligne": 80,
+   "id": "AXE4",
+   "lot": "4.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Mise à jour des mails et guide pratique",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    3,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r81",
+   "ligne": 81,
+   "id": "AXE4",
+   "lot": "4.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Session kick off users x 2",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r82",
+   "ligne": 82,
+   "id": "AXE4",
+   "lot": "4.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Session onboarding x 2",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r83",
+   "ligne": 83,
+   "id": "AXE4",
+   "lot": "4.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Copilot Coffee x 8",
+   "charges": [
+    3,
+    0,
+    0,
+    0,
+    0,
+    2,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r84",
+   "ligne": 84,
+   "id": "AXE4",
+   "lot": "4.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Formations avancées, 4 thématiques x 2 sessions",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    4,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r85",
+   "ligne": 85,
+   "id": "AXE4",
+   "lot": "4.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Atelier] Reporting - VivaInsight",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    2,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r86",
+   "ligne": 86,
+   "id": "",
+   "lot": "",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Report hebdo adoption pendant 2 mois",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    2,
+    5,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r87",
+   "ligne": 87,
+   "id": "AXE4",
+   "lot": "4.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Livrable] Analyse enquête utilisateurs x2",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r88",
+   "ligne": 88,
+   "id": "AXE4",
+   "lot": "4.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Animation communauté 2 mois",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    2,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r89",
+   "ligne": 89,
+   "id": "AXE4",
+   "lot": "4.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "[Atelier] X 5 Suivi des indicateurs",
+   "charges": [
+    0,
+    1,
+    0,
+    0,
+    0,
+    1.5,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r90",
+   "ligne": 90,
+   "id": "AXE4",
+   "lot": "4.0",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Biz Transfo pour 1 métier",
+   "charges": [
+    0,
+    1,
+    0,
+    0,
+    0,
+    1.5,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r91",
+   "ligne": 91,
+   "id": "AXE4",
+   "lot": "4.1",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Cadrage démarche",
+   "charges": [
+    2,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r92",
+   "ligne": 92,
+   "id": "AXE4",
+   "lot": "4.1",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Kit de comm lancement démarche",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    2,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r93",
+   "ligne": 93,
+   "id": "AXE4",
+   "lot": "4.1",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Préparation matériel",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    2,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r94",
+   "ligne": 94,
+   "id": "AXE4",
+   "lot": "4.1",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Business transfo - 1 atelier explo métier",
+   "charges": [
+    0,
+    0.5,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r95",
+   "ligne": 95,
+   "id": "AXE4",
+   "lot": "4.1",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Business transfo - 1 atelier inspi métier",
+   "charges": [
+    0,
+    0.5,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r96",
+   "ligne": 96,
+   "id": "AXE4",
+   "lot": "4.1",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Business transfo - 1 ateliers qualif cas d'usages",
+   "charges": [
+    0,
+    0.5,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r97",
+   "ligne": 97,
+   "id": "AXE4",
+   "lot": "4.1",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Analyse post atelier",
+   "charges": [
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r98",
+   "ligne": 98,
+   "id": "AXE4",
+   "lot": "4.1",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Business transfo - scénarios de test",
+   "charges": [
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r99",
+   "ligne": 99,
+   "id": "AXE4",
+   "lot": "4.1",
+   "phase": "CONSTRUCTION",
+   "etape": "",
+   "label": "Business transfo - specs agents",
+   "charges": [
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r100",
+   "ligne": 100,
+   "id": "AXE4",
+   "lot": "4.1",
+   "phase": "PROVISION",
+   "etape": "Provision pour risque",
+   "label": "Provision pour risque — Axe 4.0",
+   "charges": [
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  },
+  {
+   "uid": "r101",
+   "ligne": 101,
+   "id": "AXE4",
+   "lot": "4.0",
+   "phase": "PROVISION",
+   "etape": "Provision pour risque",
+   "label": "Provision pour risque — Axe 4.1",
+   "charges": [
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": ""
+  }
+ ],
+ "planningPhases": {
+  "rows": [
+   {
+    "phase": "PILOTAGE",
+    "cjm": 588.3333333333334,
+    "vals": {}
+   },
+   {
+    "phase": "CONCEPTION",
+    "cjm": 641.6666666666667,
+    "vals": {}
+   },
+   {
+    "phase": "CONSTRUCTION",
+    "cjm": 501.6666666666667,
+    "vals": {}
+   },
+   {
+    "phase": "VALIDATION",
+    "cjm": 435,
+    "vals": {}
+   },
+   {
+    "phase": "FINALISATION",
+    "cjm": 0,
+    "vals": {}
+   },
+   {
+    "phase": "GARANTIE",
+    "cjm": 0,
+    "vals": {}
+   },
+   {
+    "phase": "TMA",
+    "cjm": 0,
+    "vals": {}
+   },
+   {
+    "phase": "PROVISION",
+    "cjm": "TJM CSV",
+    "vals": {}
+   }
+  ],
+  "source": "PLANNING"
+ },
+ "types": [
+  {
+   "id": "Atelier",
+   "nom": "Atelier",
+   "socle": true
+  },
+  {
+   "id": "Livrable",
+   "nom": "Livrable",
+   "socle": true
+  }
+ ],
+ "frais": [],
+ "achats": [],
+ "prestas": [],
+ "echeancier": [
+  {
+   "n": 1,
+   "nom": "Milestone 1 - Artificial Intelligence Security and Trust Foundation",
+   "pct": 0.25,
+   "mois": "2026-12"
+  },
+  {
+   "n": 2,
+   "nom": "Milestone 2 - Artificial Intelligence and Agent Governance",
+   "pct": 0.25,
+   "mois": "2027-03"
+  },
+  {
+   "n": 3,
+   "nom": "Milestone 3 - Deployment Readiness and Adoption Preparation",
+   "pct": 0.25,
+   "mois": "2027-04"
+  },
+  {
+   "n": 4,
+   "nom": "Milestone 4 - Targeted Activation and Operational Adoption",
+   "pct": 0.25,
+   "mois": "2027-06"
+  }
+ ],
+ "metrique": [
+  {
+   "etape": "Pilotage projet",
+   "pct": 0.2
+  },
+  {
+   "etape": "Conception générale",
+   "pct": 0.05
+  },
+  {
+   "etape": "Conception fonctionnelle détaillée",
+   "pct": 0.25
+  },
+  {
+   "etape": "Conception technique détaillée",
+   "pct": 0.2
+  },
+  {
+   "etape": "Cahier de recette",
+   "pct": 0.15
+  },
+  {
+   "etape": "Développement et tests unitaires",
+   "pct": 1
+  },
+  {
+   "etape": "Tests d'intégration / Recette interne",
+   "pct": 0.2
+  },
+  {
+   "etape": "Livraison / installation / Mise en œuvre",
+   "pct": 0.1
+  },
+  {
+   "etape": "Assistance recette",
+   "pct": 0.1
+  },
+  {
+   "etape": "Garantie (suite recette - 3 mois)",
+   "pct": 0.06
+  }
+ ],
+ "planningRef": {
+  "months": [
+   "2026-06",
+   "2026-07",
+   "2026-08",
+   "2026-09",
+   "2026-10",
+   "2026-11",
+   "2026-12",
+   "2027-01",
+   "2027-02",
+   "2027-03",
+   "2027-04",
+   "2027-05",
+   "2027-06",
+   "2027-07",
+   "2027-08",
+   "2027-09"
+  ],
+  "rows": [
+   [
+    0,
+    0,
+    0,
+    0,
+    6,
+    5,
+    5,
+    4,
+    4,
+    1.5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    4,
+    5,
+    5,
+    2,
+    0,
+    0.5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    6,
+    10,
+    8,
+    3.5,
+    2,
+    2,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    6,
+    10,
+    10,
+    10,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    2.25,
+    10,
+    15,
+    15,
+    5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  ]
+ },
+ "planningSource": "PLANNING",
+ "planningTsp": {
+  "months": [
+   "2026-06",
+   "2026-07",
+   "2026-08",
+   "2026-09",
+   "2026-10",
+   "2026-11",
+   "2026-12",
+   "2027-01",
+   "2027-02",
+   "2027-03",
+   "2027-04",
+   "2027-05",
+   "2027-06",
+   "2027-07",
+   "2027-08",
+   "2027-09"
+  ],
+  "rows": [
+   [
+    0,
+    0,
+    0,
+    0,
+    6,
+    5,
+    5,
+    4,
+    4,
+    1.5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    4,
+    5,
+    5,
+    2,
+    0,
+    0.5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    6,
+    10,
+    8,
+    3.5,
+    2,
+    2,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    6,
+    10,
+    10,
+    10,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    2.25,
+    10,
+    15,
+    15,
+    5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  ]
+ },
+ "ref": {
+  "phases": [
+   "PILOTAGE",
+   "CONCEPTION",
+   "CONSTRUCTION",
+   "VALIDATION",
+   "FINALISATION",
+   "GARANTIE",
+   "TMA",
+   "PROVISION"
+  ],
+  "etapes": [
+   "Pilotage projet",
+   "Analyse de l'existant",
+   "Conception générale",
+   "Conception technique détaillée",
+   "Conception fonctionnelle détaillée",
+   "Ergonomie/Graphisme",
+   "Cahier de recette",
+   "Développement et tests unitaires",
+   "Tests d'intégration / Recette interne",
+   "Livraison / installation / Mise en œuvre",
+   "Pilote",
+   "Généralisation",
+   "Support",
+   "Reprise de contenu",
+   "Assistance recette",
+   "Formation",
+   "Garantie (suite recette - 3 mois)",
+   "Provision pour risque",
+   "Hors abaques"
+  ]
+ },
+ "axes": {
+  "0": "Pilotage (transverse)",
+  "AXE1": "Axe 1",
+  "AXE2": "Axe 2",
+  "AXE3": "Axe 3",
+  "AXE4": "Axe 4"
+ },
+ "dates": {
+  "debut": "2026-09-07",
+  "finContrat": "2027-04-07",
+  "finPrevue": "2027-04-07"
+ },
+ "settings": {
+  "startMonth": "2026-09",
+  "nbMonths": 13,
+  "iaProfile": 4,
+  "groupBy": "id"
+ },
+ "track": {},
+ "warnings": [
+  "4 tâche(s) sans axe dans le TSP (14 JH) : affectez-leur un axe depuis Workload › Liste des tâches (filtre « Sans axe »).",
+  "Planning de charge mensuel repris de l’onglet PLANNING (consultable dans Annexes › Planning du TSP ; à replanifier dans Finances › Plan de charge › Prévisionnel)."
+ ]
+}

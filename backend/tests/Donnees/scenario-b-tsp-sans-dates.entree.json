@@ -1,0 +1,1781 @@
+{
+ "schema": 2,
+ "fiche": {
+  "champs": [
+   {
+    "label": "Nom du client",
+    "value": "",
+    "key": "client"
+   },
+   {
+    "label": "Auteur",
+    "value": "",
+    "key": "auteur"
+   },
+   {
+    "label": "Projet",
+    "value": "",
+    "key": "projet"
+   },
+   {
+    "label": "Date",
+    "value": "",
+    "key": "date"
+   },
+   {
+    "label": "Référence propale",
+    "value": "",
+    "key": "reference"
+   },
+   {
+    "label": "Contact client",
+    "value": "",
+    "key": "contact"
+   },
+   {
+    "label": "Agence",
+    "value": "",
+    "key": "agence"
+   },
+   {
+    "label": "Service line",
+    "value": "",
+    "key": "serviceLine"
+   },
+   {
+    "label": "Directeur agence",
+    "value": "",
+    "key": "directeur"
+   },
+   {
+    "label": "Responsable SL",
+    "value": "",
+    "key": "responsableSL"
+   },
+   {
+    "label": "Commercial",
+    "value": "",
+    "key": "commercial"
+   },
+   {
+    "label": "Type de contrat",
+    "value": "",
+    "key": "typeContrat"
+   },
+   {
+    "label": "Période (jj/mm/aaaa au jj/mm/aaaa)",
+    "value": "",
+    "key": "periode"
+   }
+  ],
+  "client": "",
+  "auteur": "",
+  "projet": "tsp-exemple-b",
+  "date": "",
+  "reference": "",
+  "contact": "",
+  "agence": "",
+  "serviceLine": "",
+  "directeur": "",
+  "responsableSL": "",
+  "commercial": "",
+  "typeContrat": "",
+  "periode": ""
+ },
+ "periode": {
+  "start": null,
+  "end": null
+ },
+ "remise": 0,
+ "remiseSaisie": false,
+ "caInitial": null,
+ "pctPilotage": 20.673076923076923,
+ "pctProvision": 3.8461538461538463,
+ "profiles": [
+  {
+   "nom": "Chef de Projet",
+   "entite": "FO",
+   "tjm": 750,
+   "cjm": 400,
+   "prcs": null,
+   "frais": 0,
+   "collaborateur": ""
+  },
+  {
+   "nom": "Architecte",
+   "entite": "FO",
+   "tjm": 850,
+   "cjm": 420,
+   "prcs": null,
+   "frais": 0,
+   "collaborateur": ""
+  },
+  {
+   "nom": "Consultant Technique",
+   "entite": "FO",
+   "tjm": 750,
+   "cjm": 380,
+   "prcs": null,
+   "frais": 0,
+   "collaborateur": ""
+  },
+  {
+   "nom": "Consultant Change",
+   "entite": "FO",
+   "tjm": 700,
+   "cjm": 320,
+   "prcs": null,
+   "frais": 0,
+   "collaborateur": ""
+  },
+  {
+   "nom": "Consultant Data",
+   "entite": "FO",
+   "tjm": 800,
+   "cjm": 380,
+   "prcs": null,
+   "frais": 0,
+   "collaborateur": ""
+  },
+  {
+   "nom": "",
+   "entite": "FO",
+   "tjm": 0,
+   "cjm": 0,
+   "prcs": null,
+   "frais": 0,
+   "collaborateur": ""
+  },
+  {
+   "nom": "",
+   "entite": "FO",
+   "tjm": 0,
+   "cjm": 0,
+   "prcs": null,
+   "frais": 0,
+   "collaborateur": ""
+  }
+ ],
+ "grille": [
+  {
+   "profil": "Consultant Junior",
+   "tjmParis": 500,
+   "cjmParis": 300,
+   "tjmRegion": 418.33333333333337,
+   "cjmRegion": 251
+  },
+  {
+   "profil": "Consultant",
+   "tjmParis": 575,
+   "cjmParis": 345,
+   "tjmRegion": 458.33333333333337,
+   "cjmRegion": 275
+  },
+  {
+   "profil": "Consultant confirmé",
+   "tjmParis": 708.3333333333334,
+   "cjmParis": 425,
+   "tjmRegion": 558.3333333333334,
+   "cjmRegion": 335
+  },
+  {
+   "profil": "Expert",
+   "tjmParis": 733.3333333333334,
+   "cjmParis": 440,
+   "tjmRegion": 633.3333333333334,
+   "cjmRegion": 380
+  },
+  {
+   "profil": "Expert senior",
+   "tjmParis": 833.3333333333334,
+   "cjmParis": 500,
+   "tjmRegion": 733.3333333333334,
+   "cjmRegion": 440
+  },
+  {
+   "profil": "Architecte",
+   "tjmParis": 816.6666666666667,
+   "cjmParis": 490,
+   "tjmRegion": 658.3333333333334,
+   "cjmRegion": 395
+  },
+  {
+   "profil": "Architecte Senior",
+   "tjmParis": 916.6666666666667,
+   "cjmParis": 550,
+   "tjmRegion": 766.6666666666667,
+   "cjmRegion": 460
+  },
+  {
+   "profil": "Chef de Projet",
+   "tjmParis": 733.3333333333334,
+   "cjmParis": 440,
+   "tjmRegion": 616.6666666666667,
+   "cjmRegion": 370
+  },
+  {
+   "profil": "Chef de Projet Senior",
+   "tjmParis": 808.3333333333334,
+   "cjmParis": 485,
+   "tjmRegion": 683.3333333333334,
+   "cjmRegion": 410
+  },
+  {
+   "profil": "Directeur de projet",
+   "tjmParis": 966.6666666666667,
+   "cjmParis": 580,
+   "tjmRegion": 833.3333333333334,
+   "cjmRegion": 500
+  },
+  {
+   "profil": "Consultant Fonctionnel",
+   "tjmParis": 583.3333333333334,
+   "cjmParis": 350,
+   "tjmRegion": 491.6666666666667,
+   "cjmRegion": 295
+  },
+  {
+   "profil": "Consultant Fonctionnel Senior",
+   "tjmParis": 650,
+   "cjmParis": 390,
+   "tjmRegion": 575,
+   "cjmRegion": 345
+  },
+  {
+   "profil": "Expert Fonctionnel",
+   "tjmParis": 775,
+   "cjmParis": 465,
+   "tjmRegion": 683.3333333333334,
+   "cjmRegion": 410
+  },
+  {
+   "profil": "Référent",
+   "tjmParis": 1066.6666666666667,
+   "cjmParis": 640,
+   "tjmRegion": 766.6666666666667,
+   "cjmRegion": 460
+  },
+  {
+   "profil": "Manager",
+   "tjmParis": 1033.3333333333335,
+   "cjmParis": 620,
+   "tjmRegion": 816.6666666666667,
+   "cjmRegion": 490
+  }
+ ],
+ "tasks": [
+  {
+   "uid": "r5",
+   "ligne": 5,
+   "id": "1",
+   "lot": "Gouvernance",
+   "phase": "PILOTAGE",
+   "etape": "Pilotage projet",
+   "label": "Kick-off projet et cadrage initial",
+   "charges": [
+    1,
+    0.5,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "Réunion de lancement formelle",
+   "livCol": true
+  },
+  {
+   "uid": "r7",
+   "ligne": 7,
+   "id": "1",
+   "lot": "Gouvernance",
+   "phase": "PILOTAGE",
+   "etape": "Pilotage projet",
+   "label": "Suivi hebdomadaire projet",
+   "charges": [
+    2,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "non",
+   "hypothese": "COMOP",
+   "livCol": true
+  },
+  {
+   "uid": "r8",
+   "ligne": 8,
+   "id": "1",
+   "lot": "Gouvernance",
+   "phase": "PILOTAGE",
+   "etape": "Pilotage projet",
+   "label": "COPIL mensuels et reporting",
+   "charges": [
+    2,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "non",
+   "hypothese": "Pilotage décisionnel",
+   "livCol": true
+  },
+  {
+   "uid": "r10",
+   "ligne": 10,
+   "id": "2",
+   "lot": "Tech",
+   "phase": "PILOTAGE",
+   "etape": "Pilotage projet",
+   "label": "Pilotage Tech",
+   "charges": [
+    2,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r11",
+   "ligne": 11,
+   "id": "2",
+   "lot": "Tech",
+   "phase": "CONCEPTION",
+   "etape": "Analyse de l’existant",
+   "label": "Analyse tenant Entra ID",
+   "charges": [
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "Contraintes existantes",
+   "livCol": true
+  },
+  {
+   "uid": "r12",
+   "ligne": 12,
+   "id": "2",
+   "lot": "Tech",
+   "phase": "CONCEPTION",
+   "etape": "Analyse de l’existant",
+   "label": "Analyse Intune / WHfB existant",
+   "charges": [
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "Basé POC",
+   "livCol": true
+  },
+  {
+   "uid": "r13",
+   "ligne": 13,
+   "id": "2",
+   "lot": "Tech",
+   "phase": "CONCEPTION",
+   "etape": "Analyse de l’existant",
+   "label": "Analyse VPN F5 & PingAM",
+   "charges": [
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "Dépendances critiques",
+   "livCol": true
+  },
+  {
+   "uid": "r14",
+   "ligne": 14,
+   "id": "3",
+   "lot": "Tech",
+   "phase": "CONCEPTION",
+   "etape": "Conception Générale",
+   "label": "Définition architecture cible globale",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": true,
+   "livrable": "oui",
+   "hypothese": "Implémentation déja réalisée",
+   "livCol": true
+  },
+  {
+   "uid": "r15",
+   "ligne": 15,
+   "id": "3",
+   "lot": "Tech",
+   "phase": "CONCEPTION",
+   "etape": "Conception Générale",
+   "label": "Définition scénarios d’usage",
+   "charges": [
+    0,
+    1,
+    0.5,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "Nominal / fallback",
+   "livCol": true
+  },
+  {
+   "uid": "r16",
+   "ligne": 16,
+   "id": "3",
+   "lot": "Tech",
+   "phase": "CONCEPTION",
+   "etape": "Conception fonctionnelle détaillée",
+   "label": "Conception accès conditionnel",
+   "charges": [
+    0,
+    2,
+    0.5,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "Point dur du projet",
+   "livCol": true
+  },
+  {
+   "uid": "r17",
+   "ligne": 17,
+   "id": "3",
+   "lot": "Tech",
+   "phase": "CONCEPTION",
+   "etape": "Conception fonctionnelle détaillée",
+   "label": "Gestion des cas dégradés",
+   "charges": [
+    0,
+    1,
+    0.5,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "Sécurité + UX",
+   "livCol": true
+  },
+  {
+   "uid": "r18",
+   "ligne": 18,
+   "id": "2",
+   "lot": "Tech",
+   "phase": "PILOTAGE",
+   "etape": "Pilotage projet",
+   "label": "Pilotage Tech",
+   "charges": [
+    5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r19",
+   "ligne": 19,
+   "id": "4",
+   "lot": "Tech",
+   "phase": "CONSTRUCTION",
+   "etape": "Développement et tests unitaires",
+   "label": "Configuration Entra ID",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": true,
+   "livrable": "non",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r20",
+   "ligne": 20,
+   "id": "4",
+   "lot": "Tech",
+   "phase": "CONSTRUCTION",
+   "etape": "Développement et tests unitaires",
+   "label": "Configuration WHfB",
+   "charges": [
+    0,
+    0,
+    1.5,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "non",
+   "hypothese": "Implémentation déja réalisée",
+   "livCol": true
+  },
+  {
+   "uid": "r21",
+   "ligne": 21,
+   "id": "4",
+   "lot": "Tech",
+   "phase": "CONSTRUCTION",
+   "etape": "Développement et tests unitaires",
+   "label": "Paramétrage accès conditionnel",
+   "charges": [
+    0,
+    0,
+    4,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "non",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r22",
+   "ligne": 22,
+   "id": "4",
+   "lot": "Tech",
+   "phase": "CONSTRUCTION",
+   "etape": "Développement et tests unitaires",
+   "label": "Intégration VPN F5",
+   "charges": [
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "non",
+   "hypothese": "Coordination F5",
+   "livCol": true
+  },
+  {
+   "uid": "r23",
+   "ligne": 23,
+   "id": "4",
+   "lot": "Tech",
+   "phase": "CONSTRUCTION",
+   "etape": "Développement et tests unitaires",
+   "label": "Intégration PingAM",
+   "charges": [
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "non",
+   "hypothese": "Dépendance IDP",
+   "livCol": true
+  },
+  {
+   "uid": "r24",
+   "ligne": 24,
+   "id": "5",
+   "lot": "Tech",
+   "phase": "VALIDATION",
+   "etape": "Tests d’intégration / Recette interne",
+   "label": "Tests & Recette",
+   "charges": [
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "Cahier de Recette",
+   "livCol": true
+  },
+  {
+   "uid": "r25",
+   "ligne": 25,
+   "id": "5",
+   "lot": "Tech",
+   "phase": "VALIDATION",
+   "etape": "Tests d’intégration / Recette interne",
+   "label": "Corrections et ajustements",
+   "charges": [
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "non",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r26",
+   "ligne": 26,
+   "id": "6",
+   "lot": "Tech",
+   "phase": "VALIDATION",
+   "etape": "Livraison / installation / Mise en œuvre",
+   "label": "Préparation phase pilote",
+   "charges": [
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "non",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r27",
+   "ligne": 27,
+   "id": "6",
+   "lot": "Tech",
+   "phase": "VALIDATION",
+   "etape": "Livraison / installation / Mise en œuvre",
+   "label": "Accompagnement pilote",
+   "charges": [
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "non",
+   "hypothese": "Forte sollicitation",
+   "livCol": true
+  },
+  {
+   "uid": "r28",
+   "ligne": 28,
+   "id": "6",
+   "lot": "Tech",
+   "phase": "VALIDATION",
+   "etape": "Livraison / installation / Mise en œuvre",
+   "label": "Ajustements post-pilote",
+   "charges": [
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "non",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r29",
+   "ligne": 29,
+   "id": "8",
+   "lot": "Tech",
+   "phase": "FINALISATION",
+   "etape": "Support",
+   "label": "Rédaction DAT + DEX final",
+   "charges": [
+    0,
+    2,
+    1,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r30",
+   "ligne": 30,
+   "id": "8",
+   "lot": "Tech",
+   "phase": "FINALISATION",
+   "etape": "Support",
+   "label": "Transfert de compétences",
+   "charges": [
+    0,
+    0,
+    2,
+    1,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r31",
+   "ligne": 31,
+   "id": "7",
+   "lot": "Change",
+   "phase": "PILOTAGE",
+   "etape": "Pilotage projet",
+   "label": "Pilotage chantier Change hors Option",
+   "charges": [
+    7,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r32",
+   "ligne": 32,
+   "id": "7",
+   "lot": "Change",
+   "phase": "VALIDATION",
+   "etape": "Formation",
+   "label": "Atelier - Cadrage populations et stratégie d'accompagnement",
+   "charges": [
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r33",
+   "ligne": 33,
+   "id": "7",
+   "lot": "Change",
+   "phase": "VALIDATION",
+   "etape": "Formation",
+   "label": "Atelier Cadrage stratégie Change",
+   "charges": [
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r34",
+   "ligne": 34,
+   "id": "7",
+   "lot": "Change",
+   "phase": "VALIDATION",
+   "etape": "Formation",
+   "label": "Livrable - Plan d'accompagnement au changement",
+   "charges": [
+    0,
+    0,
+    0,
+    1.5,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r35",
+   "ligne": 35,
+   "id": "7",
+   "lot": "Change",
+   "phase": "VALIDATION",
+   "etape": "Formation",
+   "label": "Livrable - 1 vidéo teasing",
+   "charges": [
+    0,
+    0,
+    0,
+    3,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r37",
+   "ligne": 37,
+   "id": "7",
+   "lot": "Change",
+   "phase": "VALIDATION",
+   "etape": "Formation",
+   "label": "Livrable - 3 Mails de communication",
+   "charges": [
+    0,
+    0,
+    0,
+    1.5,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r38",
+   "ligne": 38,
+   "id": "7",
+   "lot": "Change",
+   "phase": "VALIDATION",
+   "etape": "Formation",
+   "label": "Livrable - Kit Champions",
+   "charges": [
+    0,
+    0,
+    0,
+    2,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r39",
+   "ligne": 39,
+   "id": "7",
+   "lot": "Change",
+   "phase": "VALIDATION",
+   "etape": "Formation",
+   "label": "Session Mobilisation Champions",
+   "charges": [
+    0,
+    0,
+    0,
+    0.5,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r40",
+   "ligne": 40,
+   "id": "7",
+   "lot": "Change",
+   "phase": "VALIDATION",
+   "etape": "Formation",
+   "label": "Session Sponsoring Managers",
+   "charges": [
+    0,
+    0,
+    0,
+    0.5,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r41",
+   "ligne": 41,
+   "id": "7",
+   "lot": "Change",
+   "phase": "VALIDATION",
+   "etape": "Formation",
+   "label": "Livrable - 1 Modop utilisateurs",
+   "charges": [
+    0,
+    0,
+    0,
+    2,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r42",
+   "ligne": 42,
+   "id": "7",
+   "lot": "Change",
+   "phase": "VALIDATION",
+   "etape": "Formation",
+   "label": "Livrable - 1 Guide N1 / N2",
+   "charges": [
+    0,
+    0,
+    1,
+    2,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r43",
+   "ligne": 43,
+   "id": "7",
+   "lot": "Change",
+   "phase": "VALIDATION",
+   "etape": "Formation",
+   "label": "Session - 3 Webinars utilisateurs",
+   "charges": [
+    0,
+    0,
+    0,
+    3,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "non",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r45",
+   "ligne": 45,
+   "id": "7",
+   "lot": "Change",
+   "phase": "VALIDATION",
+   "etape": "Formation",
+   "label": "Livrable - 1 Tuto vidéo Windows Hello en 3 étapes",
+   "charges": [
+    0,
+    0,
+    0,
+    2,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "non",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r46",
+   "ligne": 46,
+   "id": "7",
+   "lot": "Change",
+   "phase": "VALIDATION",
+   "etape": "Formation",
+   "label": "Livrable - FAQ",
+   "charges": [
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "non",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r47",
+   "ligne": 47,
+   "id": "7",
+   "lot": "Change",
+   "phase": "VALIDATION",
+   "etape": "Formation",
+   "label": "Accompagnement des 13 Sites Principaux (Distanciel)",
+   "charges": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": true,
+   "livrable": "non",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r48",
+   "ligne": 48,
+   "id": "7",
+   "lot": "Change",
+   "phase": "VALIDATION",
+   "etape": "Formation",
+   "label": "OPTION 1 : Accompagnement des 13 Sites principaux (Ditanciels) + 4 jours pour les vagues des grands sites",
+   "charges": [
+    0,
+    0,
+    10,
+    10,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "non",
+   "hypothese": "Affiché en moitié moitié afin d'afficher un TJM Moyen. Indenpendemment on peut amener le consultant Change ou Identité sur les journées de bascule des Sites",
+   "livCol": true
+  },
+  {
+   "uid": "r49",
+   "ligne": 49,
+   "id": "7",
+   "lot": "Change",
+   "phase": "PILOTAGE",
+   "etape": "Pilotage projet",
+   "label": "Pilotage Option Change 15 sites",
+   "charges": [
+    1.5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "non",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r50",
+   "ligne": 50,
+   "id": "7",
+   "lot": "Change",
+   "phase": "VALIDATION",
+   "etape": "Formation",
+   "label": "OPTION 2 : Dashboard Complet PowerBI",
+   "charges": [
+    0.5,
+    0,
+    0.5,
+    0,
+    5,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "oui",
+   "hypothese": "PowerBI suivi déploiement",
+   "livCol": true
+  },
+  {
+   "uid": "r60",
+   "ligne": 60,
+   "id": "9",
+   "lot": "Risques",
+   "phase": "PROVISION",
+   "etape": "Provision pour risque",
+   "label": "Aléas accès conditionnel",
+   "charges": [
+    0,
+    0.5,
+    0.5,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "non",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r61",
+   "ligne": 61,
+   "id": "9",
+   "lot": "Risques",
+   "phase": "PROVISION",
+   "etape": "Provision pour risque",
+   "label": "Aléas déploiement",
+   "charges": [
+    0,
+    0.5,
+    0.5,
+    0.5,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "non",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r62",
+   "ligne": 62,
+   "id": "9",
+   "lot": "Risques",
+   "phase": "PROVISION",
+   "etape": "Provision pour risque",
+   "label": "Aléas adoption utilisateurs",
+   "charges": [
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "non",
+   "hypothese": "",
+   "livCol": true
+  },
+  {
+   "uid": "r63",
+   "ligne": 63,
+   "id": "9",
+   "lot": "Risques",
+   "phase": "PROVISION",
+   "etape": "Provision pour risque",
+   "label": "Aléas planning / dépendances",
+   "charges": [
+    0.5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "section": false,
+   "livrable": "non",
+   "hypothese": "",
+   "livCol": true
+  }
+ ],
+ "planningPhases": {
+  "rows": [
+   {
+    "phase": "PILOTAGE",
+    "cjm": 588.3333333333334,
+    "vals": {}
+   },
+   {
+    "phase": "CONCEPTION",
+    "cjm": 641.6666666666667,
+    "vals": {}
+   },
+   {
+    "phase": "CONSTRUCTION",
+    "cjm": 501.6666666666667,
+    "vals": {}
+   },
+   {
+    "phase": "VALIDATION",
+    "cjm": 435,
+    "vals": {}
+   },
+   {
+    "phase": "FINALISATION",
+    "cjm": 0,
+    "vals": {}
+   },
+   {
+    "phase": "GARANTIE",
+    "cjm": 0,
+    "vals": {}
+   },
+   {
+    "phase": "TMA",
+    "cjm": 0,
+    "vals": {}
+   },
+   {
+    "phase": "PROVISION",
+    "cjm": "TJM CSV",
+    "vals": {}
+   }
+  ],
+  "source": "PLANNING"
+ },
+ "types": [
+  {
+   "id": "Atelier",
+   "nom": "Atelier",
+   "socle": true
+  },
+  {
+   "id": "Livrable",
+   "nom": "Livrable",
+   "socle": true
+  }
+ ],
+ "frais": [
+  {
+   "libelle": "Lot 1 : Déploiement Sites Majeurs",
+   "cu": 500,
+   "qte": 15,
+   "refacture": 7500,
+   "commentaire": ""
+  },
+  {
+   "libelle": "Lot 2: Déploiement Sites Secondaires",
+   "cu": 500,
+   "qte": 20,
+   "refacture": 10000,
+   "commentaire": ""
+  }
+ ],
+ "achats": [],
+ "prestas": [],
+ "echeancier": [
+  {
+   "n": 1,
+   "nom": "Commande",
+   "pct": 0.2,
+   "mois": null
+  },
+  {
+   "n": 2,
+   "nom": "Rédaction DAT",
+   "pct": 0.3,
+   "mois": null
+  },
+  {
+   "n": 3,
+   "nom": "Recette",
+   "pct": 0.28,
+   "mois": null
+  },
+  {
+   "n": 4,
+   "nom": "15 sites majeurs accompagnés (PV)",
+   "pct": 0.22,
+   "mois": null
+  }
+ ],
+ "metrique": [
+  {
+   "etape": "Pilotage projet",
+   "pct": 0.2
+  },
+  {
+   "etape": "Conception générale",
+   "pct": 0.05
+  },
+  {
+   "etape": "Conception fonctionnelle détaillée",
+   "pct": 0.25
+  },
+  {
+   "etape": "Conception technique détaillée",
+   "pct": 0.2
+  },
+  {
+   "etape": "Cahier de recette",
+   "pct": 0.15
+  },
+  {
+   "etape": "Développement et tests unitaires",
+   "pct": 1
+  },
+  {
+   "etape": "Tests d'intégration / Recette interne",
+   "pct": 0.2
+  },
+  {
+   "etape": "Livraison / installation / Mise en œuvre",
+   "pct": 0.1
+  },
+  {
+   "etape": "Assistance recette",
+   "pct": 0.1
+  },
+  {
+   "etape": "Garantie (suite recette - 3 mois)",
+   "pct": 0.06
+  }
+ ],
+ "planningRef": {
+  "months": [
+   "2024-01",
+   "2024-02",
+   "2024-03",
+   "2024-04",
+   "2024-05",
+   "2024-06",
+   "2024-07",
+   "2024-08",
+   "2024-09",
+   "2024-10",
+   "2024-11",
+   "2024-12",
+   "2025-01",
+   "2025-02",
+   "2025-03",
+   "2025-04"
+  ],
+  "rows": [
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  ]
+ },
+ "planningSource": "PLANNING",
+ "planningTsp": {
+  "months": [
+   "2024-01",
+   "2024-02",
+   "2024-03",
+   "2024-04",
+   "2024-05",
+   "2024-06",
+   "2024-07",
+   "2024-08",
+   "2024-09",
+   "2024-10",
+   "2024-11",
+   "2024-12",
+   "2025-01",
+   "2025-02",
+   "2025-03",
+   "2025-04"
+  ],
+  "rows": [
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  ]
+ },
+ "ref": {
+  "phases": [
+   "PILOTAGE",
+   "CONCEPTION",
+   "CONSTRUCTION",
+   "VALIDATION",
+   "FINALISATION",
+   "GARANTIE",
+   "TMA",
+   "PROVISION"
+  ],
+  "etapes": [
+   "Pilotage projet",
+   "Analyse de l'existant",
+   "Conception générale",
+   "Conception technique détaillée",
+   "Conception fonctionnelle détaillée",
+   "Ergonomie/Graphisme",
+   "Cahier de recette",
+   "Développement et tests unitaires",
+   "Tests d'intégration / Recette interne",
+   "Livraison / installation / Mise en œuvre",
+   "Pilote",
+   "Généralisation",
+   "Support",
+   "Reprise de contenu",
+   "Assistance recette",
+   "Formation",
+   "Garantie (suite recette - 3 mois)",
+   "Provision pour risque",
+   "Hors abaques"
+  ]
+ },
+ "axes": {
+  "1": "1",
+  "2": "2",
+  "3": "3",
+  "4": "4",
+  "5": "5",
+  "6": "6",
+  "7": "7",
+  "8": "8",
+  "9": "9"
+ },
+ "dates": {
+  "debut": null,
+  "finContrat": null,
+  "finPrevue": null
+ },
+ "settings": {
+  "startMonth": "2026-10",
+  "nbMonths": 15,
+  "iaProfile": -1,
+  "groupBy": "phase"
+ },
+ "track": {},
+ "warnings": [
+  "Période du projet absente du TSP : renseignez le début et la fin dans ⚙ Paramètres du projet › Dates du projet.",
+  "Onglet PLANNING présent mais vide (0 JH) : la courbe « prévu » du Plan de charge restera vide.",
+  "Fiche projet vide dans le TSP : le nom du fichier est utilisé comme nom de projet (modifiable dans TSP › Fiche)."
+ ]
+}

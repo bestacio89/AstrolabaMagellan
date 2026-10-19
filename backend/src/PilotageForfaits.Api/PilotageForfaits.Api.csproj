@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!-- Couche API : points d'entrée REST, authentification, contrôle des rôles, erreurs. -->
+  <PropertyGroup>
+    <RootNamespace>PilotageForfaits.Api</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <UserSecretsId>pilotage-forfaits-api</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PilotageForfaits.Infrastructure\PilotageForfaits.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.Identity.Web" />
+    <!-- Nécessaire pour la commande « dotnet ef migrations add » lancée depuis ce projet. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Permet aux tests d'intégration de démarrer l'API. -->
+    <InternalsVisibleTo Include="PilotageForfaits.Api.Tests" />
+  </ItemGroup>
+</Project>

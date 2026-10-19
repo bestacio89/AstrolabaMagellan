@@ -1,0 +1,59 @@
+{
+ "schema": 2,
+ "fiche": {
+  "champs": [],
+  "client": "Client",
+  "projet": "Projet vide"
+ },
+ "periode": {
+  "start": "2026-11-02",
+  "end": "2027-02-26"
+ },
+ "remise": 0,
+ "profiles": [],
+ "grille": [],
+ "tasks": [],
+ "planningPhases": {
+  "rows": [],
+  "source": null
+ },
+ "types": [
+  {
+   "id": "Atelier",
+   "nom": "Atelier",
+   "socle": true
+  },
+  {
+   "id": "Livrable",
+   "nom": "Livrable",
+   "socle": true
+  }
+ ],
+ "frais": [],
+ "achats": [],
+ "prestas": [],
+ "echeancier": [],
+ "metrique": [],
+ "planningRef": {
+  "months": [],
+  "rows": []
+ },
+ "ref": {
+  "phases": [],
+  "etapes": []
+ },
+ "axes": {},
+ "dates": {
+  "debut": "2026-11-02",
+  "finContrat": "2027-02-26",
+  "finPrevue": "2027-02-26"
+ },
+ "settings": {
+  "startMonth": "2026-11",
+  "nbMonths": 13,
+  "iaProfile": -1,
+  "groupBy": "id"
+ },
+ "track": {},
+ "warnings": []
+}

@@ -1,0 +1,27 @@
+# Requêtes d'essai (Visual Studio, Rider ou VS Code avec l'extension REST Client).
+# En développement, l'en-tête X-Utilisateur-Dev choisit l'utilisateur fictif : chef, consultant ou pilotage.
+@api = https://localhost:5081
+
+GET {{api}}/api/sante
+
+###
+GET {{api}}/api/moi
+X-Utilisateur-Dev: chef
+
+###
+GET {{api}}/api/projets
+X-Utilisateur-Dev: chef
+
+###
+POST {{api}}/api/projets
+X-Utilisateur-Dev: chef
+Content-Type: application/json
+
+{
+  "client": "Client exemple",
+  "nom": "Projet vide d'essai",
+  "reference": "OP00000",
+  "debut": "2026-11-02",
+  "finContractuelle": "2027-02-26",
+  "typeContrat": "Forfait"
+}

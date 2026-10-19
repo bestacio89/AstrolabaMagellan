@@ -1,0 +1,289 @@
+{
+ "tasks": [],
+ "profils": [],
+ "synthese": {
+  "montantProjet": 0,
+  "jours": 0,
+  "ca": 0,
+  "cout": 0,
+  "coutAgence": 0,
+  "cjmProd": null,
+  "tjmClient": null,
+  "margeAgence": null,
+  "margeEN": null,
+  "fraisDep": 0,
+  "fraisRef": 0,
+  "provJH": 0,
+  "provEur": 0,
+  "achatsMt": 0,
+  "achatsRef": 0,
+  "margeAchats": 0,
+  "margeNette": 0,
+  "margeNettePct": null
+ },
+ "ventilation": {
+  "parPhase": [],
+  "parEtape": [],
+  "sansEtape": 0
+ },
+ "metrique": [],
+ "axes": [],
+ "total": {
+  "n": 0,
+  "prevu": 0,
+  "conso": 0,
+  "raf": 0,
+  "atterrissage": 0,
+  "ecart": 0,
+  "prevuTSP": 0,
+  "ajout": 0,
+  "annule": 0,
+  "coutPrevu": 0,
+  "coutConso": 0,
+  "coutRaf": 0,
+  "coutFinal": 0,
+  "statut": "À faire",
+  "avancement": 0,
+  "avDeclare": 0,
+  "valides": 0,
+  "actives": 0,
+  "ia": 0,
+  "iaRes": 0
+ },
+ "months": [
+  "2026-11",
+  "2026-12",
+  "2027-01",
+  "2027-02"
+ ],
+ "mensuel": [
+  {
+   "mois": "2026-11",
+   "conso": 0,
+   "ref": 0,
+   "tsp": 0,
+   "tspP": [],
+   "coutCJM": 0,
+   "cumCJM": 0,
+   "valoTJM": 0,
+   "cumTJM": 0,
+   "refTJM": 0,
+   "cumRefTJM": 0
+  },
+  {
+   "mois": "2026-12",
+   "conso": 0,
+   "ref": 0,
+   "tsp": 0,
+   "tspP": [],
+   "coutCJM": 0,
+   "cumCJM": 0,
+   "valoTJM": 0,
+   "cumTJM": 0,
+   "refTJM": 0,
+   "cumRefTJM": 0
+  },
+  {
+   "mois": "2027-01",
+   "conso": 0,
+   "ref": 0,
+   "tsp": 0,
+   "tspP": [],
+   "coutCJM": 0,
+   "cumCJM": 0,
+   "valoTJM": 0,
+   "cumTJM": 0,
+   "refTJM": 0,
+   "cumRefTJM": 0
+  },
+  {
+   "mois": "2027-02",
+   "conso": 0,
+   "ref": 0,
+   "tsp": 0,
+   "tspP": [],
+   "coutCJM": 0,
+   "cumCJM": 0,
+   "valoTJM": 0,
+   "cumTJM": 0,
+   "refTJM": 0,
+   "cumRefTJM": 0
+  }
+ ],
+ "refTotal": 0,
+ "tspTotal": 0,
+ "replanifie": false,
+ "jalons": [],
+ "axeIdsActifs": [],
+ "avancement": {
+  "cle": "lot",
+  "groupes": []
+ },
+ "risques": [],
+ "financier": {
+  "ca": 0,
+  "caTSP": 0,
+  "caAvenant": 0,
+  "coutInitial": 0,
+  "coutAjout": 0,
+  "coutAnnule": 0,
+  "coutPrevu": 0,
+  "coutConso": 0,
+  "coutRaf": 0,
+  "coutFinal": 0,
+  "marge": 0,
+  "tauxMarge": 0,
+  "ecartCout": 0,
+  "margeNette": 0,
+  "tauxMargeNette": 0,
+  "margeNetteVendue": 0,
+  "tauxMargeNetteVendue": null,
+  "achats": {
+   "budget": 0,
+   "budgetRev": 0,
+   "reel": 0,
+   "reelRev": 0,
+   "horsTSP": 0,
+   "att": 0,
+   "attRev": 0,
+   "reste": 0,
+   "depasse": 0,
+   "impactNet": 0
+  },
+  "frais": {
+   "budget": 0,
+   "budgetRef": 0,
+   "reel": 0,
+   "reelRef": 0,
+   "att": 0,
+   "attRef": 0,
+   "reste": 0,
+   "depasse": 0,
+   "impactNet": 0
+  }
+ },
+ "perimetre": {
+  "chargeTSP": 0,
+  "chargeAjout": 0,
+  "chargeAnnulee": 0,
+  "chargeActuelle": 0,
+  "coutAjout": 0,
+  "coutAnnule": 0,
+  "caAvenant": 0,
+  "nTaches": 0,
+  "nProfilsTache": 0,
+  "nAnnul": 0,
+  "margeVendue": null,
+  "margeAvecAjouts": null,
+  "lignes": []
+ },
+ "echeancier": [],
+ "echSynth": {
+  "facture": 0,
+  "paye": 0,
+  "reste": 0,
+  "produit": 0,
+  "faeADate": 0,
+  "ajustAvenant": 0
+ },
+ "ateliers": {
+  "ateliers": {
+   "prevus": 0,
+   "realises": 0,
+   "restants": 0,
+   "taux": 0
+  },
+  "livrables": {
+   "prevus": 0,
+   "realises": 0,
+   "restants": 0,
+   "taux": 0
+  },
+  "parType": [
+   {
+    "id": "Atelier",
+    "prevus": 0,
+    "realises": 0,
+    "restants": 0,
+    "annules": 0,
+    "charge": 0
+   },
+   {
+    "id": "Livrable",
+    "prevus": 0,
+    "realises": 0,
+    "restants": 0,
+    "annules": 0,
+    "charge": 0
+   }
+  ]
+ },
+ "ia": {
+  "profil": null,
+  "ref": 0,
+  "consomme": 0,
+  "realise": 0,
+  "envVal": 0,
+  "projection": 0,
+  "taux": 0,
+  "tauxProj": 0,
+  "valeurTJM": 0,
+  "valeurCJM": 0,
+  "validees": 0
+ },
+ "vigilance": [
+  {
+   "cle": "sansAxe",
+   "valeur": 0,
+   "niveau": "ok"
+  },
+  {
+   "cle": "bloque",
+   "valeur": 0,
+   "niveau": "ok"
+  },
+  {
+   "cle": "reestimer",
+   "valeur": 0,
+   "niveau": "ok"
+  },
+  {
+   "cle": "incoherent",
+   "valeur": 0,
+   "niveau": "ok"
+  },
+  {
+   "cle": "sansConso",
+   "valeur": 0,
+   "niveau": "ok"
+  },
+  {
+   "cle": "depassement",
+   "valeur": 0,
+   "niveau": "ok"
+  },
+  {
+   "cle": "ecart",
+   "valeur": 0,
+   "niveau": "ok"
+  },
+  {
+   "cle": "cout",
+   "valeur": 0,
+   "niveau": "ok"
+  }
+ ],
+ "cal": {
+  "debut": "2026-11-02",
+  "finContrat": "2027-02-26",
+  "finPrevue": "2027-02-26",
+  "joursTotal": 82,
+  "joursEcoules": 0,
+  "joursRestants": 82,
+  "tempsPct": 0,
+  "consoPct": 0,
+  "glissementJours": 0,
+  "glissementOuvres": 0
+ },
+ "surJours": []
+}
