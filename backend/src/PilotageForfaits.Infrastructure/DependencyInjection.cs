@@ -10,12 +10,16 @@ namespace PilotageForfaits.Infrastructure;
 
 public static class DependencyInjection
 {
-    /// <summary>Déclare la base de données, la lecture des TSP, l'écriture des exports Excel et l'horloge.</summary>
+    /// <summary>Déclare PostgreSQL, la lecture des TSP, l'écriture des exports Excel et l'horloge.</summary>
     public static IServiceCollection AjouterInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        var chaine = configuration.GetConnectionString("Pilotage")
-            ?? throw new InvalidOperationException("Chaîne de connexion « ConnectionStrings:Pilotage » absente de la configuration.");
-        services.AddDbContext<PilotageDbContext>(o => o.UseSqlServer(chaine, sql => sql.EnableRetryOnFailure()));
+        var chaine = configuration.GetConnectionString("Pilotage");
+        if (string.IsNullOrWhiteSpace(chaine))
+            throw new InvalidOperationException("La chaîne de connexion « ConnectionStrings:Pilotage » est absente ou vide.");
+
+        services.AddDbContext<PilotageDbContext>(options =>
+            options.UseNpgsql(chaine, postgres => postgres.EnableRetryOnFailure()));
+
         services.AddScoped<IContexteDonnees>(sp => sp.GetRequiredService<PilotageDbContext>());
         services.AddSingleton<IHorloge, HorlogeSysteme>();
         services.AddScoped<ILecteurTsp, LecteurTsp>();
