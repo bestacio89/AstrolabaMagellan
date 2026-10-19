@@ -54,7 +54,7 @@ type ChampNombre = 'tjm' | 'cjm' | 'prcs' | 'frais';
                   <tr>
                     <td class="pf-c-nom">
                       <input class="in pf-nom" [value]="p.nom" (input)="texte(p.id, 'nom', $event)" list="pf-suggestions" aria-label="Nom du profil" placeholder="Ex. Chef de projet" />
-                      <input class="in pf-perso" [value]="p.collaborateur" (input)="texte(p.id, 'collaborateur', $event)" aria-label="Personne prévue sur ce profil (facultatif)" placeholder="Personne prévue (facultatif)" title="Relie le profil à « Mon travail » de cette personne" />
+                      <input class="in pf-perso" [value]="p.collaborateur" (input)="texte(p.id, 'collaborateur', $event)" aria-label="Personne prévue sur ce profil (à défaut, le nom du profil)" placeholder="Personne (sinon : nom du profil)" title="Relie le profil à la personne qui fera le travail (son « Mon travail », ses absences)" />
                     </td>
                     <td>
                       <select class="in" (change)="texte(p.id, 'entite', $event)" aria-label="Entité">

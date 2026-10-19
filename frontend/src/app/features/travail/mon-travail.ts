@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { ProjetsApi } from '../../api/projets.api';
+import { MoiApi, MonAbsence, ProjetsApi } from '../../api/projets.api';
 import { messageErreur } from '../../core/http/erreurs.interceptor';
 import { NavigationService } from '../../core/layout/navigation';
 import { NotificationsService } from '../../core/notifications/notifications';
@@ -10,6 +10,7 @@ import { aujourdhuiIso, couleurProjet, formatDate } from '../../shared/format/fo
 import { Icone } from '../../shared/ui/icone';
 import { Suivi } from '../suivi/api/modeles';
 import { SuiviApi } from '../suivi/api/suivi.api';
+import { ABS, ABS_SUITE, Moment } from '../suivi/etat/absences.logique';
 import { fDh, fJ } from '../suivi/etat/formats';
 import { initialesDe } from '../suivi/etat/fil.logique';
 import { lundi } from '../portefeuille/portefeuille.logique';
@@ -160,6 +161,30 @@ const JOURS = ['Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.'];
               } @else {
                 <p class="mt-vide">Aucune tâche en cours où vous avez de la charge.</p>
               }
+              <!-- mes absences de la semaine : elles valent pour tous mes projets (le chef de projet les voit dans Pilotage › Absences) -->
+              <div class="mt-abs" role="group" aria-labelledby="mt-abs-titre">
+                <div class="mt-abs-tete">
+                  <b id="mt-abs-titre">Mes absences</b>
+                  <small>Un clic : journée → matin → après-midi → présent. Visibles par le chef de projet de chacun de vos projets.</small>
+                </div>
+                <div class="mt-abs-jours">
+                  @for (j of jours(); track j; let k = $index) {
+                    @let a = absences()[j] ?? '';
+                    <button
+                      type="button"
+                      class="mt-abs-b"
+                      [class]="'mt-abs-b' + (a ? ' abs-' + a : '')"
+                      [disabled]="envoiAbsence()"
+                      [attr.aria-label]="nomsJours[k] + ' ' + formatDate(j) + ' : ' + (a ? libelleAbsence(a) : 'présent')"
+                      [title]="formatDate(j) + ' : ' + (a ? libelleAbsence(a) : 'présent')"
+                      (click)="basculerAbsence(j)"
+                    >
+                      <span>{{ nomsJours[k] }} {{ j.slice(8) }}</span>
+                      <small>{{ a ? libelleAbsence(a) : 'Présent' }}</small>
+                    </button>
+                  }
+                </div>
+              </div>
             </section>
           </div>
 
@@ -481,6 +506,77 @@ const JOURS = ['Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.'];
       place-items: center;
       font: 500 12px/1 var(--police-texte);
     }
+    .mt-abs {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--esp-3);
+      padding: var(--esp-3) var(--esp-5) var(--esp-4);
+      border-top: 1px solid var(--c-separateur);
+    }
+    .mt-abs-tete {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 220px;
+      gap: 2px;
+      font-size: 14px;
+    }
+    .mt-abs-tete small {
+      font-size: 12px;
+      color: var(--c-texte-discret);
+    }
+    .mt-abs-jours {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .mt-abs-b {
+      --abs: #6b40c4;
+      --abs-soft: #efeafa;
+      width: 84px;
+      height: 44px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--c-bordure);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--c-texte);
+      font: 500 12px/16px var(--police-texte);
+      cursor: pointer;
+    }
+    .mt-abs-b small {
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--c-texte-discret);
+    }
+    .mt-abs-b:hover {
+      border-color: var(--abs);
+    }
+    .mt-abs-b:focus-visible {
+      outline: 2px solid var(--abs);
+      outline-offset: 1px;
+    }
+    .mt-abs-b.abs-j {
+      background: var(--abs-soft);
+      border-color: var(--abs);
+      box-shadow: inset 0 0 0 1px var(--abs);
+    }
+    .mt-abs-b.abs-m {
+      background: linear-gradient(to bottom, var(--abs-soft) 0 50%, #fff 50%);
+      border-color: var(--abs);
+    }
+    .mt-abs-b.abs-a {
+      background: linear-gradient(to bottom, #fff 50%, var(--abs-soft) 50%);
+      border-color: var(--abs);
+    }
+    .mt-abs-b.abs-j small,
+    .mt-abs-b.abs-m small,
+    .mt-abs-b.abs-a small {
+      color: var(--abs);
+      font-weight: 600;
+    }
     @media (max-width: 1100px) {
       .mt-grille {
         grid-template-columns: minmax(0, 1fr);
@@ -503,6 +599,7 @@ export class MonTravail implements OnInit {
   private readonly projetsApi = inject(ProjetsApi);
   private readonly api = inject(SuiviApi);
   private readonly notifs = inject(NotificationsService);
+  private readonly moiApi = inject(MoiApi);
 
   protected readonly aujourdhui = aujourdhuiIso();
   protected readonly jourLong = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -522,6 +619,9 @@ export class MonTravail implements OnInit {
   /** Les éléments sans échéance (souvent nombreux) sont repliés par défaut. */
   protected readonly sansDateOuvert = signal(false);
   protected readonly vu = signal(MonTravail.lireVu());
+  /** Mes absences connues, par jour (« j », « m » ou « a ») ; elles valent pour tous mes projets. */
+  protected readonly absences = signal<Partial<Record<string, Moment>>>({});
+  protected readonly envoiAbsence = signal(false);
 
   private readonly moi = computed(() => {
     const m = this.session.moi();
@@ -595,6 +695,53 @@ export class MonTravail implements OnInit {
       this.chargement.set(false);
       this.publierCompteur();
     }
+    void this.chargerAbsences();
+  }
+
+  /** Mes absences de la semaine affichée (une erreur de lecture n'empêche pas le reste de l'écran). */
+  private async chargerAbsences(): Promise<void> {
+    const j = this.jours();
+    try {
+      this.retenirAbsences(await firstValueFrom(this.moiApi.absences(j[0], j[j.length - 1])));
+    } catch {
+      /* absences illisibles : les cases restent « présent », la saisie reste possible */
+    }
+  }
+
+  /** Le serveur renvoie toutes mes absences de la semaine lue : elles remplacent ce qu'on savait de ces jours-là. */
+  private retenirAbsences(l: MonAbsence[]): void {
+    const semaine = new Set(this.jours());
+    this.absences.update((a) => {
+      const r: Partial<Record<string, Moment>> = {};
+      for (const [k, v] of Object.entries(a)) if (!semaine.has(k)) r[k] = v;
+      for (const x of l) r[x.jour] = x.moment;
+      return r;
+    });
+  }
+
+  protected libelleAbsence(a: Moment): string {
+    return ABS[a][0];
+  }
+
+  /** Un clic fait défiler le jour : présent → journée → matin → après-midi → présent. */
+  protected async basculerAbsence(jour: string): Promise<void> {
+    const suivant = ABS_SUITE[this.absences()[jour] ?? ''];
+    this.envoiAbsence.set(true);
+    try {
+      const l = await firstValueFrom(this.moiApi.absence(jour, suivant));
+      // réponse : mes absences du mois du jour modifié
+      const mois = jour.slice(0, 7);
+      this.absences.update((a) => {
+        const r: Partial<Record<string, Moment>> = {};
+        for (const [k, v] of Object.entries(a)) if (k.slice(0, 7) !== mois) r[k] = v;
+        for (const x of l) r[x.jour] = x.moment;
+        return r;
+      });
+    } catch (err) {
+      this.notifs.erreur(messageErreur(err));
+    } finally {
+      this.envoiAbsence.set(false);
+    }
   }
 
   /** Pastille de « Mon travail » dans la barre latérale : éléments en retard ou à rendre cette semaine. */
@@ -608,6 +755,7 @@ export class MonTravail implements OnInit {
     const d = new Date(this.semaine() + 'T00:00:00Z');
     d.setUTCDate(d.getUTCDate() + jours);
     this.semaine.set(d.toISOString().slice(0, 10));
+    void this.chargerAbsences();
   }
 
   protected total(l: LigneSemaine): number {
