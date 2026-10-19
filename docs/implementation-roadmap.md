@@ -8,7 +8,7 @@ The Angular application and its existing screen designs are intentionally out of
 
 ## Delivery rules
 
-- One focused branch and one pull request per stage. Target `main` unless the stage depends on an open predecessor PR; dependent stages may be stacked on that predecessor and retargeted to `main` after it merges.
+- Keep persistence changes separate from identity and authorization changes. Entra authentication/authorization stages should be reviewed together in one branch and one pull request when earlier stacked stages have not actually landed on `main`.
 - Do not merge until CI is green and the stage's acceptance criteria are met.
 - Commit format: `[Action][Scope]: lowercase summary`. Allowed actions: `[Feat]`, `[Fix]`, `[Patch]`, `[Test]`, `[Refactor]`, `[Docs]`, `[Chore]`. Scopes should use the existing project conventions, including `[Api]`, `[Domain]`, `[Application]`, `[Contracts]`, `[CPM]`, `[Tests]`, `[Messaging]`, and `[Persistence]`.
 - Every PR uses the agreed sections: Summary, Details, Changes, Tests, Docs, and Release Notes.
@@ -145,15 +145,15 @@ One-line changelog entry.
 
 ## Current status
 
-Implementation is being delivered as separate pull requests. A merge alone is not evidence that the stage's acceptance criteria passed; CI and security review remain required.
+A merge into a feature branch does not mean the change is present in `main`. The repository was inspected at `main` commit `f6b1972b35ea2b0a717163443d486cc2cc7ed70e`. PostgreSQL, Entra authentication, and group-to-capability transformation were present there; project/resource enforcement, the current-user contract, and PostgreSQL authorization hardening were not present on `main`, even though PRs #6–#8 showed as merged into their stacked feature bases.
 
-| Stage | Pull request | State |
-| --- | --- | --- |
-| 1 — PostgreSQL and code-first persistence | [#2](https://github.com/bestacio89/AstrolabaMagellan/pull/2) | Merged; CI/release acceptance still requires verified checks |
-| 2 — Entra ID authentication | [#4](https://github.com/bestacio89/AstrolabaMagellan/pull/4) | Merged; CI/release acceptance still requires verified checks |
-| 3 — Group-to-capability authorization | [#5](https://github.com/bestacio89/AstrolabaMagellan/pull/5) | Open for review |
-| 4 — Project/resource authorization | [#6](https://github.com/bestacio89/AstrolabaMagellan/pull/6) | Open for review; stacked on Stage 3 |
-| 5 — Current-user authorization contract | [#7](https://github.com/bestacio89/AstrolabaMagellan/pull/7) | Open for review; stacked on Stage 4 |
-| 6 — Security and release hardening | [#8](https://github.com/bestacio89/AstrolabaMagellan/pull/8) | Open for review; stacked on Stage 5 |
+Those remaining Entra-related changes have been consolidated into one direct-to-`main` pull request:
 
-At the time of this update, GitHub Actions runner jobs are queued, so no successful CI result is claimed. Do not merge dependent stages until the preceding stage is merged, all required checks pass, and the security acceptance criteria have been reviewed.
+| Area | Pull request | State |
+|---|---|---|
+| PostgreSQL and code-first persistence | [#2](https://github.com/bestacio89/AstrolabaMagellan/pull/2) | Merged; CI/release acceptance still requires verified checks |
+| Entra ID authentication | [#4](https://github.com/bestacio89/AstrolabaMagellan/pull/4) | Merged; CI/release acceptance still requires verified checks |
+| Group-to-capability mapping | [#5](https://github.com/bestacio89/AstrolabaMagellan/pull/5) | Merged to `main`; CI/release acceptance still requires verified checks |
+| Project/resource authorization, current-user contract, and security hardening | [#9](https://github.com/bestacio89/AstrolabaMagellan/pull/9) | Open; consolidated branch targeting `main` |
+
+GitHub Actions jobs are currently queued, so no successful CI result is claimed. Production acceptance still requires green CI, configured tenant/group mappings, review of the tenant-qualified identity migration, and security review against the final screen-permission matrix. Angular/MSAL integration remains deferred until the updated frontend and permission matrix are available.
