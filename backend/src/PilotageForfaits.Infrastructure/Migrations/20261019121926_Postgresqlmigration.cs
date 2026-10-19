@@ -904,7 +904,7 @@ namespace PilotageForfaits.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AchatsReels", x => x.Id);
-                    table.CheckConstraint("CK_AchatsReels_Positifs", "CAST([Quantite] AS FLOAT) > 0 AND CAST([CoutUnitaire] AS FLOAT) >= 0 AND CAST([Refacture] AS FLOAT) >= 0");
+                    table.CheckConstraint("CK_AchatsReels_Positifs", "\"Quantite\" > 0 AND \"CoutUnitaire\" >= 0 AND \"Refacture\" >= 0");
                     table.ForeignKey(
                         name: "FK_AchatsReels_BudgetsAchat_LigneBudgetAchatId",
                         column: x => x.LigneBudgetAchatId,
@@ -946,7 +946,7 @@ namespace PilotageForfaits.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_FraisReels", x => x.Id);
-                    table.CheckConstraint("CK_FraisReels_Positif", "CAST([Montant] AS FLOAT) > 0");
+                    table.CheckConstraint("CK_FraisReels_Positif", "\"Montant\" > 0");
                     table.ForeignKey(
                         name: "FK_FraisReels_ImportsFrais_ImportFraisId",
                         column: x => x.ImportFraisId,
@@ -1154,7 +1154,7 @@ namespace PilotageForfaits.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Taches", x => x.Id);
-                    table.CheckConstraint("CK_Taches_Avancement", "[Avancement] IS NULL OR (CAST([Avancement] AS FLOAT) >= 0 AND CAST([Avancement] AS FLOAT) <= 1)");
+                    table.CheckConstraint("CK_Taches_Avancement", "\"Avancement\" IS NULL OR (\"Avancement\" >= 0 AND \"Avancement\" <= 1)");
                     table.ForeignKey(
                         name: "FK_Taches_Axes_AxeId",
                         column: x => x.AxeId,
@@ -1286,7 +1286,7 @@ namespace PilotageForfaits.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ChargesTache", x => x.Id);
-                    table.CheckConstraint("CK_ChargesTache_Positives", "CAST([ChargeVendue] AS FLOAT) >= 0 AND CAST([ChargeAjoutee] AS FLOAT) >= 0");
+                    table.CheckConstraint("CK_ChargesTache_Positives", "\"ChargeVendue\" >= 0 AND \"ChargeAjoutee\" >= 0");
                     table.ForeignKey(
                         name: "FK_ChargesTache_ProfilsProjet_ProfilProjetId",
                         column: x => x.ProfilProjetId,
@@ -1330,7 +1330,7 @@ namespace PilotageForfaits.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Consommes", x => x.Id);
-                    table.CheckConstraint("CK_Consommes_Positif", "CAST([JoursHomme] AS FLOAT) > 0");
+                    table.CheckConstraint("CK_Consommes_Positif", "\"JoursHomme\" > 0");
                     table.ForeignKey(
                         name: "FK_Consommes_ProfilsProjet_ProfilProjetId",
                         column: x => x.ProfilProjetId,
