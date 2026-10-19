@@ -87,8 +87,6 @@ static async Task AppliquerMigrationsDeDeveloppementAsync(WebApplication app)
     await db.Database.MigrateAsync();
 }
 
-/// <summary>Rend la classe Program visible des tests d'intégration.</summary>
-public partial class Program;
 
 
 static void ValiderConfigurationEntraId(IConfiguration configuration)
@@ -117,3 +115,6 @@ static bool EstValeurConfiguree(string? value) =>
     && !value.Contains("REPLACE_ME", StringComparison.OrdinalIgnoreCase)
     && !value.Contains("YOUR_", StringComparison.OrdinalIgnoreCase)
     && !string.Equals(value, "CHANGEME", StringComparison.OrdinalIgnoreCase);
+
+/// <summary>Rend la classe Program visible des tests d'intégration.</summary>
+public partial class Program;
