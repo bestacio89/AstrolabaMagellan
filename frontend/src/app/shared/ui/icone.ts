@@ -31,6 +31,7 @@ export type NomIcone =
   | 'profil'
   | 'calculette'
   | 'calendrier'
+  | 'conge'
   | 'regle'
   | 'repartition'
   | 'reglages'
@@ -175,6 +176,9 @@ export type NomIcone =
         }
         @case ('calendrier') {
           <rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18" /><path d="M8 3v4" /><path d="M16 3v4" />
+        }
+        @case ('conge') {
+          <rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18" /><path d="M8 3v4" /><path d="M16 3v4" /><path d="m9.5 13.5 5 5" /><path d="m14.5 13.5-5 5" />
         }
         @case ('regle') {
           <path d="M3 17 17 3l4 4L7 21z" /><path d="m7 13 2 2" /><path d="m10 10 2 2" /><path d="m13 7 2 2" />

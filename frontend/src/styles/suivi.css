@@ -15,10 +15,10 @@
   --accent: var(--c-primaire); --accent-ink: #ffffff; --accent-soft: var(--c-primaire-pale);
   --ok: var(--c-ok); --ok-soft: var(--c-ok-fond); --warn: var(--c-attention); --warn-soft: var(--c-attention-fond); --crit: var(--c-critique); --crit-soft: var(--c-critique-fond);
   --info: var(--c-primaire); --info-soft: var(--c-primaire-pale); --neutral: var(--c-texte-discret); --neutral-soft: var(--c-neutre-fond); --test: var(--c-violet); --test-soft: var(--c-violet-fond);
-  --over-bg: #fbe9ec; --ax0: #579bfc; --ax1: #a25ddc; --ax2: #00c875; --ax3: #fdab3d; --ax4: #ff5ac4; --ax5: #037f4c; --ax6: #66ccff; --ax7: #e2445c; --c-prevu: #0073ea; --c-conso: #fdab3d; --c-atter: #a8abbd; --g-tsp: #037f4c; --g-tsp-soft: #e3f4ea; --g-pil: #0073ea; --g-pil-soft: #e6f1fd; --g-ann: #6b40c4; --g-ann-soft: #efeafa; --g-set: #676879; --g-set-soft: #ecedf2; --s1: #0073ea; --s2: #fdab3d; --s3: #00c875; --off: #f5f6f8; --today: #d83a52;
+  --over-bg: #fbe9ec; --ax0: #579bfc; --ax1: #a25ddc; --ax2: #00c875; --ax3: #fdab3d; --ax4: #ff5ac4; --ax5: #037f4c; --ax6: #66ccff; --ax7: #e2445c; --c-prevu: var(--c-primaire); --c-conso: #fdab3d; --c-atter: #a8abbd; --g-tsp: #037f4c; --g-tsp-soft: #e3f4ea; --g-pil: #0073ea; --g-pil-soft: #e6f1fd; --g-ann: #6b40c4; --g-ann-soft: #efeafa; --g-set: #676879; --g-set-soft: #ecedf2; --s1: #0073ea; --s2: #fdab3d; --s3: #00c875; --off: #f5f6f8; --today: #d83a52;
   --f-display: var(--police-titre);
   --f-body: var(--police-texte);
-  --radius: 8px; --shadow: 0 1px 2px rgba(0,0,0,.06);
+  --radius: 10px; --shadow: 0 1px 2px rgba(16,24,40,.05);
 }
 
 
@@ -924,7 +924,7 @@
 /* ==========================================================================
    Design system de l'application (docs/design-system.md) : ces règles priment sur celles reprises du POC ci-dessus.
    Rythme vertical : 24 px entre les blocs d'un écran, 16 px dans une grille de cartes.
-   Titres en Poppins, tout le reste en Figtree, deux graisses de texte seulement (400 et 500/600).
+   Titres et texte en Figtree, deux graisses de texte seulement (400 et 500/600).
    ========================================================================== */
 .suivi { font: var(--texte-courant); color: var(--ink); }
 .suivi .wrap { padding-inline: var(--marge-page); }

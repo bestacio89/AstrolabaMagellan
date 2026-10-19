@@ -6,26 +6,12 @@
 /* ==========================================================================
    Polices hébergées avec l'application (pas d'appel à Google Fonts : fonctionne sur l'intranet,
    rien n'est envoyé à un tiers). Licence SIL Open Font License : public/fonts/OFL-*.txt.
-   Figtree pour le texte, Poppins pour les titres : le couple du design system Vibe de monday.com.
+   Figtree pour tout (titres et texte) : une seule police, plus moderne et homogène (charte 2026).
    ========================================================================== */
 @font-face {
   font-family: 'Figtree';
   src: url('/fonts/figtree-variable.woff') format('woff');
   font-weight: 300 900;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Poppins';
-  src: url('/fonts/poppins-500.woff') format('woff');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Poppins';
-  src: url('/fonts/poppins-600.woff') format('woff');
-  font-weight: 600;
   font-style: normal;
   font-display: swap;
 }
@@ -35,21 +21,21 @@
      adaptés à l'application. On change une valeur ici, une seule fois, et tous les écrans suivent. */
 
   /* ---- couleurs de base ---- */
-  --c-primaire: #0073ea;
-  --c-primaire-fonce: #0060b9;
-  --c-primaire-clair: #cce5ff;
-  --c-primaire-pale: #e6f1fd;
+  --c-primaire: #2f6feb;
+  --c-primaire-fonce: #2459c7;
+  --c-primaire-clair: #cddcfb;
+  --c-primaire-pale: #e8effd;
   --c-fond: #f6f7fb;
   --c-surface: #ffffff;
   --c-surface-survol: #f5f6f8;
-  --c-texte: #323338;
-  --c-texte-2: #323338;
-  --c-texte-doux: #676879;
-  --c-texte-discret: #676879;
-  --c-bordure: #d0d4e4;
-  --c-bordure-champ: #c3c6d4;
-  --c-separateur: #e7e9ef;
-  --c-neutre-fond: #e7e9ef;
+  --c-texte: #1f2330;
+  --c-texte-2: #3d4152;
+  --c-texte-doux: #676b80;
+  --c-texte-discret: #676b80;
+  --c-bordure: #e3e6ee;
+  --c-bordure-champ: #d5d9e3;
+  --c-separateur: #eef0f5;
+  --c-neutre-fond: #eef0f5;
   --c-survol: rgba(103, 104, 121, 0.1);
 
   /* ---- informations (fond pâle + texte foncé) ---- */
@@ -64,25 +50,25 @@
 
   /* ---- statuts (cellules pleines) : une couleur = un sens, partout ; contraste du texte ≥ 4,5 ---- */
   --c-statut-afaire: #c4c4c4;
-  --c-statut-afaire-texte: #323338;
+  --c-statut-afaire-texte: #1f2330;
   --c-statut-encours: #fdab3d;
-  --c-statut-encours-texte: #323338;
+  --c-statut-encours-texte: #1f2330;
   --c-statut-bloque: #d83a52;
   --c-statut-bloque-texte: #ffffff;
   --c-statut-test: #9d50dd;
   --c-statut-test-texte: #ffffff;
   --c-statut-valide: #00c875;
-  --c-statut-valide-texte: #323338;
+  --c-statut-valide-texte: #1f2330;
   --c-statut-annule: #e7e9ef;
   --c-statut-annule-texte: #676879;
 
-  /* ---- typographie : Poppins pour les titres, Figtree pour tout le reste ---- */
-  --police-titre: 'Poppins', 'Figtree', 'Segoe UI', system-ui, sans-serif;
+  /* ---- typographie : Figtree partout (charte 2026) ---- */
+  --police-titre: 'Figtree', 'Segoe UI', system-ui, sans-serif;
   --police-texte: 'Figtree', 'Segoe UI', system-ui, sans-serif;
   --texte-titre-page: 600 26px/34px var(--police-titre);
-  --texte-titre-ecran: 500 20px/28px var(--police-titre);
-  --texte-titre-carte: 500 16px/24px var(--police-titre);
-  --texte-chiffre: 600 28px/34px var(--police-titre);
+  --texte-titre-ecran: 600 18px/24px var(--police-titre);
+  --texte-titre-carte: 600 15px/21px var(--police-titre);
+  --texte-chiffre: 600 24px/30px var(--police-titre);
   --texte-courant: 400 14px/20px var(--police-texte);
   --texte-petit: 400 12px/16px var(--police-texte);
 
@@ -98,11 +84,11 @@
 
   /* ---- formes, ombres, mouvements ---- */
   --rayon-badge: 4px;
-  --rayon: 4px;
-  --rayon-carte: 8px;
-  --rayon-fenetre: 16px;
-  --ombre-carte: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --ombre-flottante: 0 6px 20px rgba(0, 0, 0, 0.16);
+  --rayon: 6px;
+  --rayon-carte: 12px;
+  --rayon-fenetre: 14px;
+  --ombre-carte: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --ombre-flottante: 0 10px 30px rgba(16, 24, 40, 0.16);
   --transition: 120ms cubic-bezier(0, 0, 0.35, 1);
 
   /* ---- mise en page ---- */

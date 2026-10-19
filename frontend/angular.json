@@ -23,7 +23,7 @@
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [{ "glob": "**/*", "input": "public" }],
-            "styles": ["src/styles.scss", "src/styles/suivi.css"]
+            "styles": ["src/styles.scss", "src/styles/suivi.css", "src/styles/charte.css"]
           },
           "configurations": {
             "production": {
