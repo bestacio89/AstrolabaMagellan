@@ -30,7 +30,7 @@ public sealed partial class ExportsService(
     {
         var role = await acces.ExigerExportAsync(projetId, a);
         // la photo des indicateurs n'est prise que par le chef de projet, et jamais sur un projet archivé (lecture seule)
-        if (ServiceAcces.PeutModifier(role) && !await acces.EstArchiveAsync(projetId, a)) await PhotographierAsync(projetId, NaturePhoto.Copil, null, a);
+        if (acces.PeuModifierSurProjet(role) && !await acces.EstArchiveAsync(projetId, a)) await PhotographierAsync(projetId, NaturePhoto.Copil, null, a);
         var (vue, modele) = await ChargerAsync(projetId, a);
         var feuilles = ExportComites.Copil(vue, modele, horloge.Aujourdhui);
         return new FichierExport(ecrivain.Ecrire(feuilles), $"COPIL - {NomFichier(vue.Fiche.Client, "Projet")} - {NomFichier(vue.Fiche.Projet, "")} - {Calendrier.Iso(horloge.Aujourdhui)}.xlsx".Replace(" -  - ", " - "));
