@@ -137,7 +137,7 @@ namespace PilotageForfaits.Infrastructure.Migrations
 
                     b.ToTable("AchatsReels", null, t =>
                         {
-                            t.HasCheckConstraint("CK_AchatsReels_Positifs", "CAST([Quantite] AS FLOAT) > 0 AND CAST([CoutUnitaire] AS FLOAT) >= 0 AND CAST([Refacture] AS FLOAT) >= 0");
+                            t.HasCheckConstraint("CK_AchatsReels_Positifs", "\"Quantite\" > 0 AND \"CoutUnitaire\" >= 0 AND \"Refacture\" >= 0");
                         });
                 });
 
@@ -448,7 +448,7 @@ namespace PilotageForfaits.Infrastructure.Migrations
 
                     b.ToTable("ChargesTache", null, t =>
                         {
-                            t.HasCheckConstraint("CK_ChargesTache_Positives", "CAST([ChargeVendue] AS FLOAT) >= 0 AND CAST([ChargeAjoutee] AS FLOAT) >= 0");
+                            t.HasCheckConstraint("CK_ChargesTache_Positives", "\"ChargeVendue\" >= 0 AND \"ChargeAjoutee\" >= 0");
                         });
                 });
 
@@ -497,7 +497,7 @@ namespace PilotageForfaits.Infrastructure.Migrations
 
                     b.ToTable("Consommes", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Consommes_Positif", "CAST([JoursHomme] AS FLOAT) > 0");
+                            t.HasCheckConstraint("CK_Consommes_Positif", "\"JoursHomme\" > 0");
                         });
                 });
 
@@ -973,7 +973,7 @@ namespace PilotageForfaits.Infrastructure.Migrations
 
                     b.ToTable("FraisReels", null, t =>
                         {
-                            t.HasCheckConstraint("CK_FraisReels_Positif", "CAST([Montant] AS FLOAT) > 0");
+                            t.HasCheckConstraint("CK_FraisReels_Positif", "\"Montant\" > 0");
                         });
                 });
 
@@ -2341,7 +2341,7 @@ namespace PilotageForfaits.Infrastructure.Migrations
 
                     b.ToTable("Taches", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Taches_Avancement", "[Avancement] IS NULL OR (CAST([Avancement] AS FLOAT) >= 0 AND CAST([Avancement] AS FLOAT) <= 1)");
+                            t.HasCheckConstraint("CK_Taches_Avancement", "\"Avancement\" IS NULL OR (\"Avancement\" >= 0 AND \"Avancement\" <= 1)");
                         });
                 });
 
