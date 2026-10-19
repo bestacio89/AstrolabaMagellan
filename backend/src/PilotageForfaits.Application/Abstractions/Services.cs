@@ -6,13 +6,15 @@ namespace PilotageForfaits.Application.Abstractions;
 public interface IUtilisateurCourant
 {
     bool EstAuthentifie { get; }
-    /// <summary>Identifiant du compte d'entreprise (« oid » Entra ID).</summary>
+    /// <summary>Clé d'identité stable composée du tenant Entra et de l'object ID.</summary>
     string IdentifiantExterne { get; }
     string Prenom { get; }
     string Nom { get; }
     string Email { get; }
-    /// <summary>Rôles globaux attribués dans Entra ID (voir <see cref="RolesGlobaux"/>).</summary>
+    /// <summary>Rôles Entra conservés à titre de profil d'identité, pas comme décision d'accès aux ressources.</summary>
     IReadOnlyCollection<string> Roles { get; }
+    /// <summary>Capacités applicatives calculées côté serveur à partir de la configuration d'autorisation.</summary>
+    IReadOnlyCollection<string> Capacites { get; }
 }
 
 /// <summary>Noms des rôles globaux déclarés dans l'inscription de l'application Entra ID.</summary>
