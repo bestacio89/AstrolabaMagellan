@@ -2143,8 +2143,7 @@ namespace PilotageForfaits.Infrastructure.Migrations
                 name: "IX_Projets_CleUnicite",
                 table: "Projets",
                 column: "CleUnicite",
-                unique: true,
-                filter: "[CleUnicite] IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Projets_CreeParId",
