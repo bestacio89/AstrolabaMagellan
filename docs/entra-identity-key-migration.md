@@ -24,6 +24,7 @@ BEGIN;
 DO $migration$
 DECLARE
     tenant_id text := '11111111-1111-4111-8111-111111111111';
+    updated_count bigint;
 BEGIN
     IF tenant_id !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN
         RAISE EXCEPTION 'tenant_id must be a GUID';
@@ -43,7 +44,8 @@ BEGIN
        SET "IdentifiantExterne" = tenant_id || ':' || "IdentifiantExterne"
      WHERE "IdentifiantExterne" ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
 
-    RAISE NOTICE 'Tenant-qualified legacy identities updated: %', FOUND;
+    GET DIAGNOSTICS updated_count = ROW_COUNT;
+    RAISE NOTICE 'Tenant-qualified legacy identities updated: %', updated_count;
 END
 $migration$;
 
