@@ -10,6 +10,22 @@ jobs:
   serveur:
     name: Serveur .NET (compilation et tests)
     runs-on: ubuntu-latest
+    env:
+      POSTGRES_TEST_CONNECTION: Host=localhost;Port=5432;Database=pilotage_forfaits_tests;Username=pilotage;Password=pilotage_test_only
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: pilotage_forfaits_tests
+          POSTGRES_USER: pilotage
+          POSTGRES_PASSWORD: pilotage_test_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pilotage -d pilotage_forfaits_tests"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     defaults:
       run:
         working-directory: backend
