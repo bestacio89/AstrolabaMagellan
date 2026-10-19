@@ -20,7 +20,7 @@ public sealed class ProjetsService(
     public async Task<IReadOnlyList<ProjetResumeDto>> ListerAsync(bool archives, CancellationToken annulation = default)
     {
         var utilisateur = await acces.UtilisateurAsync(annulation);
-        if (!acces.PeuttLireProjets) throw new AccesRefuseException("Vous n'avez pas la capacité de consulter les projets.");
+        if (!acces.PeutLireProjets) throw new AccesRefuseException("Vous n'avez pas la capacité de consulter les projets.");
         var roles = await db.Habilitations.AsNoTracking()
             .Where(h => h.UtilisateurId == utilisateur.Id)
             .ToDictionaryAsync(h => h.ProjetId, h => h.Role, annulation);
@@ -71,7 +71,7 @@ public sealed class ProjetsService(
     public async Task<Guid> CreerVideAsync(CreerProjetVideCommande commande, CancellationToken annulation = default)
     {
         var utilisateur = await acces.UtilisateurAsync(annulation);
-        if (!acces.PeuttCreerUnProjet) throw new AccesRefuseException("Vous n'avez pas le droit de créer un projet.");
+        if (!acces.PeutCreerUnProjet) throw new AccesRefuseException("Vous n'avez pas le droit de créer un projet.");
         await unicite.ExigerLibreAsync(commande.Reference, commande.Client, commande.Nom, null, annulation);
         var projet = Projet.CreerVide(commande.Client, commande.Nom, commande.Reference, commande.Debut, commande.FinContractuelle,
             commande.TypeContrat, utilisateur.Id, horloge.Maintenant);
