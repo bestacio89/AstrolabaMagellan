@@ -4,14 +4,14 @@ PostgreSQL est le fournisseur relationnel de référence. Le schéma doit être 
 
 ## État de la migration initiale
 
-La migration initiale n'est pas encore générée dans ce changement. Elle doit être produite à partir du modèle EF Core courant avec le fournisseur Npgsql, puis relue et testée sur PostgreSQL avant que cette branche puisse être fusionnée. Ne pas créer une migration SQL Server puis la réutiliser : les types, séquences, identifiants et annotations de fournisseur diffèrent.
+La migration initiale `20261019121926_Postgresqlmigration` et le modèle instantané sont maintenant versionnés sous `src/PilotageForfaits.Infrastructure/Migrations`. Ils ont été générés avec Npgsql, et les index spécifiques à SQL Server ont été corrigés pour PostgreSQL. La migration reste à valider sur une base PostgreSQL vierge : compilation, génération du script SQL, application de la migration et tests de persistance doivent réussir avant fusion. Ne pas créer une migration SQL Server puis la réutiliser : les types, séquences, identifiants et annotations de fournisseur diffèrent.
 
 ## Préparer un environnement local
 
 1. Installer le SDK .NET 10 et Docker Desktop.
 2. À la racine du dépôt, lancer `docker compose up -d` et attendre que le contrôle de santé PostgreSQL soit vert.
 3. Vérifier la chaîne `ConnectionStrings: Pilotage` dans `backend/src/PilotageForfaits.Api/appsettings.Development.json`. Ne jamais copier les identifiants locaux dans un environnement partagé.
-4. Depuis `backend`, restaurer puis compiler la solution avant de générer la migration.
+4. Depuis `backend`, restaurer et compiler la solution, puis appliquer la migration versionnée.
 
 ## Générer la migration initiale
 
