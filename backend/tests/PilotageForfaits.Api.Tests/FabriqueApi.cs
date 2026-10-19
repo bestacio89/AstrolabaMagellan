@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using PilotageForfaits.Application.Abstractions;
@@ -12,8 +13,9 @@ using PilotageForfaits.Infrastructure.Donnees;
 namespace PilotageForfaits.Api.Tests;
 
 /// <summary>
-/// Démarre l'API complète en mémoire, avec une base SQLite en mémoire (au lieu de SQL Server),
+/// Démarre l'API complète en mémoire, avec une base SQLite en mémoire réservée aux tests,
 /// des utilisateurs fictifs et une date du jour fixe (06/10/2026, celle des scénarios de référence).
+/// La configuration est injectée dans l'hôte de test : aucun état de configuration global du processus n'est modifié.
 /// </summary>
 public sealed class FabriqueApi : WebApplicationFactory<Program>
 {
@@ -23,11 +25,16 @@ public sealed class FabriqueApi : WebApplicationFactory<Program>
     {
         // La base SQLite en mémoire vit tant que la connexion reste ouverte.
         _connexion.Open();
-        // Réglages lus par Program.cs dès son démarrage : on les passe par variables d'environnement,
-        // lues de façon sûre au tout début (avant les réglages propres à la fabrique de tests).
-        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Tests");
-        Environment.SetEnvironmentVariable("Authentification__Mode", "Dev");
-        Environment.SetEnvironmentVariable("ConnectionStrings__Pilotage", "Server=inutilise-dans-les-tests");
+    }
+
+    private static Dictionary<string, string?> ConfigurationTests()
+    {
+        var configuration = new Dictionary<string, string?>
+        {
+            ["Authentification:Mode"] = "Dev",
+            ["ConnectionStrings:Pilotage"] = "Server=localhost;Database=unused_tests;User Id=unused;Password=unused;TrustServerCertificate=True",
+        };
+
         var utilisateurs = new[]
         {
             ("chef", "oid-chef", "Camille", "Martin", "ChefDeProjet"),
@@ -35,17 +42,20 @@ public sealed class FabriqueApi : WebApplicationFactory<Program>
             ("consultant", "oid-consultant", "Sam", "Petit", ""),
             ("pilotage", "oid-pilotage", "Lou", "Bernard", "Pilotage"),
         };
+
         for (var i = 0; i < utilisateurs.Length; i++)
         {
             var (cle, oid, prenom, nom, role) = utilisateurs[i];
-            var prefixe = $"Authentification__UtilisateursDev__{i}__";
-            Environment.SetEnvironmentVariable(prefixe + "Cle", cle);
-            Environment.SetEnvironmentVariable(prefixe + "Oid", oid);
-            Environment.SetEnvironmentVariable(prefixe + "Prenom", prenom);
-            Environment.SetEnvironmentVariable(prefixe + "Nom", nom);
-            Environment.SetEnvironmentVariable(prefixe + "Email", $"{cle}@exemple.fr");
-            if (role.Length > 0) Environment.SetEnvironmentVariable(prefixe + "Roles__0", role);
+            var prefixe = $"Authentification:UtilisateursDev:{i}:";
+            configuration[prefixe + "Cle"] = cle;
+            configuration[prefixe + "Oid"] = oid;
+            configuration[prefixe + "Prenom"] = prenom;
+            configuration[prefixe + "Nom"] = nom;
+            configuration[prefixe + "Email"] = $"{cle}@exemple.fr";
+            if (role.Length > 0) configuration[$"{prefixe}Roles:0"] = role;
         }
+
+        return configuration;
     }
 
     /// <summary>
@@ -62,9 +72,12 @@ public sealed class FabriqueApi : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Tests");
+        builder.ConfigureAppConfiguration((_, configuration) =>
+            configuration.AddInMemoryCollection(ConfigurationTests()));
+
         builder.ConfigureTestServices(services =>
         {
-            // remplace SQL Server par SQLite en mémoire
+            // La base SQLite en mémoire est réservée aux tests d'intégration API.
             services.RemoveAll<DbContextOptions<PilotageDbContext>>();
             services.RemoveAll<IDbContextOptionsConfiguration<PilotageDbContext>>();
             services.AddDbContext<PilotageDbContext>(o => o.UseSqlite(_connexion));
@@ -94,8 +107,9 @@ public sealed class FabriqueApi : WebApplicationFactory<Program>
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<PilotageDbContext>();
         db.Database.EnsureCreated();
-        // chaque test part d'une base sans projet : un même TSP ne peut être importé qu'une fois (unicité des projets)
-        foreach (var id in db.Projets.Select(p => p.Id).ToList()) db.MarquerProjetPourSuppressionAsync(id).GetAwaiter().GetResult();
+        // Chaque test repart d'une base sans projet : un même TSP ne peut être importé qu'une fois (unicité des projets).
+        foreach (var id in db.Projets.Select(p => p.Id).ToList())
+            db.MarquerProjetPourSuppressionAsync(id).GetAwaiter().GetResult();
         db.SaveChanges();
     }
 
