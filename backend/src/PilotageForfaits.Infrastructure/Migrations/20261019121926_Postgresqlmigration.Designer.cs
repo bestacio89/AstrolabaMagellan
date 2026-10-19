@@ -2099,8 +2099,7 @@ namespace PilotageForfaits.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CleUnicite")
-                        .IsUnique()
-                        .HasFilter("[CleUnicite] IS NOT NULL");
+                        .IsUnique();
 
                     b.HasIndex("CreeParId");
 
