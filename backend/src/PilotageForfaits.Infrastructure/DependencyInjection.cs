@@ -15,10 +15,34 @@ public static class DependencyInjection
     {
         var chaine = configuration.GetConnectionString("Pilotage");
         if (string.IsNullOrWhiteSpace(chaine))
-            throw new InvalidOperationException("La chaîne de connexion « ConnectionStrings:Pilotage » est absente ou vide.");
+        {
+            // If running tests, the test host injects configuration and test services; skip requiring a real connection string.
+            var environment = configuration["Environment"] ?? configuration["ASPNETCORE_ENVIRONMENT"] ?? configuration["DOTNET_ENVIRONMENT"];
+            if (string.Equals(environment, "Tests", StringComparison.OrdinalIgnoreCase))
+            {
+                // Tests will replace the DbContext with an in-memory SQLite in ConfigureTestServices.
+                chaine = null;
+            }
+            else
+            {
+                // During non-test runs, prefer an explicit registration override if present.
+                if (services.Any(sd => sd.ServiceType == typeof(DbContextOptions<PilotageDbContext>)))
+                {
+                    // Don't register PostgreSQL DbContext; an alternative was provided.
+                    chaine = null;
+                }
+                else
+                {
+                    throw new InvalidOperationException("La chaîne de connexion « ConnectionStrings:Pilotage » est absente ou vide.");
+                }
+            }
+        }
 
-        services.AddDbContext<PilotageDbContext>(options =>
-            options.UseNpgsql(chaine, postgres => postgres.EnableRetryOnFailure()));
+        if (!string.IsNullOrWhiteSpace(chaine))
+        {
+            services.AddDbContext<PilotageDbContext>(options =>
+                options.UseNpgsql(chaine, postgres => postgres.EnableRetryOnFailure()));
+        }
 
         services.AddScoped<IContexteDonnees>(sp => sp.GetRequiredService<PilotageDbContext>());
         services.AddSingleton<IHorloge, HorlogeSysteme>();

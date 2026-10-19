@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
+using PilotageForfaits.Domain.Entites;
 using PilotageForfaits.Infrastructure.Donnees;
 
 namespace PilotageForfaits.Api.Tests;
