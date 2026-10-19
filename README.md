@@ -124,27 +124,23 @@ Les résultats attendus sont produits par le moteur du POC lui-même (`outils/re
 
 ---
 
-## Base de données : repartir propre et passer aux migrations (une seule fois)
+## Base de données : migrations PostgreSQL
 
-Tant qu'aucune migration n'existe, la base de développement est créée directement au démarrage, puis n'est plus jamais mise à jour. Une seule commande supprime la base de développement (**toutes ses données**), crée la migration initiale et laisse l'API recréer la base au prochain démarrage :
+Le schéma est géré exclusivement par les migrations EF Core. L'API ne crée jamais une base avec `EnsureCreated`, et les scripts ne suppriment ni base ni migrations.
 
-```bash
-./scripts/reinitialiser-base.sh          # macOS / Linux
-.\scripts\reinitialiser-base.ps1         # Windows (PowerShell)
+Pour créer une migration après une modification du modèle, depuis la racine du dépôt :
+
+```powershell
+.\scripts\creer-migration.ps1 -Nom NomDeLEvolution
 ```
 
-Enregistrez ensuite le dossier `backend/src/PilotageForfaits.Infrastructure/Donnees/Migrations` dans Git.
-À partir de là, chaque modification du modèle = une nouvelle migration (si vous l'oubliez, l'API le dit clairement au démarrage), et la base est mise à jour au démarrage **sans perte de données** :
+Ou sous macOS/Linux :
 
 ```bash
-./scripts/creer-migration.sh NomDeLEvolution        # macOS / Linux
-.\scripts\creer-migration.ps1 -Nom NomDeLEvolution  # Windows
+./scripts/creer-migration.sh NomDeLEvolution
 ```
 
-> **Version du 07/10/2026 (brouillons de projet)** : une table s'ajoute (`BrouillonsProjet`). Deux possibilités, l'API arrêtée :
-> - garder vos données : `.\scripts\creer-migration.ps1 -Nom Brouillons`, puis relancer l'API ;
-> - repartir d'une base vide (phase de développement) : `.\scripts\reinitialiser-base.ps1` — supprime la base **et** les anciennes
->   migrations, recrée une seule migration « Initiale » à jour du modèle ; l'API recrée la base au démarrage.
+La migration initiale PostgreSQL doit être générée, revue et validée avant le premier démarrage local. Voir [docs/postgresql-migrations.md](docs/postgresql-migrations.md) pour les commandes et critères de validation. Ne supprimez jamais des migrations déjà partagées pour « repartir propre » : ajoutez une migration corrective.
 
 ---
 
