@@ -45,6 +45,30 @@ public sealed class ServiceAcces(IContexteDonnees db, IUtilisateurCourant couran
     public bool PeutLireProjets => A(CapacitesAcces.ProjetsLire) || VoitTousLesProjets;
     public bool PeutCreerUnProjet => A(CapacitesAcces.ProjetsCreer);
 
+    /// <summary>
+    /// Liste uniquement les identifiants de projets lisibles par l'utilisateur.
+    /// Une capacité globale de pilotage élargit le périmètre; elle ne modifie pas les capacités d'écriture.
+    /// </summary>
+    public async Task<IReadOnlyList<Guid>> ProjetsAccessiblesAsync(CancellationToken annulation = default)
+    {
+        if (!PeutLireProjets) return Array.Empty<Guid>();
+
+        if (VoitTousLesProjets)
+        {
+            return await db.Projets.AsNoTracking()
+                .OrderBy(p => p.Id)
+                .Select(p => p.Id)
+                .ToListAsync(annulation);
+        }
+
+        var utilisateur = await UtilisateurAsync(annulation);
+        return await db.Habilitations.AsNoTracking()
+            .Where(h => h.UtilisateurId == utilisateur.Id)
+            .OrderBy(h => h.ProjetId)
+            .Select(h => h.ProjetId)
+            .ToListAsync(annulation);
+    }
+
     /// <summary>Role du projet seulement si l'utilisateur a la capacité de lecture et une affectation, ou la capacité globale de pilotage.</summary>
     public async Task<RoleProjet?> RoleSurProjetAsync(Guid projetId, CancellationToken annulation = default)
     {
