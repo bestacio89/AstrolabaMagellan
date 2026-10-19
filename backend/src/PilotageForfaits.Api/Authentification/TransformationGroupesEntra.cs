@@ -25,6 +25,12 @@ public sealed class TransformationGroupesEntra(IConfiguration configuration) : I
         if (principal.Identity?.IsAuthenticated != true)
             return Task.FromResult(principal);
 
+        // Development authentication is only enabled in Development/Tests. Its configured capabilities are test/local fixtures,
+        // not Entra token claims, so preserve them instead of replacing them with group-derived claims.
+        if (principal.Identities.Any(i => i.IsAuthenticated
+            && string.Equals(i.AuthenticationType, AuthentificationDev.Schema, StringComparison.Ordinal)))
+            return Task.FromResult(principal);
+
         // Never trust capability claims supplied by the token itself; rebuild them from the server-side group mapping.
         foreach (var identiteExistante in principal.Identities)
         {
