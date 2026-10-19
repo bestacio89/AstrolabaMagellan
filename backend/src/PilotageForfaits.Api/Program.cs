@@ -24,6 +24,12 @@ builder.Services.AddScoped<IUtilisateurCourant, UtilisateurCourantHttp>();
 var mode = builder.Configuration["Authentification:Mode"] ?? (!EstValeurConfiguree(builder.Configuration["AzureAd:TenantId"]) ? "Dev" : "EntraId");
 if (mode == "Dev")
 {
+    if (!builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("Tests"))
+    {
+        throw new InvalidOperationException(
+            "L’authentification Dev est interdite hors des environnements Development et Tests. Configurez EntraId pour tout environnement déployé.");
+    }
+
     // In test or local scenarios we allow the development authentication scheme to be enabled when requested.
     builder.Services.AddAuthentication(AuthentificationDev.Schema)
         .AddScheme<OptionsAuthentificationDev, AuthentificationDev>(AuthentificationDev.Schema,

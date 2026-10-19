@@ -241,6 +241,10 @@ public sealed class FabriquePostgreSqlApi : IAsyncLifetime
                     options.Authority = null;
                     options.MetadataAddress = null;
                     options.ConfigurationManager = null;
+                    // Keep the exact Entra claim names used by the signed test tokens. This makes the
+                    // group-to-capability mapping exercise the raw tid/oid/groups contract without
+                    // relying on framework inbound claim remapping.
+                    options.MapInboundClaims = false;
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuer = true,
