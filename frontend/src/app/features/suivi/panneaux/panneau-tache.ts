@@ -49,6 +49,15 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
         <aside class="drawer" aria-label="Détail de la tâche" [style.--axc]="couleur()">
           <div class="dr-head">
             <div class="dr-nav">
+              @if (etat.retourAvancement()) {
+                <button type="button" class="btn sm ghost" title="Revenir au détail de l’avancement" (click)="etat.ouvrirAvancement()">‹ Avancement</button>
+              }
+              @if (etat.retourAction(); as ra) {
+                <button type="button" class="btn sm ghost" title="Revenir à l’action" (click)="etat.ouvrirRegistre(ra)">‹ {{ refAction(ra) }}</button>
+              }
+              @if (etat.retourPlanning(); as pl) {
+                <button type="button" class="btn sm ghost" title="Revenir à la ligne du planning" (click)="etat.ouvrirLignePlanning(pl)">‹ Planning</button>
+              }
               @if (etat.retourMarge(); as rt) {
                 <button type="button" class="btn sm ghost" title="Revenir au détail de la rentabilité" (click)="revenirMarge(rt)">‹ Rentabilité</button>
               }
@@ -120,6 +129,19 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
           </div>
 
           <div class="dr-body">
+            @if (!t.annulee) {
+              <!-- mise en avant sur Planning › Vue d'ensemble -->
+              <label class="pl-case-t"
+                ><input type="checkbox" [checked]="surLePlanning()" [disabled]="lecture()" #pc (change)="afficherSurLePlanning(t.uid, pc.checked)" /><span
+                  ><b>Afficher sur le planning</b
+                  ><small>{{
+                    v.m.dim.key === 'id' || v.m.dim.key === 'phase'
+                      ? 'Sous ' + (v.m.dim.key === 'phase' ? 'sa phase' : 'son axe') + ', dans Planning › Vue d’ensemble'
+                      : 'Dans Planning › Vue d’ensemble, regroupé par axe ou par phase'
+                  }}</small></span
+                ></label
+              >
+            }
             @if (t.annulee) {
               <div class="annul-banner">
                 <div>
@@ -151,7 +173,7 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
               </div>
             } @else {
               <section>
-                <h3>Statut et avancement</h3>
+                <h3>Statut et avancement déclaré</h3>
                 <div class="dr-choices">
                   @for (s of statuts; track s) {
                     <button
@@ -426,7 +448,7 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
                   <span>Atterrissage</span><b>{{ fJ(t.atterrissage) }} JH</b>
                 </div>
                 <div>
-                  <span>Écart</span><b [class]="sgn(t.ecart)">{{ fSigned(t.ecart) }} JH</b>
+                  <span>Écart</span><b data-ecart [class]="sgn(t.ecart)">{{ fSigned(t.ecart) }} JH</b>
                 </div>
               </div>
               @if (!t.annulee) {
@@ -839,6 +861,18 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
   `,
 })
 export class PanneauTache {
+  /** Référence de l'action d'où la tâche a été ouverte (« A-001 »). */
+  protected refAction(spec: string): string {
+    return this.etat.vue()?.projet.actions.find((a) => 'act:' + a.id === spec)?.ref ?? 'Action';
+  }
+
+  /** La tâche est mise en avant sur Planning › Vue d'ensemble. */
+  protected readonly surLePlanning = computed(() => !!this.etat.vue()?.projet.planning?.avant?.['tache|' + this.uid()]);
+
+  protected afficherSurLePlanning(uid: string, on: boolean): void {
+    void this.etat.saisir((id) => this.api.elementPlanning(id, 'avant', 'tache|' + uid, on));
+  }
+
   readonly uid = input.required<string>();
   protected readonly etat = inject(SuiviEtat);
   private readonly ui = inject(UiEtat);
@@ -1029,7 +1063,7 @@ export class PanneauTache {
     const liste = listeAffichee();
     const suivante = liste[liste.indexOf(this.uid()) + pas];
     if (!suivante) return;
-    this.etat.ouvrirTache(suivante, this.etat.retourMarge()); // le retour vers le détail de la rentabilité est gardé
+    this.etat.ouvrirTache(suivante, this.etat.retourMarge(), this.etat.retourPlanning()); // les retours (rentabilité, planning) sont gardés
     document.querySelector(`.suivi .s-panel [data-open="${CSS.escape(suivante)}"]`)?.scrollIntoView({ block: 'nearest' });
   }
 
@@ -1043,7 +1077,10 @@ export class PanneauTache {
   protected allerAction(a: Action): void {
     this.ui.maj({ ad: 'actions', adf: a.statut === 'Fait' || a.statut === 'Annulée' ? 'toutes' : 'ouvertes' });
     this.etat.fermerPanneau();
-    void this.router.navigate(['actions'], { relativeTo: this.route }).then(() => this.etat.ligneEnEvidence.set(a.id));
+    void this.router.navigate(['actions'], { relativeTo: this.route }).then(() => {
+      this.etat.ouvrirRegistre('act:' + a.id);
+      setTimeout(() => document.querySelector(`[data-adopen="act:${a.id}"]`)?.scrollIntoView({ block: 'center' }), 50);
+    });
   }
 
   // ---------------------------------------------------------------- saisies

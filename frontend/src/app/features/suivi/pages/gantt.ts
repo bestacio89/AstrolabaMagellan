@@ -35,20 +35,23 @@ interface Texte {
  * couleur du statut ; jalons ◇ planifié et ◆ réalisé / livré ; repères début, fin contractuelle, fin prévue, aujourd'hui.
  * Échelle mois ou semaine ; colonnes Statut / Prévu / Réel masquables.
  */
+import { derivesGroupes } from '../etat/planning.logique';
 import { Fx } from '../ui/fx';
+import { OngletsPlanning } from '../ui/onglets-planning';
 @Component({
   selector: 'app-gantt',
-  imports: [NgTemplateOutlet, BarreFiltres, LienTache, Statut, Fx],
+  imports: [NgTemplateOutlet, BarreFiltres, LienTache, Statut, Fx, OngletsPlanning],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="sechead">
       <div>
-        <h2>Planning Gantt</h2>
+        <h2>Planning</h2>
         <p>
           Contour = période <b>prévue</b> · barre pleine = période <b>réelle</b> (jours de consommé saisis), couleur du statut. Jalons : ◇ planifié, ◆ réalisé ou livré.
           Repères : vert = début du projet · gris = fin contractuelle · pointillés rouges = fin prévue · rouge = aujourd’hui. <app-fx cle="gantt" />
         </p>
       </div>
+      <app-onglets-planning />
     </div>
     @if (vm(); as m) {
       <app-barre-filtres>
@@ -123,7 +126,7 @@ import { Fx } from '../ui/fx';
                       <app-statut [statut]="g.axe.statut" />
                     }
                   </td>
-                  <td class="num g-d">{{ plage(g.axe?.prevuDebut ?? null, g.axe?.prevuFin ?? null) }}</td>
+                  <td class="num g-d">{{ plage(g.axe?.planDebut ?? null, g.axe?.planFin ?? null) }}</td>
                   <td class="num g-d">{{ plage(g.axe?.reelDebut ?? null, g.axe?.reelFin ?? null) }}</td>
                 }
                 <td class="tl" [style.background]="m.fond">
@@ -273,6 +276,33 @@ import { Fx } from '../ui/fx';
           } @else {
             <p class="empty">Aucune tâche n’a bougé depuis cette référence.</p>
           }
+          @if (m.derivesLignes.length) {
+            <h3 class="g-der-g">Lignes du planning décalées · {{ m.derivesLignes.length }}</h3>
+            <div class="tw">
+              <table class="g-der">
+                <thead>
+                  <tr>
+                    <th>{{ etat.vue()?.dimL }} ou sous-partie</th>
+                    <th>Référence</th>
+                    <th>Actuel</th>
+                    <th class="n">Décalage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (d of m.derivesLignes; track d.cle) {
+                    <tr>
+                      <td><button type="button" class="tlink" (click)="etat.ouvrirLignePlanning(d.cle)">{{ d.nom }}</button></td>
+                      <td class="g-d">{{ plage(d.debutReference, d.finReference) }}</td>
+                      <td class="g-d">{{ plage(d.debut, d.fin) }}</td>
+                      <td class="n">
+                        <span class="ecart-badge" [class.neg]="(d.decalage ?? 1) > 0" [class.pos]="(d.decalage ?? 0) < 0">{{ texteDecalage(d) }}</span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
         </section>
       } @else if (!m.references.length) {
         <div class="card g-derives vide">
@@ -401,7 +431,8 @@ export class Gantt {
     const marquesAxe = (a: Groupe | undefined): Marque[] => {
       if (!a) return [];
       const h: Marque[] = [];
-      if (a.prevuDebut && a.prevuFin) h.push(...barre('gp', a.prevuDebut, a.prevuFin, 'ax', `Prévu : ${fD(a.prevuDebut)} → ${fD(a.prevuFin)}`));
+      if (a.planDebut && a.planFin)
+        h.push(...barre('gp', a.planDebut, a.planFin, 'ax', `Prévu : ${fD(a.planDebut)} → ${fD(a.planFin)}${a.planSaisi ? ' (saisi dans le planning)' : ''}`));
       if (a.reelDebut && a.reelFin)
         h.push(...barre('gr', a.reelDebut, a.reelFin, 'ax g-axe', `Réel : ${fD(a.reelDebut)} → ${fD(a.reelFin)} · avancement ${Math.round(a.avancement * 100)} %`));
       return h.length ? h : [nonDate('Non planifié')];
@@ -418,6 +449,7 @@ export class Gantt {
       reference,
       choixReference: u.gRef === 'aucune' ? 'aucune' : (reference?.id ?? 'aucune'),
       derives: listeDerives,
+      derivesLignes: reference ? derivesGroupes(v.m.axes, reference) : [],
       sansMotif: listeDerives.filter((d) => !d.ligne.cause && !d.ligne.motif).length,
       causes: v.projet.causes ?? [],
       zoom,
@@ -493,7 +525,7 @@ export class Gantt {
     const ok = await this.etat.confirmer(
       'Figer une référence',
       [
-        'Les dates prévues et la charge actuelles de toutes les tâches sont enregistrées comme référence.',
+        `Les dates prévues et la charge actuelles de toutes les tâches, ainsi que les dates prévues des lignes du planning (${v.dimL.toLowerCase()}s et sous-parties), sont enregistrées comme référence.`,
         'Le Gantt comparera ensuite le planning à cette référence ; chaque décalage pourra recevoir une cause et un motif.',
       ],
       'Figer le planning',

@@ -5,6 +5,8 @@ import { FenetreAnnulation } from './annulation';
 import { FenetreBilanIa } from './bilan-ia';
 import { FenetreImportFrais, FenetreNouveauFrais, FenetreNouvelAchat } from './depenses';
 import { FenetreExportCoproj, FenetreReperes } from './export-reperes';
+import { FenetreJalon } from './jalon';
+import { FenetrePersonne } from './personne';
 import { FenetreLienEcheance } from './lien-echeance';
 import { FenetreNouvelleTache } from './nouvelle-tache';
 import { FenetreReaffectation } from './reaffectation';
@@ -22,6 +24,8 @@ import { FenetreReaffectation } from './reaffectation';
     FenetreExportCoproj,
     FenetreReperes,
     FenetreLienEcheance,
+    FenetreJalon,
+    FenetrePersonne,
     FenetreNouvelleTache,
     FenetreReaffectation,
   ],
@@ -50,6 +54,10 @@ import { FenetreReaffectation } from './reaffectation';
         <app-fenetre-export-coproj (fermer)="fermer()" />
       } @else if (f.type === 'reperes') {
         <app-fenetre-reperes (fermer)="fermer()" />
+      } @else if (f.type === 'jalon') {
+        <app-fenetre-jalon [id]="f.id" (fermer)="fermer()" />
+      } @else if (f.type === 'personne') {
+        <app-fenetre-personne (fermer)="fermer()" />
       }
     }
   `,
