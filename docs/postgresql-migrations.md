@@ -22,7 +22,7 @@ dotnet tool restore
 dotnet ef migrations add InitialPostgreSql --project src/PilotageForfaits.Infrastructure --startup-project src/PilotageForfaits.Api --output-dir Donnees/Migrations
 ```
 
-Si aucun manifeste d'outils EF Core n'est présent, installer l'outil localement via un manifeste versionné et aligné sur EF Core 10 avant de poursuivre ; ne pas dépendre d'une installation globale non documentée.
+Le dépôt fournit déjà un manifeste d'outils local dans `backend/.config/dotnet-tools.json` avec `dotnet-ef` aligné sur EF Core 10. Restaurer cet outil via `dotnet tool restore` ; ne pas dépendre d'une installation globale non documentée.
 
 Ensuite :
 
