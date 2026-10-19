@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AjouterApplication();
 builder.Services.AjouterInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddTransient<IClaimsTransformation, TransformationGroupesEntra>();
 builder.Services.AddScoped<IUtilisateurCourant, UtilisateurCourantHttp>();
 
 // ---------- Authentification : compte d'entreprise (Entra ID), ou utilisateurs fictifs en développement ----------
@@ -42,6 +44,12 @@ builder.Services.AddAuthorization(options =>
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build();
+
+    foreach (var capacite in CapacitesApplication.Toutes)
+    {
+        options.AddPolicy(CapacitesApplication.Politique(capacite), policy =>
+            policy.RequireAuthenticatedUser().RequireClaim(CapacitesApplication.TypeClaim, capacite));
+    }
 });
 
 // ---------- API REST ----------
