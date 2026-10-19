@@ -61,6 +61,73 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
         var liste = await lecteur.GetFromJsonAsync<JsonArray>("/api/projets");
         Assert.DoesNotContain(liste!, p => p!["id"]!.GetValue<Guid>() == id);
     }
+
+    [PostgreSqlApiFact]
+    public async Task Une_habilitation_autorise_la_lecture_sans_accorder_les_capacites_decriture_ni_les_autres_projets()
+    {
+        var objectIdChef = Guid.NewGuid().ToString();
+        using var chef = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
+            objectIdChef,
+            FabriquePostgreSqlApi.GroupeChef));
+
+        var reference = "SEC-" + Guid.NewGuid().ToString("N")[..8];
+        var creation = await chef.PostAsJsonAsync("/api/projets", new
+        {
+            client = "Client sécurité de test",
+            nom = "Projet affecté " + reference,
+            reference,
+            debut = "2026-11-02",
+            finContractuelle = "2027-02-26",
+            typeContrat = "Forfait"
+        });
+        Assert.Equal(HttpStatusCode.Created, creation.StatusCode);
+        var id = (await creation.Content.ReadFromJsonAsync<JsonObject>())!["id"]!.GetValue<Guid>();
+
+        var objectIdLecteurAffecte = Guid.NewGuid().ToString();
+        using var lecteurAffecte = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
+            objectIdLecteurAffecte,
+            FabriquePostgreSqlApi.GroupeLecteur));
+
+        // Creates the local user record from the validated Entra identity before assigning the project.
+        var contrat = await lecteurAffecte.GetFromJsonAsync<JsonObject>("/api/moi/capacites");
+        Assert.Contains("projets.lire", contrat!["capacites"]!.AsArray().Select(c => c!.GetValue<string>()));
+        Assert.Empty(contrat["projetsAccessibles"]!.AsArray());
+
+        using (var scope = _fixture.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<PilotageDbContext>();
+            var utilisateur = await db.Utilisateurs.SingleAsync(
+                u => u.IdentifiantExterne == $"{FabriquePostgreSqlApi.TenantId}:{objectIdLecteurAffecte}");
+            db.Habilitations.Add(new Habilitation
+            {
+                ProjetId = id,
+                UtilisateurId = utilisateur.Id,
+                Role = RoleProjet.ChefDeProjet,
+                Depuis = DateTimeOffset.UtcNow
+            });
+            await db.SaveChangesAsync();
+        }
+
+        Assert.Equal(HttpStatusCode.OK, (await lecteurAffecte.GetAsync($"/api/projets/{id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await lecteurAffecte.PostAsJsonAsync("/api/projets", new
+        {
+            client = "Client sécurité de test",
+            nom = "Création interdite " + reference,
+            reference = reference + "-DENIED",
+            debut = "2026-11-02",
+            finContractuelle = "2027-02-26",
+            typeContrat = "Forfait"
+        })).StatusCode);
+
+        var objectIdLecteurSansAffectation = Guid.NewGuid().ToString();
+        using var lecteurSansAffectation = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
+            objectIdLecteurSansAffectation,
+            FabriquePostgreSqlApi.GroupeLecteur));
+        var contratSansAffectation = await lecteurSansAffectation.GetFromJsonAsync<JsonObject>("/api/moi/capacites");
+        Assert.Contains("projets.lire", contratSansAffectation!["capacites"]!.AsArray().Select(c => c!.GetValue<string>()));
+        Assert.Empty(contratSansAffectation["projetsAccessibles"]!.AsArray());
+        Assert.Equal(HttpStatusCode.NotFound, (await lecteurSansAffectation.GetAsync($"/api/projets/{id}")).StatusCode);
+    }
 }
 
 public sealed class FabriquePostgreSqlApi : IAsyncLifetime
@@ -78,6 +145,7 @@ public sealed class FabriquePostgreSqlApi : IAsyncLifetime
     private HoteApi? _host;
 
     public HttpClient Client { get; private set; } = null!;
+    public IServiceProvider Services => _host?.Services ?? throw new InvalidOperationException("PostgreSQL API host is not initialized.");
 
     public async Task InitializeAsync()
     {
