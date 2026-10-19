@@ -29,7 +29,8 @@ public sealed class MigrationPostgreSqlTests
         Assert.NotEmpty(migrationsAppliquees);
         Assert.Empty(await db.Database.GetPendingMigrationsAsync());
 
-        FormattableString requete = $"SELECT COUNT(*) AS \"Value\" FROM information_schema.tables WHERE table_schema = 'public' AND table_name = {"Projets"}";
+        const string nomTable = "Projets";
+        FormattableString requete = $"SELECT COUNT(*) AS \"Value\" FROM information_schema.tables WHERE table_schema = 'public' AND table_name = {nomTable}";
         var nombreTablesProjets = await db.Database.SqlQuery<int>(requete).SingleAsync();
         Assert.Equal(1, nombreTablesProjets);
 
