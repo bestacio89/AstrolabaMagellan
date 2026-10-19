@@ -48,7 +48,7 @@ app.UseStatusCodePages();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    await PreparerBaseDeDeveloppementAsync(app);
+    await AppliquerMigrationsDeDeveloppementAsync(app);
 }
 app.UseHttpsRedirection();
 app.UseAuthentication();
@@ -58,37 +58,23 @@ app.MapGet("/api/sante", () => Results.Ok(new { statut = "ok" })).AllowAnonymous
 
 app.Run();
 
-// En développement : crée ou met à jour la base au démarrage.
-static async Task PreparerBaseDeDeveloppementAsync(WebApplication app)
+// En développement, le schéma doit toujours être géré par des migrations EF Core.
+// EnsureCreated est volontairement interdit : il contourne l'historique des migrations et rend les évolutions non fiables.
+static async Task AppliquerMigrationsDeDeveloppementAsync(WebApplication app)
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<PilotageDbContext>();
-    if (db.Database.GetMigrations().Any())
-    {
-        // le modèle a changé depuis la dernière migration (nouvelle version de l'application) : il faut d'abord créer la migration
-        if (db.Database.HasPendingModelChanges())
-        {
-            app.Logger.LogCritical(
-                "LE MODÈLE DE DONNÉES A CHANGÉ DEPUIS LA DERNIÈRE MIGRATION : la base n'est pas mise à jour. Arrêtez l'API (Ctrl+C), puis depuis le dossier du dépôt : " +
-                ".\\scripts\\creer-migration.ps1 -Nom <NomDuChangement> (Windows) ou ./scripts/creer-migration.sh <NomDuChangement>, et relancez l'API " +
-                "(README, « Faire évoluer la base »).");
-            return;
-        }
-        await db.Database.MigrateAsync();
-    }
-    else
-    {
-        // Pas encore de migration (voir README, « Créer la première migration ») : la base est créée directement.
-        app.Logger.LogWarning("Aucune migration trouvée : la base de développement est créée sans migration. Créez la migration initiale avant toute recette.");
-        await db.Database.EnsureCreatedAsync();
-        // une base créée par une version précédente n'est pas mise à jour : on le dit clairement, dès le démarrage
-        var manquants = await db.ElementsManquantsAsync();
-        if (manquants.Count > 0)
-            app.Logger.LogCritical(
-                "LA BASE DE DÉVELOPPEMENT DATE D'UNE VERSION PRÉCÉDENTE : il lui manque {Manquants}. Arrêtez l'API (Ctrl+C), puis depuis le dossier du dépôt : " +
-                ".\\scripts\\reinitialiser-base.ps1 (Windows) ou ./scripts/reinitialiser-base.sh. La base est supprimée puis recréée, gérée par migrations " +
-                "(README, « Repartir propre et passer aux migrations »).", string.Join(", ", manquants));
-    }
+    var migrations = db.Database.GetMigrations().ToArray();
+
+    if (migrations.Length == 0)
+        throw new InvalidOperationException(
+            "Aucune migration EF Core n'est présente. Créez et validez la migration initiale PostgreSQL avant de démarrer l'API en développement.");
+
+    if (db.Database.HasPendingModelChanges())
+        throw new InvalidOperationException(
+            "Le modèle EF Core diffère de la dernière migration. Créez une nouvelle migration avant de démarrer l'API.");
+
+    await db.Database.MigrateAsync();
 }
 
 /// <summary>Rend la classe Program visible des tests d'intégration.</summary>
