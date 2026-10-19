@@ -146,6 +146,51 @@ export class SuiviApi {
     return this.put(id, `references/${referenceId}/taches/${uid}/derive`, { cause, motif, version });
   }
 
+  // ---- planning (vue d'ensemble) ----
+  datePlanning(id: string, cle: string, cote: 'debut' | 'fin', valeur: string | null, version?: number) {
+    return this.put(id, 'planning/dates', { cle, cote, valeur, version });
+  }
+  effacerDatesPlanning(id: string, cle: string) {
+    return this.post(id, 'planning/dates/effacer', { cle });
+  }
+  nomSousPartie(id: string, cle: string, nom: string, version?: number) {
+    return this.put(id, 'planning/sous-parties/nom', { cle, nom, version });
+  }
+  ajouterJalon(id: string, j: JalonSaisi) {
+    return this.post(id, 'planning/jalons', j);
+  }
+  modifierJalon(id: string, jalonId: string, j: JalonSaisi & { version?: number }) {
+    return this.put(id, `planning/jalons/${jalonId}`, j);
+  }
+  supprimerJalon(id: string, jalonId: string) {
+    return this.supprimer(id, `planning/jalons/${jalonId}`);
+  }
+  elementPlanning(id: string, nature: 'avant' | 'masque', cle: string, actif: boolean) {
+    return this.put(id, 'planning/elements', { nature, cle, actif });
+  }
+  retirerElementsPlanning(id: string, cles: string[]) {
+    return this.post(id, 'planning/elements/retirer', { cles });
+  }
+
+  // ---- prévisionnel de charge ----
+  previsionnel(id: string, profilId: string, mois: string, jh: number | null) {
+    return this.put(id, 'previsionnel', { profilId, mois, jh });
+  }
+  reinitialiserPrevisionnel(id: string) {
+    return this.post(id, 'previsionnel/reinitialiser');
+  }
+
+  // ---- absences (Pilotage › Absences) ----
+  absence(id: string, nom: string, jour: string, moment: '' | 'j' | 'm' | 'a') {
+    return this.put(id, 'absences', { nom, jour, moment });
+  }
+  ajouterPersonne(id: string, nom: string) {
+    return this.post(id, 'personnes', { nom });
+  }
+  retirerPersonne(id: string, personneId: string) {
+    return this.supprimer(id, `personnes/${personneId}`);
+  }
+
   // ---- facturation ----
   dateEcheance(id: string, n: number, champ: 'datePrevue' | 'realiseLe' | 'payeeLe', valeur: string | null, version?: number) {
     return this.put(id, `echeances/${n}/dates`, { champ, valeur, version });
@@ -187,6 +232,9 @@ export class SuiviApi {
   profilIa(id: string, profilId: string | null) {
     return this.put(id, 'parametres/profil-ia', { profilId });
   }
+  instances(id: string, valeurs: string[], ancien: string | null = null, nouveau: string | null = null) {
+    return this.put(id, 'parametres/instances', { valeurs, ancien, nouveau });
+  }
   listeIa(id: string, liste: 'leviers-ia' | 'causes-ia', valeurs: string[]) {
     return this.put(id, `parametres/${liste}`, { valeurs });
   }
@@ -212,6 +260,10 @@ export class SuiviApi {
   // ---- exports ----
   copil(id: string): Observable<HttpResponse<Blob>> {
     return this.http.post(`${this.base(id)}/exports/copil`, {}, { responseType: 'blob', observe: 'response', context: this.contexte });
+  }
+  /** Actions, décisions, risques : une feuille chacun (tous les rôles ; sans montants pour un consultant). */
+  registres(id: string): Observable<HttpResponse<Blob>> {
+    return this.http.post(`${this.base(id)}/exports/registres`, {}, { responseType: 'blob', observe: 'response', context: this.contexte });
   }
   coproj(id: string, du: string, au: string, horizon: number): Observable<HttpResponse<Blob>> {
     return this.http.post(`${this.base(id)}/exports/coproj`, { du, au, horizon }, { responseType: 'blob', observe: 'response', context: this.contexte });
@@ -283,4 +335,13 @@ export interface NouveauFrais {
   montant: number;
   refacturable: boolean;
   commentaire: string;
+}
+
+/** Jalon tel qu'il est saisi (fenêtre « Nouveau jalon » / « Modifier le jalon »). */
+export interface JalonSaisi {
+  libelle: string;
+  type: 'date' | 'periode' | 'semaine';
+  debut: string;
+  fin: string | null;
+  aConfirmer: boolean;
 }

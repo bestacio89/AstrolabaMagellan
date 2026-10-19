@@ -27,7 +27,7 @@ export interface Diapo {
   addImage(o: Options): unknown;
 }
 export interface Presentation {
-  ShapeType: Record<'rect' | 'roundRect' | 'line' | 'sun' | 'cloud' | 'lightningBolt' | 'rightArrow', string>;
+  ShapeType: Record<'rect' | 'roundRect' | 'line' | 'sun' | 'cloud' | 'lightningBolt' | 'rightArrow' | 'diamond', string>;
   layout?: string;
   theme?: Options;
   title?: string;
@@ -304,7 +304,7 @@ export function apercu(d: DonneesDiapo): string {
     },
   };
   const fausse: Presentation = {
-    ShapeType: { rect: 'rect', roundRect: 'roundRect', line: 'line', sun: 'sun', cloud: 'cloud', lightningBolt: 'lightningBolt', rightArrow: 'rightArrow' },
+    ShapeType: { rect: 'rect', roundRect: 'roundRect', line: 'line', sun: 'sun', cloud: 'cloud', lightningBolt: 'lightningBolt', rightArrow: 'rightArrow', diamond: 'diamond' },
     addSlide: () => diapo,
     write: () => Promise.resolve(null),
   };

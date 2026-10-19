@@ -98,6 +98,10 @@ export interface ProjetSuivi {
   causes: string[];
   /** Fil de mises à jour de chaque tâche (clé : repère), du plus récent au plus ancien. */
   misesAJour: Record<string, MiseAJour[]>;
+  /** Personnes ajoutées à la main au planning des absences (hors profils du TSP). */
+  personnesAjoutees?: { id: string; nom: string }[];
+  /** Absences de l'équipe sur la période du projet (personne = nom normalisé ; moment : j, m ou a). */
+  absences?: AbsenceEquipe[];
   /** Point hebdo : réglages et saisie par période (absent pour les rôles qui ne voient pas les montants). */
   pointsHebdo?: PointsHebdo | null;
 }
@@ -117,7 +121,7 @@ export interface Jalon {
   id: string;
   version: number;
   libelle: string;
-  type: 'date' | 'periode';
+  type: 'date' | 'periode' | 'semaine';
   debut: string;
   fin: string | null;
   aConfirmer: boolean;
@@ -130,6 +134,8 @@ export interface PlanReference {
   par: string | null;
   /** Clé : repère de la tâche. */
   lignes: Record<string, LigneReference>;
+  /** Dates prévues des lignes du planning (axes, lots ou phases, sous-parties) figées avec la référence. */
+  groupes?: Record<string, { debut: string | null; fin: string | null; nom: string | null }>;
 }
 
 export interface LigneReference {
@@ -929,4 +935,12 @@ export interface PointVigilance {
   unite: string | null;
   niveau: 'ok' | 'attention' | 'critique';
   detail: string | null;
+}
+
+/** Absence d'une personne de l'équipe : « j » journée, « m » matin, « a » après-midi. */
+export interface AbsenceEquipe {
+  /** Nom normalisé (sans accents, en minuscules, mots dans l'ordre alphabétique). */
+  personne: string;
+  jour: string;
+  moment: 'j' | 'm' | 'a';
 }

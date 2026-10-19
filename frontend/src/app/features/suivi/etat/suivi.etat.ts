@@ -26,7 +26,9 @@ export type FenetreDemandee =
   | { type: 'import-frais' }
   | { type: 'lien-echeance'; numero: number }
   | { type: 'export-coproj' }
-  | { type: 'reperes' };
+  | { type: 'reperes' }
+  | { type: 'jalon'; id: string | null }
+  | { type: 'personne' };
 
 /** Bouton d'une fenêtre de confirmation. */
 export interface BoutonConfirmation<T> {
@@ -58,6 +60,10 @@ export interface OptionsSaisie {
 
 /** Valeur de « panneau » pour le détail de l'avancement (une tâche n'a jamais ce repère). */
 export const PANNEAU_AVANCEMENT = 'av:';
+/** Préfixe de « panneau » pour le détail d'une action, d'une décision ou d'un risque (« ad:act:<id> », « ad:dec:<id> », « ad:rk:<id> »). */
+export const PANNEAU_REGISTRE = 'ad:';
+/** Préfixe de « panneau » pour le volet d'une ligne du Planning (vue d'ensemble). */
+export const PANNEAU_PLANNING = 'pl:';
 /** Préfixe de « panneau » pour le détail d'une colonne de la cascade de la marge (Rentabilité). */
 export const PANNEAU_MARGE = 'rt:';
 /**
@@ -88,6 +94,10 @@ export class SuiviEtat {
   readonly retourAvancement = signal(false);
   /** La tâche a été ouverte depuis le détail d'une colonne de la cascade : clé de la colonne, pour y revenir. */
   readonly retourMarge = signal<string | null>(null);
+  /** La tâche a été ouverte depuis le volet d'une ligne du Planning : clé de la ligne, pour y revenir (« ‹ Planning »). */
+  readonly retourPlanning = signal<string | null>(null);
+  /** La tâche a été ouverte depuis une action (« Tâche concernée ») : « act:<id> », pour y revenir. */
+  readonly retourAction = signal<string | null>(null);
   readonly fenetre = signal<FenetreDemandee | null>(null);
   readonly confirmation = signal<Confirmation | null>(null);
   readonly toasts = signal<Toast[]>([]);
@@ -262,20 +272,28 @@ export class SuiviEtat {
 
   // ---------------------------------------------------------------- panneau de détail
 
-  ouvrirTache(uid: string, retourMarge: string | null = null): void {
-    this.retourAvancement.set(false);
+  ouvrirTache(uid: string, retourMarge: string | null = null, retourPlanning: string | null = null, retourAction: string | null = null): void {
+    this.retourPlanning.set(retourPlanning);
+    this.retourAction.set(retourAction);
+    // « ‹ Avancement » : tâche ouverte depuis le détail de l'avancement, gardé en passant d'une tâche à l'autre
+    const p = this.panneau();
+    this.retourAvancement.set(!retourMarge && (p === PANNEAU_AVANCEMENT || (this.retourAvancement() && !!p && !p.includes(':'))));
     this.retourMarge.set(retourMarge);
     this.panneau.set(uid);
   }
 
   /** Détail d'une colonne de la cascade de la marge (Rentabilité). */
   ouvrirMarge(cle: string): void {
+    this.retourAction.set(null);
+    this.retourPlanning.set(null);
     this.retourAvancement.set(false);
     this.retourMarge.set(null);
     this.panneau.set(PANNEAU_MARGE + cle);
   }
 
   ouvrirPhase(phase: string, depuisAvancement = false): void {
+    this.retourAction.set(null);
+    this.retourPlanning.set(null);
     this.retourAvancement.set(depuisAvancement);
     this.retourMarge.set(null);
     this.panneau.set('ph:' + phase);
@@ -283,12 +301,34 @@ export class SuiviEtat {
 
   /** Détail de l'avancement par axe, lot ou phase (tableau de bord › « Détail »). */
   ouvrirAvancement(): void {
+    this.retourAction.set(null);
+    this.retourPlanning.set(null);
     this.retourAvancement.set(false);
     this.retourMarge.set(null);
     this.panneau.set(PANNEAU_AVANCEMENT);
   }
 
+  /** Volet d'une ligne du Planning (axe, lot, phase ou sous-partie). */
+  ouvrirLignePlanning(cle: string): void {
+    this.retourAction.set(null);
+    this.retourAvancement.set(false);
+    this.retourMarge.set(null);
+    this.retourPlanning.set(null);
+    this.panneau.set(PANNEAU_PLANNING + cle);
+  }
+
+  /** Détail d'une action, d'une décision ou d'un risque (« act:<id> », « dec:<id> », « rk:<id> »). */
+  ouvrirRegistre(spec: string): void {
+    this.retourAvancement.set(false);
+    this.retourMarge.set(null);
+    this.retourPlanning.set(null);
+    this.retourAction.set(null);
+    this.panneau.set(PANNEAU_REGISTRE + spec);
+  }
+
   fermerPanneau(): void {
+    this.retourAction.set(null);
+    this.retourPlanning.set(null);
     this.retourAvancement.set(false);
     this.retourMarge.set(null);
     this.panneau.set(null);

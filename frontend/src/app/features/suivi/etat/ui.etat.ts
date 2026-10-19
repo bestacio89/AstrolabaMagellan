@@ -8,6 +8,8 @@ import { Injectable, signal } from '@angular/core';
 export interface EtatUi {
   // Workload
   wl: 'suivi' | 'conso' | 'ia';
+  /** Liste des tâches : affichage Essentiel, Suivi ou Complet. */
+  wlVue: string;
   month: string | null;
   axe: string;
   q: string;
@@ -23,6 +25,8 @@ export interface EtatUi {
   taskW: number;
   // Tableau de bord
   todo: string;
+  /** Points de vigilance dépliés (repliés par défaut ; non mémorisé d'une visite à l'autre). */
+  vigOuverte: boolean;
   dismissed: Record<string, boolean>;
   // cartes repliées
   coll: Record<string, boolean>;
@@ -38,6 +42,27 @@ export interface EtatUi {
   adp: string;
   adq: string;
   rkf: string;
+  /** Registres : date cible (actions), instance, période (du / au), date (décisions), personnes (décisions, risques), type de risque. */
+  adEch: string;
+  adInst: string;
+  adDu: string;
+  adAu: string;
+  adDPer: string;
+  adpd: string;
+  adpr: string;
+  rkty: string;
+  // Plan de charge : Prévu et réel, Prévisionnel, Par axe, Coûts (mémorisé)
+  pc: string;
+  // Absences : mois affiché (non mémorisé)
+  absMois: string;
+  // Planning
+  /** Vue d'ensemble (par défaut) ou Gantt détaillé. Non mémorisé. */
+  gVue: 'ens' | 'detail';
+  /** Volet d'une ligne : filtre des tâches (tous, afaire, encours, valide). */
+  plFiltre: string;
+  /** Volet d'une ligne : recherche, valable pour la ligne plRechCle (repart vide sur une autre ligne). */
+  plRech: string;
+  plRechCle: string;
   // Gantt
   gZoom: 'mois' | 'semaine';
   gCompact: boolean;
@@ -49,6 +74,13 @@ export interface EtatUi {
   frC: string;
   frCat: string;
   frQ: string;
+  // Avancement détaillé (tableau de bord › « Détail › »)
+  /** Groupes et sous-parties dépliés (non mémorisé). */
+  avOuv: Record<string, boolean>;
+  /** Filtre « Ateliers et livrables seulement » (non mémorisé). */
+  avAL: boolean;
+  /** Afficher les sous-parties, par regroupement (axe, lot, phase) : mémorisé. */
+  avSous: Record<string, boolean>;
   // Affichage
   /** Tableaux plus serrés : plus de lignes à l'écran. */
   compact: boolean;
@@ -56,11 +88,13 @@ export interface EtatUi {
 
 const DEFAUT: EtatUi = {
   wl: 'suivi',
+  wlVue: 'essentiel',
   month: null,
   axe: '',
   q: '',
   typeF: '',
   onlyAjout: false,
+  vigOuverte: false,
   iaF: '',
   hideDone: false,
   profF: '',
@@ -81,6 +115,20 @@ const DEFAUT: EtatUi = {
   adp: '',
   adq: '',
   rkf: 'ouverts',
+  adEch: '',
+  adInst: '',
+  adDu: '',
+  adAu: '',
+  adDPer: '',
+  adpd: '',
+  adpr: '',
+  rkty: '',
+  pc: 'pr',
+  absMois: '',
+  gVue: 'ens',
+  plFiltre: 'tous',
+  plRech: '',
+  plRechCle: '',
   gZoom: 'mois',
   gCompact: false,
   gRef: 'auto',
@@ -89,12 +137,16 @@ const DEFAUT: EtatUi = {
   frC: '',
   frCat: '',
   frQ: '',
+  avOuv: {},
+  avAL: false,
+  avSous: {},
   compact: false,
 };
 
 /** Clés mémorisées d'une session à l'autre (les recherches et filtres ponctuels ne le sont pas). */
 const MEMORISEES: (keyof EtatUi)[] = [
   'wl',
+  'wlVue',
   'axe',
   'typeF',
   'hideDone',
@@ -112,6 +164,8 @@ const MEMORISEES: (keyof EtatUi)[] = [
   'rkf',
   'gZoom',
   'gCompact',
+  'avSous',
+  'pc',
   'compact',
 ];
 
@@ -125,6 +179,11 @@ export class UiEtat {
   maj(changement: Partial<EtatUi>): void {
     this.ui.update((u) => ({ ...u, ...changement }));
     this.ecrire();
+  }
+
+  /** « Effacer les filtres » des listes de tâches (Workload) : axe, recherche, type, évolutions, profil, filtre IA. */
+  effacerFiltres(): void {
+    this.maj({ axe: '', q: '', typeF: '', onlyAjout: false, profF: '', iaF: '' });
   }
 
   private static lire(): EtatUi {

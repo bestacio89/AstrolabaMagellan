@@ -60,7 +60,7 @@ export function derives(taches: readonly TacheDatee[], reference: PlanReference)
 }
 
 /** Décalage en clair : « +12 j », « −3 j », « dates retirées ». */
-export function texteDecalage(d: Derive): string {
+export function texteDecalage(d: Pick<Derive, 'decalage'>): string {
   if (d.decalage === null) return 'dates retirées';
   if (d.decalage === 0) return 'début déplacé';
   return (d.decalage > 0 ? '+' : '−') + Math.abs(d.decalage) + ' j';

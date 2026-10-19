@@ -60,4 +60,20 @@ export class MoiApi {
   obtenir(): Observable<Moi> {
     return this.http.get<Moi>(`${environment.api}/moi`);
   }
+
+  /** Mes absences entre deux dates incluses (elles valent pour tous mes projets). */
+  absences(du: string, au: string): Observable<MonAbsence[]> {
+    return this.http.get<MonAbsence[]>(`${environment.api}/moi/absences`, { params: { du, au } });
+  }
+
+  /** Mon absence un jour (moment vide : présent) ; renvoie mes absences du mois de ce jour. */
+  absence(jour: string, moment: '' | 'j' | 'm' | 'a'): Observable<MonAbsence[]> {
+    return this.http.put<MonAbsence[]>(`${environment.api}/moi/absences`, { jour, moment });
+  }
+}
+
+/** Une de mes absences : « j » journée, « m » matin, « a » après-midi. */
+export interface MonAbsence {
+  jour: string;
+  moment: 'j' | 'm' | 'a';
 }
