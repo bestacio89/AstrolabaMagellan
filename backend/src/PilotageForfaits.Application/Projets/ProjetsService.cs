@@ -20,6 +20,7 @@ public sealed class ProjetsService(
     public async Task<IReadOnlyList<ProjetResumeDto>> ListerAsync(bool archives, CancellationToken annulation = default)
     {
         var utilisateur = await acces.UtilisateurAsync(annulation);
+        if (!acces.PeutLireProjets) throw new AccesRefuseException("Vous n'avez pas la capacité de consulter les projets.");
         var roles = await db.Habilitations.AsNoTracking()
             .Where(h => h.UtilisateurId == utilisateur.Id)
             .ToDictionaryAsync(h => h.ProjetId, h => h.Role, annulation);
