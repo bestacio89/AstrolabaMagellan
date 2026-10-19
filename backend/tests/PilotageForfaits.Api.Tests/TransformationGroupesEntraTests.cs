@@ -89,6 +89,21 @@ public sealed class TransformationGroupesEntraTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => sut.TransformAsync(principal));
     }
 
+    [Fact]
+    public async Task Les_capacites_de_l_identite_dev_sont_preservees_dans_les_environnements_de_test()
+    {
+        var capacite = CapacitesApplication.ProjetsCreer;
+        var principal = new ClaimsPrincipal(new ClaimsIdentity(
+            [new Claim(CapacitesApplication.TypeClaim, capacite)],
+            AuthentificationDev.Schema,
+            "name",
+            "roles"));
+
+        await Creer(new Dictionary<string, string?>()).TransformAsync(principal);
+
+        Assert.Contains(principal.FindAll(CapacitesApplication.TypeClaim), c => c.Value == capacite);
+    }
+
     private static TransformationGroupesEntra Creer(IDictionary<string, string?> valeurs) =>
         new(new ConfigurationBuilder().AddInMemoryCollection(valeurs).Build());
 
