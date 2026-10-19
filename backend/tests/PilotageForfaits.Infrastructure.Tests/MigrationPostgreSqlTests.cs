@@ -12,8 +12,8 @@ public sealed class MigrationPostgreSqlTests
     [PostgreSqlFact]
     public async Task La_migration_initiale_est_applicable_et_idempotente()
     {
-        var connectionString = Environment.GetEnvironmentVariable("POSTGRES_TEST_CONNECTION");
-        Assert.False(string.IsNullOrWhiteSpace(connectionString));
+        var connectionString = Environment.GetEnvironmentVariable("POSTGRES_TEST_CONNECTION")
+            ?? throw new InvalidOperationException("POSTGRES_TEST_CONNECTION must be configured.");
 
         var options = new DbContextOptionsBuilder<PilotageDbContext>()
             .UseNpgsql(connectionString)
