@@ -145,6 +145,7 @@ public sealed class FabriquePostgreSqlApi : IAsyncLifetime
     private HoteApi? _host;
 
     public HttpClient Client { get; private set; } = null!;
+    public IServiceProvider Services => _host?.Services ?? throw new InvalidOperationException("PostgreSQL API host is not initialized.");
 
     public async Task InitializeAsync()
     {
