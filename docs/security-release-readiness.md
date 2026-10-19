@@ -16,6 +16,7 @@ This checklist complements the staged implementation roadmap. It is not a claim 
 ## Project authorization
 
 - [ ] Verify identity is keyed by Entra tenant ID plus object ID, not email or display name.
+- [ ] Migrate existing bare object-ID user keys to `{tenantId}:{objectId}` using `docs/entra-identity-key-migration.md` before rollout; verify existing project assignments remain attached.
 - [ ] Verify a mapped read capability without project assignment cannot read a project.
 - [ ] Verify project assignment without the required capability cannot read or change it.
 - [ ] Verify project writes require both the relevant capability and an appropriate project role.
