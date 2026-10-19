@@ -61,7 +61,7 @@ public sealed class BrouillonsService(
         if (commande.ProjetSource is { } idSource)
         {
             var role = await acces.ExigerAccesAsync(idSource, annulation);
-            if (!ServiceAcces.VoitMontants(role))
+            if (!acces.PeuVoirMontants(role))
                 throw new AccesRefuseException("Repartir d'un projet reprend ses prix : réservé au chef de projet et au pilotage de ce projet.");
             var donnees = await constructeur.ChargerDonneesAsync(idSource, annulation);
             contenu = RedactionTsp.DepuisProjet(donnees, client, projet, reference);
