@@ -12,7 +12,7 @@ internal sealed class ConfigurationProjet : IEntityTypeConfiguration<Projet>
         b.Property(x => x.Code).HasMaxLength(50);
         // un même forfait n'est jamais suivi deux fois (voir IdentiteProjet) ; les projets sans clé (anciens) ne sont pas concernés
         b.Property(x => x.CleUnicite).HasMaxLength(200);
-        b.HasIndex(x => x.CleUnicite).IsUnique().HasFilter("[CleUnicite] IS NOT NULL");
+        b.HasIndex(x => x.CleUnicite).IsUnique();
         b.Property(x => x.Nom).IsRequired();
         b.Property(x => x.Client).IsRequired();
         b.HasIndex(x => x.Statut);
