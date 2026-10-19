@@ -5,6 +5,7 @@ import { SuiviEtat } from '../etat/suivi.etat';
 import { UiEtat } from '../etat/ui.etat';
 import { filteredTasks, idName } from '../etat/vue';
 import { BarreFiltres } from '../ui/barre-filtres';
+import { Triable } from '../ui/triable';
 
 interface LigneChiffrage {
   cle: string;
@@ -24,7 +25,7 @@ interface LigneChiffrage {
 import { Fx } from '../ui/fx';
 @Component({
   selector: 'app-chiffrage',
-  imports: [BarreFiltres, Fx],
+  imports: [BarreFiltres, Fx, Triable],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="sechead">
@@ -41,7 +42,7 @@ import { Fx } from '../ui/fx';
         }}
       </p>
       <div class="tw tall">
-        <table>
+        <table appTriable>
           <thead>
             <tr>
               <th>Axe</th>

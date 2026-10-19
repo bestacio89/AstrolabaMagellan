@@ -10,6 +10,7 @@ import { UiEtat } from '../etat/ui.etat';
 import { Carte, CarteRepliable } from '../ui/cartes';
 import { Fx } from '../ui/fx';
 import { Barre } from '../ui/petits';
+import { Triable } from '../ui/triable';
 
 type Champ = HTMLInputElement | HTMLSelectElement;
 
@@ -95,7 +96,7 @@ export class KpisDepenses {
 /** Achats : budget vendu au TSP et achats réels (HT), saisis directement dans le tableau. */
 @Component({
   selector: 'app-achats',
-  imports: [Carte, CarteRepliable, Fx, KpisDepenses, Barre],
+  imports: [Carte, CarteRepliable, Fx, KpisDepenses, Barre, Triable],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="sechead">
@@ -150,7 +151,7 @@ export class KpisDepenses {
         sousTitre="Saisie directe dans le tableau. Montant HT = quantité × coût unitaire. « Hors TSP » : achat non prévu, son coût réduit la marge."
       >
         <div class="tw">
-          <table class="reg dep fixw">
+          <table appTriable class="reg dep fixw">
             <colgroup>
               @for (w of largeurs; track $index) {
                 <col [style.width.%]="w" />
@@ -225,7 +226,14 @@ export class KpisDepenses {
               } @empty {
                 <tr>
                   <td colspan="11" class="empty">
-                    {{ m.lignesReelles.length ? 'Aucun achat ne correspond au filtre.' : 'Aucun achat saisi. Ajoutez le premier avec « + Nouvel achat ».' }}
+                    @if (m.lignesReelles.length) {
+                      Aucun achat ne correspond au filtre.
+                    } @else {
+                      Aucun achat saisi pour l’instant.
+                      @if (!lecture()) {
+                        <button type="button" class="btn sm primary" (click)="etat.fenetre.set({ type: 'nouvel-achat' })">+ Nouvel achat</button>
+                      }
+                    }
                   </td>
                 </tr>
               }
@@ -492,7 +500,7 @@ export class Achats {
       </div>
       <app-carte titre="Frais réels" sousTitre="Saisie directe dans le tableau. Cochez « Refacturable » pour les frais repris sur la facture client.">
         <div class="tw">
-          <table class="reg dep">
+          <table appTriable class="reg dep">
             <thead>
               <tr>
                 <th>Date</th>
@@ -539,7 +547,16 @@ export class Achats {
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="8" class="empty">{{ m.lignesReelles.length ? 'Aucun frais ne correspond au filtre.' : 'Aucun frais saisi. Ajoutez le premier avec « + Nouveau frais ».' }}</td>
+                  <td colspan="8" class="empty">
+                    @if (m.lignesReelles.length) {
+                      Aucun frais ne correspond au filtre.
+                    } @else {
+                      Aucun frais saisi pour l’instant.
+                      @if (!lecture()) {
+                        <button type="button" class="btn sm primary" (click)="etat.fenetre.set({ type: 'nouveau-frais', reprise: null })">+ Nouveau frais</button>
+                      }
+                    }
+                  </td>
                 </tr>
               }
               @if (m.liste.length) {

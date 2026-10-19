@@ -8,6 +8,7 @@ import { SuiviEtat } from '../etat/suivi.etat';
 import { UiEtat } from '../etat/ui.etat';
 import { axeName, couleurGroupe, defaultAxeName, filteredTasks, groupByAxe, idName, isOver, ProfilVue, TacheVue, taskProfiles, Vue } from '../etat/vue';
 import { BarreFiltres } from '../ui/barre-filtres';
+import { absenceProfil, indexAbsences, Moment } from '../etat/absences.logique';
 import { Fx } from '../ui/fx';
 import { EtiquetteAjout } from '../ui/tache';
 
@@ -251,7 +252,14 @@ interface LigneProfil {
                     <td class="n c-conso" [class.zero]="!t.consoP[p.i]" [class.over]="p.depasse">{{ fJ(t.consoP[p.i]) }}</td>
                     <td class="n c-raf" [class.neg]="p.depasse">{{ p.depasse ? fSigned(t.charges[p.i] - t.consoP[p.i]) : fJ(t.restP[p.i]) }}</td>
                     @for (j of m.jours; track j.d; let ci = $index) {
-                      <td [class.off]="!j.ouvre" [class.hp]="j.hors">
+                      @let ab = absence(p.profil?.collaborateur, j.d);
+                      <!-- jour d'absence de la personne (Pilotage › Absences) : signalé, sans bloquer la saisie -->
+                      <td
+                        [class.off]="!j.ouvre"
+                        [class.hp]="j.hors"
+                        [class]="ab ? 'abs-jour abs-' + ab : ''"
+                        [attr.title]="ab ? (p.profil?.collaborateur ?? '') + ' est absent' + (ab === 'j' ? ' toute la journée' : ab === 'm' ? ' le matin' : ' l’après-midi') + ' (Pilotage › Absences)' : null"
+                      >
                         <input
                           #cel
                           [attr.data-c]="ci"
@@ -272,7 +280,7 @@ interface LigneProfil {
               }
             } @empty {
               <tr>
-                <td [attr.colspan]="m.jours.length + 6 + m.visibles.length" class="empty">Aucune tâche ne correspond au filtre.</td>
+                <td [attr.colspan]="m.jours.length + 6 + m.visibles.length" class="empty">Aucune tâche ne correspond au filtre. <button type="button" class="btn sm" (click)="ui.effacerFiltres()">Effacer les filtres</button></td>
               </tr>
             }
           </tbody>
@@ -343,6 +351,13 @@ export class WorkloadConso {
   protected quitterPlein(e: Event): void {
     if (e.defaultPrevented || document.querySelector('dialog[open]')) return;
     if (this.plein() && !this.etat.panneau() && !this.etat.fenetre() && !this.etat.confirmation()) this.plein.set(false);
+  }
+
+  /** Absences de l'équipe, par personne et par jour. */
+  private readonly absences = computed(() => indexAbsences(this.etat.vue()?.projet.absences));
+
+  protected absence(collaborateur: string | null | undefined, jour: string): '' | Moment {
+    return absenceProfil(this.absences(), collaborateur, jour);
   }
 
   protected readonly vm = computed(() => {

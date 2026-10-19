@@ -8,6 +8,7 @@ import { UiEtat } from '../etat/ui.etat';
 import { atHoraire, atRealise, axeName, couleurGroupe, groupByAxe, isOver, lvLivre, lvPrevue, lvValide, TacheVue, Vue } from '../etat/vue';
 import { BarreFiltres } from '../ui/barre-filtres';
 import { LienTache } from '../ui/tache';
+import { Triable } from '../ui/triable';
 
 /** Colonne d'un registre (largeur fixe en pixels, répartie au prorata de la largeur disponible). */
 interface Colonne {
@@ -17,8 +18,10 @@ interface Colonne {
   n?: boolean;
 }
 
-/** Colonnes masquées par défaut : « Responsable principal ». */
-const MASQUEES_PAR_DEFAUT: Record<string, boolean> = { resp: true };
+/** Colonnes masquées par défaut : « Responsable principal » et « Commentaire ». */
+const MASQUEES_PAR_DEFAUT: Record<string, boolean> = { resp: true, com: true };
+/** Charge, consommé et RAF : côte à côte, et une seule case « Charge, consommé, RAF » dans le menu Colonnes. */
+const CHIFFRES = ['charge', 'conso', 'raf'];
 
 /**
  * Ateliers & livrables : un registre par type de tâche (types gérés dans ⚙ Paramètres du projet), regroupé par axe, lot ou phase.
@@ -27,7 +30,7 @@ const MASQUEES_PAR_DEFAUT: Record<string, boolean> = { resp: true };
 import { Fx } from '../ui/fx';
 @Component({
   selector: 'app-ateliers',
-  imports: [BarreFiltres, LienTache, Fx],
+  imports: [BarreFiltres, LienTache, Fx, Triable],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (vm(); as m) {
@@ -81,8 +84,10 @@ import { Fx } from '../ui/fx';
           </summary>
           <div class="dd-menu" role="group" aria-label="Colonnes à masquer">
             <div class="dd-h">Colonnes à masquer</div>
-            @for (c of m.toutes; track c.k) {
-              @if (c.k !== 'lib') {
+            @for (c of m.menu; track c.k) {
+              @if (c.k === 'charge') {
+                <label class="dd-i"><input type="checkbox" [checked]="m.chiffresMasques" #cb (change)="masquer(m.cur, 'chiffres', cb.checked)" /> Charge, consommé, RAF</label>
+              } @else {
                 <label class="dd-i"><input type="checkbox" [checked]="!!m.masquees[c.k]" #cb (change)="masquer(m.cur, c.k, cb.checked)" /> {{ c.l }}</label>
               }
             }
@@ -92,7 +97,7 @@ import { Fx } from '../ui/fx';
         </details>
       </app-barre-filtres>
       <div class="tw tall reg-tw">
-        <table class="atreg rz" [style.min-width.px]="m.largeurMin">
+        <table appTriable class="atreg rz" [style.min-width.px]="m.largeurMin">
           <colgroup>
             @for (c of m.colonnes; track c.k) {
               <col [style.width.%]="c.pct" />
@@ -346,11 +351,11 @@ export class Ateliers {
     const debut: Colonne[] = [
       { k: 'lot', l: 'Lot', w: 110 },
       { k: 'lib', l: 'Intitulé', w: 250 },
-      { k: 'charge', l: 'Charge', w: 64, n: true },
     ];
     const fin: Colonne[] = [
       { k: 'resp', l: 'Responsable principal', w: 180 },
       { k: 'statut', l: 'Statut', w: 150 },
+      { k: 'charge', l: 'Charge', w: 64, n: true },
       { k: 'conso', l: 'Consommé', w: 88, n: true },
       { k: 'raf', l: 'RAF', w: 56, n: true },
       { k: 'com', l: 'Commentaire', w: 300 },
@@ -390,7 +395,7 @@ export class Ateliers {
     }
     const toutes = [...debut, ...milieu, ...fin];
     const masquees = { ...(u.regHide[cur] ?? MASQUEES_PAR_DEFAUT) };
-    const visibles = toutes.filter((c) => c.k === 'lib' || !masquees[c.k]);
+    const visibles = toutes.filter((c) => c.k === 'lib' || !(masquees[c.k] || (masquees['chiffres'] && CHIFFRES.includes(c.k))));
     const total = sum(visibles.map((c) => c.w));
     return {
       v,
@@ -399,7 +404,10 @@ export class Ateliers {
       filtres,
       toutes,
       masquees,
-      nbMasquees: toutes.filter((c) => c.k !== 'lib' && masquees[c.k]).length,
+      nbMasquees: toutes.filter((c) => c.k !== 'lib' && !visibles.includes(c)).length,
+      chiffresMasques: !!masquees['chiffres'] || CHIFFRES.every((k) => masquees[k]),
+      // menu Colonnes : une seule case pour Charge, consommé et RAF
+      menu: toutes.filter((c) => c.k !== 'lib' && c.k !== 'conso' && c.k !== 'raf'),
       colonnes: visibles.map((c) => ({ ...c, pct: +((c.w / total) * 100).toFixed(2) })),
       lotVisible: visibles.some((c) => c.k === 'lot'),
       largeurMin: Math.round(total * 0.8),
@@ -450,7 +458,10 @@ export class Ateliers {
     const u = this.ui.ui();
     const h = { ...(u.regHide[type] ?? MASQUEES_PAR_DEFAUT) };
     if (oui) h[k] = true;
-    else delete h[k];
+    else {
+      delete h[k];
+      if (k === 'chiffres') for (const x of CHIFFRES) delete h[x]; // réafficher aussi d'anciens choix colonne par colonne
+    }
     this.ui.maj({ regHide: { ...u.regHide, [type]: h } });
   }
 

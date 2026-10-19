@@ -9,6 +9,7 @@ import { axeName, couleurGroupe, filteredTasks, groupByAxe, TacheVue, Vue } from
 import { BarreFiltres } from '../ui/barre-filtres';
 import { Carte } from '../ui/cartes';
 import { LienTache, Statut } from '../ui/tache';
+import { Triable } from '../ui/triable';
 
 /**
  * Workload › Optimisation IA : enveloppe Agent IA de chaque tâche, résultat (constaté à la validation, projeté avant),
@@ -16,7 +17,7 @@ import { LienTache, Statut } from '../ui/tache';
  */
 @Component({
   selector: 'app-workload-ia',
-  imports: [BarreFiltres, Carte, LienTache, Statut],
+  imports: [BarreFiltres, Carte, LienTache, Statut, Triable],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (vm(); as m) {
@@ -78,7 +79,7 @@ import { LienTache, Statut } from '../ui/tache';
           sousTitre="L’enveloppe IA est une réserve adossée aux profils de chaque tâche : elle n’est consommée que si la tâche dépasse la charge de ses profils. Résultat constaté à la validation, projection (≈) avant."
         >
           <div class="tw tall">
-            <table class="ia-t">
+            <table appTriable class="ia-t">
               <colgroup>
                 @for (w of largeurs; track $index) {
                   <col [style.width.%]="w" />
@@ -161,7 +162,7 @@ import { LienTache, Statut } from '../ui/tache';
                   }
                 } @empty {
                   <tr>
-                    <td colspan="10" class="empty">Aucune tâche ne correspond au filtre.</td>
+                    <td colspan="10" class="empty">Aucune tâche ne correspond au filtre. <button type="button" class="btn sm" (click)="ui.effacerFiltres()">Effacer les filtres</button></td>
                   </tr>
                 }
               </tbody>
