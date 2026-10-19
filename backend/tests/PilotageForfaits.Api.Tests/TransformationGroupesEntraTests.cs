@@ -69,6 +69,26 @@ public sealed class TransformationGroupesEntraTests
         Assert.Empty(principal.FindAll(CapacitesApplication.TypeClaim));
     }
 
+
+    [Fact]
+    public async Task Capacite_presente_dans_le_jeton_est_ignoree_sans_mapping_de_groupe()
+    {
+        var principal = Authentifie(new Claim(CapacitesApplication.TypeClaim, CapacitesApplication.ExportsFinanciers));
+        await Creer(new Dictionary<string, string?>()).TransformAsync(principal);
+        Assert.Empty(principal.FindAll(CapacitesApplication.TypeClaim));
+    }
+
+    [Fact]
+    public async Task Mapping_refuse_une_capacite_inconnue()
+    {
+        var sut = Creer(new Dictionary<string, string?>
+        {
+            [$"AutorisationEntra:GroupesCapacites:{GroupeA}:0"] = "administrateur-total"
+        });
+        var principal = Authentifie(new Claim("groups", GroupeA));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.TransformAsync(principal));
+    }
+
     private static TransformationGroupesEntra Creer(IDictionary<string, string?> valeurs) =>
         new(new ConfigurationBuilder().AddInMemoryCollection(valeurs).Build());
 
