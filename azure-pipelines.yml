@@ -37,7 +37,9 @@ stages:
               versionSpec: '22.x'
           - script: if [ -f package-lock.json ]; then npm ci; else npm install; fi
             workingDirectory: frontend
-          - script: npm run build
+          - script: npm run build -- --configuration production
+            workingDirectory: frontend
+          - script: test -s dist/pilotage-forfaits/browser/index.html
             workingDirectory: frontend
           - script: npm test
             workingDirectory: frontend
