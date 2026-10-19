@@ -2,9 +2,11 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using PilotageForfaits.Application.Calcul;
 using PilotageForfaits.Domain.Calcul;
+using PilotageForfaits.Domain.Entites;
 using PilotageForfaits.Infrastructure.Donnees;
 
 namespace PilotageForfaits.Api.Tests;
@@ -63,6 +65,35 @@ public sealed class ProjetsApiTests : IClassFixture<FabriqueApi>
 
         var detail = await client.GetFromJsonAsync<JsonObject>($"/api/projets/{id}");
         Assert.Equal("Création manuelle", detail!["origine"]!.GetValue<string>());
+    }
+
+
+    [Fact]
+    public async Task Une_habilitation_sans_capacite_de_lecture_ne_donne_pas_acces_au_projet()
+    {
+        var chef = _api.ClientPour("chef");
+        var creation = await chef.PostAsJsonAsync("/api/projets", ProjetVide("Projet protégé par capacité"));
+        Assert.Equal(HttpStatusCode.Created, creation.StatusCode);
+        var id = (await creation.Content.ReadFromJsonAsync<JsonObject>())!["id"]!.GetValue<Guid>();
+
+        var sansCapacite = _api.ClientPour("sans-capacite");
+        Assert.Equal(HttpStatusCode.OK, (await sansCapacite.GetAsync("/api/moi")).StatusCode);
+
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<PilotageDbContext>();
+            var utilisateur = await db.Utilisateurs.SingleAsync(u => u.IdentifiantExterne == "tenant-tests:oid-sans-capacite");
+            db.Habilitations.Add(new Habilitation
+            {
+                ProjetId = id,
+                UtilisateurId = utilisateur.Id,
+                Role = RoleProjet.ChefDeProjet,
+                Depuis = FabriqueApi.HorlogeFixe.ParDefaut
+            });
+            await db.SaveChangesAsync();
+        }
+
+        Assert.Equal(HttpStatusCode.NotFound, (await sansCapacite.GetAsync($"/api/projets/{id}")).StatusCode);
     }
 
     [Fact]
@@ -283,4 +314,44 @@ public sealed class ProjetsApiTests : IClassFixture<FabriqueApi>
         Assert.Equal(HttpStatusCode.Created, (await chef.PostAsJsonAsync("/api/projets", SansReference("Refonte intranet"))).StatusCode);
         Assert.Equal(HttpStatusCode.UnprocessableEntity, (await chef.PostAsJsonAsync("/api/projets", SansReference("REFONTE  INTRANÉT"))).StatusCode);
     }
+
+    [Fact]
+    public async Task Contrat_capacites_retourne_les_capacites_effectives_et_uniquement_les_projets_accessibles()
+    {
+        var chef = _api.ClientPour("chef");
+        var creation = await chef.PostAsJsonAsync("/api/projets", ProjetVide("Projet du contrat de capacités"));
+        Assert.Equal(HttpStatusCode.Created, creation.StatusCode);
+        var id = (await creation.Content.ReadFromJsonAsync<JsonObject>())!["id"]!.GetValue<Guid>();
+
+        var contrat = await chef.GetFromJsonAsync<JsonObject>("/api/moi/capacites");
+        Assert.Equal(1, contrat!["version"]!.GetValue<int>());
+        Assert.Contains("projets.lire", contrat["capacites"]!.AsArray().Select(x => x!.GetValue<string>()));
+        Assert.Contains("projets.creer", contrat["capacites"]!.AsArray().Select(x => x!.GetValue<string>()));
+        Assert.Contains(id.ToString(), contrat["projetsAccessibles"]!.AsArray().Select(x => x!.GetValue<string>()));
+
+        var autre = await _api.ClientPour("chef2").GetFromJsonAsync<JsonObject>("/api/moi/capacites");
+        Assert.DoesNotContain(id.ToString(), autre!["projetsAccessibles"]!.AsArray().Select(x => x!.GetValue<string>()));
+    }
+
+    [Fact]
+    public async Task Contrat_capacites_ne_donne_pas_de_projets_a_un_utilisateur_sans_capacite_de_lecture()
+    {
+        var contrat = await _api.ClientPour("sans-capacite").GetFromJsonAsync<JsonObject>("/api/moi/capacites");
+
+        Assert.Equal(1, contrat!["version"]!.GetValue<int>());
+        Assert.Empty(contrat["capacites"]!.AsArray());
+        Assert.Empty(contrat["projetsAccessibles"]!.AsArray());
+    }
+
+    [Fact]
+    public async Task Contrat_capacites_du_pilotage_expose_tous_les_identifiants_de_projet()
+    {
+        var creation = await _api.ClientPour("chef").PostAsJsonAsync("/api/projets", ProjetVide("Projet visible au pilotage"));
+        Assert.Equal(HttpStatusCode.Created, creation.StatusCode);
+        var id = (await creation.Content.ReadFromJsonAsync<JsonObject>())!["id"]!.GetValue<Guid>();
+
+        var contrat = await _api.ClientPour("pilotage").GetFromJsonAsync<JsonObject>("/api/moi/capacites");
+        Assert.Contains(id.ToString(), contrat!["projetsAccessibles"]!.AsArray().Select(x => x!.GetValue<string>()));
+    }
+
 }

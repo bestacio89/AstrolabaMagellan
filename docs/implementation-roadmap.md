@@ -8,7 +8,7 @@ The Angular application and its existing screen designs are intentionally out of
 
 ## Delivery rules
 
-- One focused branch and one pull request per stage; target `main` unless repository policy changes.
+- One focused branch and one pull request per stage. Target `main` unless the stage depends on an open predecessor PR; dependent stages may be stacked on that predecessor and retargeted to `main` after it merges.
 - Do not merge until CI is green and the stage's acceptance criteria are met.
 - Commit format: `[Action][Scope]: lowercase summary`. Allowed actions: `[Feat]`, `[Fix]`, `[Patch]`, `[Test]`, `[Refactor]`, `[Docs]`, `[Chore]`. Scopes should use the existing project conventions, including `[Api]`, `[Domain]`, `[Application]`, `[Contracts]`, `[CPM]`, `[Tests]`, `[Messaging]`, and `[Persistence]`.
 - Every PR uses the agreed sections: Summary, Details, Changes, Tests, Docs, and Release Notes.
@@ -145,4 +145,15 @@ One-line changelog entry.
 
 ## Current status
 
-This roadmap is the planning baseline only. Each implementation stage must be delivered in its own pull request with its own commits and evidence; this document does not claim that PostgreSQL migration, Entra authentication, or authorization enforcement has already been implemented or verified.
+Implementation is being delivered as separate pull requests. A merge alone is not evidence that the stage's acceptance criteria passed; CI and security review remain required.
+
+| Stage | Pull request | State |
+| --- | --- | --- |
+| 1 — PostgreSQL and code-first persistence | [#2](https://github.com/bestacio89/AstrolabaMagellan/pull/2) | Merged; CI/release acceptance still requires verified checks |
+| 2 — Entra ID authentication | [#4](https://github.com/bestacio89/AstrolabaMagellan/pull/4) | Merged; CI/release acceptance still requires verified checks |
+| 3 — Group-to-capability authorization | [#5](https://github.com/bestacio89/AstrolabaMagellan/pull/5) | Open for review |
+| 4 — Project/resource authorization | [#6](https://github.com/bestacio89/AstrolabaMagellan/pull/6) | Open for review; stacked on Stage 3 |
+| 5 — Current-user authorization contract | [#7](https://github.com/bestacio89/AstrolabaMagellan/pull/7) | Open for review; stacked on Stage 4 |
+| 6 — Security and release hardening | [#8](https://github.com/bestacio89/AstrolabaMagellan/pull/8) | Open for review; stacked on Stage 5 |
+
+At the time of this update, GitHub Actions runner jobs are queued, so no successful CI result is claimed. Do not merge dependent stages until the preceding stage is merged, all required checks pass, and the security acceptance criteria have been reviewed.

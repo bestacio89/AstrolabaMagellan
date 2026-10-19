@@ -16,7 +16,11 @@ public sealed class UtilisateurCourantHttp(IHttpContextAccessor accesseur) : IUt
 
     public bool EstAuthentifie => Utilisateur?.Identity?.IsAuthenticated == true;
 
-    public string IdentifiantExterne => Valeur("oid", "http://schemas.microsoft.com/identity/claims/objectidentifier");
+    private string TenantId => Valeur("tid", "http://schemas.microsoft.com/identity/claims/tenantid");
+    private string ObjectId => Valeur("oid", "http://schemas.microsoft.com/identity/claims/objectidentifier");
+
+    public string IdentifiantExterne =>
+        TenantId.Length == 0 || ObjectId.Length == 0 ? "" : $"{TenantId}:{ObjectId}";
 
     public string Prenom => Valeur("given_name", ClaimTypes.GivenName);
 
@@ -36,5 +40,12 @@ public sealed class UtilisateurCourantHttp(IHttpContextAccessor accesseur) : IUt
             .Where(c => c.Type is "roles" or ClaimTypes.Role)
             .Select(c => c.Value)
             .Distinct()
+            .ToList();
+
+    public IReadOnlyCollection<string> Capacites =>
+        (Utilisateur?.Claims ?? [])
+            .Where(c => c.Type == CapacitesApplication.TypeClaim)
+            .Select(c => c.Value)
+            .Distinct(StringComparer.Ordinal)
             .ToList();
 }

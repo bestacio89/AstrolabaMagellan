@@ -20,7 +20,7 @@ Example shape only; replace these illustrative IDs in deployment configuration a
 }
 ```
 
-Supported capabilities are `projets.lire-tous`, `projets.creer`, `projets.modifier`, `consomme.saisir`, and `exports.financiers`. A capability claim is derived only from an authenticated principal's group claim and the server-side mapping. Existing `roles` claims are not rewritten.
+Supported capabilities are `projets.lire`, `projets.lire-tous`, `projets.creer`, `projets.modifier`, `consomme.saisir`, and `exports.financiers`. `projets.lire` allows reads only when the user also has a project assignment; `projets.lire-tous` is the explicit cross-project read capability. A capability claim is derived only from an authenticated principal's group claim and the server-side mapping. Existing `roles` claims are not rewritten.
 
 Entra can omit a complete group list when membership exceeds token limits. The transformer treats `hasgroups` and `_claim_names` markers as overage signals and grants no group-derived capabilities in that case. This stage does not call Microsoft Graph; any future resolver must be deliberately designed, permissioned, and tested. Missing or unresolved group membership never implies access.
 
