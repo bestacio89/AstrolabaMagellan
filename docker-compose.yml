@@ -1,18 +1,23 @@
-# Base de données de DÉVELOPPEMENT (SQL Server 2022 dans un conteneur Docker).
+# Base de données PostgreSQL de DÉVELOPPEMENT.
 # Démarrer : docker compose up -d     Arrêter : docker compose down
-# Le mot de passe ci-dessous ne sert qu'en local ; il ne doit jamais être utilisé ailleurs.
+# Les identifiants ci-dessous sont réservés au développement local et ne doivent jamais être réutilisés ailleurs.
 services:
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: pilotage-sqlserver
+  postgres:
+    image: postgres:18
+    container_name: pilotage-postgres
     environment:
-      ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "Dev_Pilotage_2026!"
-      MSSQL_PID: "Developer"
+      POSTGRES_DB: pilotage_forfaits
+      POSTGRES_USER: pilotage
+      POSTGRES_PASSWORD: pilotage_dev_local_only
     ports:
-      - "1433:1433"
+      - "5432:5432"
     volumes:
-      - donnees-sqlserver:/var/opt/mssql
+      - donnees-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pilotage -d pilotage_forfaits"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
-  donnees-sqlserver:
+  donnees-postgres:
