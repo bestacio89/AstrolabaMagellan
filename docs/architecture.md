@@ -15,7 +15,7 @@
 | API | `PilotageForfaits.Api` | Contrôleurs REST, authentification (Entra ID ou utilisateurs de développement), traduction des erreurs en réponses HTTP, description OpenAPI | Application, Infrastructure (pour l'assemblage) |
 | Application | `PilotageForfaits.Application` | Cas d'usage : lister les projets, créer un projet vide, importer un TSP, vue d'ensemble ; contrôle des droits (`ServiceAcces`) ; passage base ↔ moteur (`ConstructeurProjetCalcul`) | Domaine |
 | Domaine | `PilotageForfaits.Domain` | Entités du modèle de données, règles métier, **moteur de calcul** (`Calcul/MoteurCalcul.cs`), **lecture du TSP** (`Tsp/InterpreteurTsp.cs`) | rien |
-| Infrastructure | `PilotageForfaits.Infrastructure` | Base de données (EF Core + SQL Server), lecture des fichiers Excel (`Excel/ClasseurXlsx.cs`), horloge | Application |
+| Infrastructure | `PilotageForfaits.Infrastructure` | Base de données PostgreSQL (EF Core + Npgsql), lecture des fichiers Excel (`Excel/ClasseurXlsx.cs`), horloge | Application |
 
 Choix assumé pour rester simple : les services de l'Application utilisent directement les requêtes EF Core (via `IContexteDonnees`), sans couche « dépôt » supplémentaire.
 
