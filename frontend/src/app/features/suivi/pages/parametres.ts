@@ -12,6 +12,7 @@ import { SuiviEtat } from '../etat/suivi.etat';
 import { UiEtat } from '../etat/ui.etat';
 import { ecrireTypesParDefaut } from '../etat/types-par-defaut';
 import { defaultAxeName, Vue } from '../etat/vue';
+import { instancesDuProjet } from '../etat/registres.logique';
 import { Carte } from '../ui/cartes';
 import { ListeEditable } from '../ui/liste-editable';
 
@@ -98,6 +99,18 @@ type CleAlerte = 'alerteActionsJours' | 'alerteAtelierJours' | 'alerteLivrableJo
               </div>
             }
           </div>
+        </app-carte>
+        <app-carte
+          titre="Instances de gouvernance"
+          sousTitre="Comités et réunions proposés pour les actions et les décisions (filtre et panneau de détail). Renommer une instance la renomme aussi sur les actions et décisions qui la portent ; en retirer une ne change pas celles qui l’utilisent déjà."
+        >
+          <app-liste-editable
+            libelle="Instances de gouvernance"
+            placeholder="Nouvelle instance (ex. Comité technique)"
+            [valeurs]="instancesDe(v)"
+            [lecture]="lecture"
+            (changer)="instances(v, $event)"
+          />
         </app-carte>
         <app-carte
           titre="Types de tâches"
@@ -368,6 +381,16 @@ export class Parametres {
 
   /** Une valeur par ligne (doublons retirés) ; liste vide : liste par défaut rétablie. */
   /** Enregistre la liste complète (liste vide : le serveur rétablit la liste par défaut). */
+  protected readonly instancesDe = instancesDuProjet;
+
+  /** Instances : une seule valeur changée à la même place = un renommage (les actions et décisions qui la portent suivent). */
+  protected instances(v: Vue, valeurs: string[]): void {
+    const avant = instancesDuProjet(v);
+    const diff = valeurs.length === avant.length ? avant.map((x, i) => (x !== valeurs[i] ? i : -1)).filter((i) => i >= 0) : [];
+    const [ancien, nouveau] = diff.length === 1 ? [avant[diff[0]], valeurs[diff[0]]] : [null, null];
+    void this.etat.saisir((id) => this.api.instances(id, valeurs, ancien, nouveau));
+  }
+
   protected listeIa(liste: 'leviers-ia' | 'causes-ia', valeurs: string[]): void {
     void this.etat.saisir((id) => this.api.listeIa(id, liste, valeurs));
   }

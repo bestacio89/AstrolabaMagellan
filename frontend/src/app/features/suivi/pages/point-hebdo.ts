@@ -154,7 +154,7 @@ import { SuiviEtat } from '../etat/suivi.etat';
               <div class="ph-echelle" [style.transform]="'scale(' + echelle() + ')'" [innerHTML]="html()"></div>
             </div>
             <p class="auto">
-              Consommé arrêté au {{ fD(dd.periode.fin) }} et valorisé au TJM. Risques : les 3 plus critiques. Actions : les ouvertes par date d’échéance, puis celles faites sur la période.
+              Consommé arrêté au {{ fD(dd.periode.fin) }} et valorisé au TJM. Risques : les 3 plus critiques (Actions &amp; décisions › Risques). Actions : les ouvertes par date d’échéance, puis celles faites sur la période.
             </p>
           </section>
         </div>
