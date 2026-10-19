@@ -9,11 +9,13 @@ namespace PilotageForfaits.Api.Authentification;
 public sealed class UtilisateurDev
 {
     public string Cle { get; set; } = "";
+    public string TenantId { get; set; } = "dev-tenant";
     public string Oid { get; set; } = "";
     public string Prenom { get; set; } = "";
     public string Nom { get; set; } = "";
     public string Email { get; set; } = "";
     public List<string> Roles { get; set; } = new();
+    public List<string> Capacites { get; set; } = new();
 }
 
 public sealed class OptionsAuthentificationDev : AuthenticationSchemeOptions
@@ -38,6 +40,7 @@ public sealed class AuthentificationDev(IOptionsMonitor<OptionsAuthentificationD
         if (u is null) return Task.FromResult(AuthenticateResult.Fail("Utilisateur de développement inconnu."));
         var claims = new List<Claim>
         {
+            new("tid", u.TenantId),
             new("oid", u.Oid),
             new("given_name", u.Prenom),
             new("family_name", u.Nom),
@@ -45,6 +48,7 @@ public sealed class AuthentificationDev(IOptionsMonitor<OptionsAuthentificationD
             new("name", $"{u.Prenom} {u.Nom}".Trim()),
         };
         claims.AddRange(u.Roles.Select(r => new Claim("roles", r)));
+        claims.AddRange(u.Capacites.Select(c => new Claim(CapacitesApplication.TypeClaim, c)));
         var identite = new ClaimsIdentity(claims, Schema, "name", "roles");
         return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identite), Schema)));
     }
