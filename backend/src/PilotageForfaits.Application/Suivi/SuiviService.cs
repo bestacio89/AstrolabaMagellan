@@ -63,16 +63,16 @@ public sealed class SuiviService(IContexteDonnees db, ServiceAcces acces, Constr
             Modele = modele,
             Droits = new DroitsDto
             {
-                Role = role.ToString(), RoleLibelle = Libelles.De(role), PeutModifier = acces.PeuModifierSurProjet(role) && !archive,
-                PeutSaisirConsomme = acces.PeuSaisirConsommeSurProjet(role) && !archive, VoitMontants = acces.PeuVoirMontants(role),
-                Archive = archive, EstChefDeProjet = acces.PeuModifierSurProjet(role),
-                PeutExporter = acces.PeuVoirMontants(role), Utilisateur = utilisateur.NomComplet,
+                Role = role.ToString(), RoleLibelle = Libelles.De(role), PeutModifier = acces.PeutModifierSurProjet(role) && !archive,
+                PeutSaisirConsomme = acces.PeutSaisirConsommeSurProjet(role) && !archive, VoitMontants = acces.PeutVoirMontants(role),
+                Archive = archive, EstChefDeProjet = acces.PeutModifierSurProjet(role),
+                PeutExporter = acces.PeutVoirMontants(role), Utilisateur = utilisateur.NomComplet,
             },
             Aujourdhui = horloge.Aujourdhui,
         };
         suivi.Projet.PointsHebdo = PointsHebdoService.Vue(pointsHebdo, nomsPh);
         var json = JsonSerializer.SerializeToNode(suivi, OptionsJson)!.AsObject();
-        if (!acces.PeuVoirMontants(role)) FiltreMontants.Appliquer(json);
+        if (!acces.PeutVoirMontants(role)) FiltreMontants.Appliquer(json);
         return (json, modele);
     }
 
