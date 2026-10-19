@@ -7,7 +7,7 @@ using PilotageForfaits.Domain.Entites;
 namespace PilotageForfaits.Infrastructure.Donnees;
 
 /// <summary>
-/// Accès à la base relationnelle (SQL Server) avec Entity Framework Core.
+/// Accès à PostgreSQL avec Entity Framework Core.
 /// La structure des tables est décrite dans le dossier Configurations, une classe par objet du modèle de données.
 /// </summary>
 public sealed class PilotageDbContext(DbContextOptions<PilotageDbContext> options) : DbContext(options), IContexteDonnees
@@ -71,7 +71,7 @@ public sealed class PilotageDbContext(DbContextOptions<PilotageDbContext> option
             modelBuilder.Entity(type.ClrType).Property(nameof(Entite.Version)).IsConcurrencyToken();
 
         // « Rien ne se supprime sans trace » : aucune suppression en cascade. Un objet lié empêche la suppression.
-        // (Évite aussi les « chemins de cascade multiples » refusés par SQL Server.)
+        // (Les suppressions en cascade sont interdites par la règle métier, quel que soit le fournisseur.)
         foreach (var lien in modelBuilder.Model.GetEntityTypes().SelectMany(t => t.GetForeignKeys()).Where(fk => !fk.IsOwnership))
             lien.DeleteBehavior = DeleteBehavior.Restrict;
     }
@@ -133,13 +133,13 @@ public sealed class PilotageDbContext(DbContextOptions<PilotageDbContext> option
         (await Set<T>().Where(x => x.ProjetId == projetId).ToListAsync(annulation)).Cast<object>().ToList();
 
     /// <summary>
-    /// Développement sans migration : compare les tables et colonnes du modèle à celles de la base SQL Server
+    /// Outil de diagnostic : compare les tables et colonnes du modèle à celles de la base PostgreSQL
     /// (une base créée par une version précédente n'est pas mise à jour). Renvoie ce qui manque (vide : tout va bien).
     /// Lecture du catalogue (INFORMATION_SCHEMA) : aucune requête en erreur, donc rien de bruyant dans le journal.
     /// </summary>
     public async Task<List<string>> ElementsManquantsAsync(CancellationToken annulation = default)
     {
-        var existantes = (await Database.SqlQuery<ColonneSql>($"SELECT TABLE_NAME AS NomTable, COLUMN_NAME AS NomColonne FROM INFORMATION_SCHEMA.COLUMNS")
+        var existantes = (await Database.SqlQuery<ColonneSql>($"SELECT table_name AS "NomTable", column_name AS "NomColonne" FROM information_schema.columns WHERE table_schema = 'public'")
                 .ToListAsync(annulation))
             .Select(c => (c.NomTable.ToUpperInvariant(), c.NomColonne.ToUpperInvariant())).ToHashSet();
         var tables = existantes.Select(c => c.Item1).ToHashSet();
@@ -160,7 +160,7 @@ public sealed class PilotageDbContext(DbContextOptions<PilotageDbContext> option
         return manquants.Distinct().ToList();
     }
 
-    /// <summary>Une colonne du catalogue SQL Server.</summary>
+    /// <summary>Une colonne du catalogue PostgreSQL.</summary>
     public sealed class ColonneSql
     {
         public string NomTable { get; set; } = "";
