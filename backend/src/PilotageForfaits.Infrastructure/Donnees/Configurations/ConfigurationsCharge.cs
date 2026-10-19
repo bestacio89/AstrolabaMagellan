@@ -31,7 +31,7 @@ internal sealed class ConfigurationTache : IEntityTypeConfiguration<Tache>
         b.HasMany(x => x.Consommes).WithOne().HasForeignKey(c => c.TacheId).IsRequired();
         b.HasMany(x => x.Evolutions).WithOne().HasForeignKey(e => e.TacheId).IsRequired();
         b.Ignore(x => x.EstAnnulee);
-        b.ToTable(t => t.HasCheckConstraint("CK_Taches_Avancement", "[Avancement] IS NULL OR (CAST([Avancement] AS FLOAT) >= 0 AND CAST([Avancement] AS FLOAT) <= 1)"));
+        b.ToTable(t => t.HasCheckConstraint("CK_Taches_Avancement", "\"Avancement\" IS NULL OR (\"Avancement\" >= 0 AND \"Avancement\" <= 1)"));
     }
 }
 
@@ -39,7 +39,7 @@ internal sealed class ConfigurationChargeTache : IEntityTypeConfiguration<Charge
 {
     public void Configure(EntityTypeBuilder<ChargeTache> b)
     {
-        b.ToTable("ChargesTache", t => t.HasCheckConstraint("CK_ChargesTache_Positives", "CAST([ChargeVendue] AS FLOAT) >= 0 AND CAST([ChargeAjoutee] AS FLOAT) >= 0"));
+        b.ToTable("ChargesTache", t => t.HasCheckConstraint("CK_ChargesTache_Positives", "\"ChargeVendue\" >= 0 AND \"ChargeAjoutee\" >= 0"));
         b.AppartientAuProjet();
         b.HasOne(x => x.ProfilProjet).WithMany().HasForeignKey(x => x.ProfilProjetId).IsRequired();
         b.HasIndex(x => new { x.TacheId, x.ProfilProjetId }).IsUnique(); // une charge par tâche et profil
@@ -52,7 +52,7 @@ internal sealed class ConfigurationConsomme : IEntityTypeConfiguration<Consomme>
 {
     public void Configure(EntityTypeBuilder<Consomme> b)
     {
-        b.ToTable("Consommes", t => t.HasCheckConstraint("CK_Consommes_Positif", "CAST([JoursHomme] AS FLOAT) > 0"));
+        b.ToTable("Consommes", t => t.HasCheckConstraint("CK_Consommes_Positif", "\"JoursHomme\" > 0"));
         b.AppartientAuProjet();
         b.HasOne<ProfilProjet>().WithMany().HasForeignKey(x => x.ProfilProjetId).IsRequired();
         b.HasIndex(x => new { x.TacheId, x.ProfilProjetId, x.Jour }).IsUnique(); // un consommé par tâche, profil et jour

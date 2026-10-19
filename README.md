@@ -40,10 +40,10 @@ Elle remplace le prototype (POC) en HTML. La **version de référence du POC (v6
 │  2. Application     cas d'usage (services), droits par rôle, transactions,     │
 │                     journal                                                    │
 │  3. Domaine         entités, règles métier, MOTEUR DE CALCUL, lecture du TSP   │
-│  4. Infrastructure  base SQL Server (EF Core), lecture des fichiers Excel      │
+│  4. Infrastructure  base PostgreSQL (EF Core + Npgsql), lecture des fichiers Excel      │
 └───────────────────────────────────┬───────────────────────────────────────────┘
                                     │
-                          SQL Server (base relationnelle)
+                          PostgreSQL (base relationnelle)
 ```
 
 Règle d'or : **les dépendances vont de haut en bas uniquement**. Le Domaine ne connaît ni la base, ni le web : c'est ce qui le rend testable et durable. Détails et choix : [docs/architecture.md](docs/architecture.md).
@@ -58,17 +58,16 @@ Règle d'or : **les dépendances vont de haut en bas uniquement**. Le Domaine ne
 |---|---|---|
 | [.NET SDK](https://dotnet.microsoft.com/download) | 10 (LTS) | serveur |
 | [Node.js](https://nodejs.org) | 22.12 ou plus (LTS) — Angular refuse les versions plus anciennes | interface |
-| SQL Server Developer (+ SSMS) | 2022 | base de données locale (ou Docker Desktop, voir plus bas) |
+| PostgreSQL | 18 | base de données locale (ou Docker Desktop, voir plus bas) |
 | Git | récent | |
 
 Les versions sont **à confirmer avec l'équipe** : voir [docs/a-valider.md](docs/a-valider.md).
 
 ### 1. Base de données
 
-Avec **SQL Server installé sur le poste** : rien à faire. La chaîne de connexion de `appsettings.Development.json` utilise votre compte Windows (`Server=localhost;…;Trusted_Connection=True`). Pour une instance nommée, remplacez `localhost` par `localhost\NOM_INSTANCE`.
+Avec **PostgreSQL installé sur le poste** : configurez `ConnectionStrings: Pilotage` dans `appsettings.Development.json` avec votre hôte, base, utilisateur et mot de passe PostgreSQL.
 
-Avec **Docker** à la place : `docker compose up -d`, puis remplacez la chaîne de connexion par
-`Server=localhost,1433;Database=PilotageForfaits;User Id=sa;Password=Dev_Pilotage_2026!;TrustServerCertificate=True`.
+Avec **Docker** : `docker compose up -d`. Le fichier `appsettings.Development.json` contient la chaîne locale correspondant au conteneur PostgreSQL. Ces identifiants sont réservés au développement local.
 
 Une seule fois, faites confiance au certificat HTTPS de développement : `dotnet dev-certs https --trust`.
 
@@ -80,9 +79,8 @@ dotnet build
 dotnet run --project src/PilotageForfaits.Api
 ```
 
-L'API écoute sur `https://localhost:5081` (et `http://localhost:5080`, redirigé vers HTTPS). Au premier démarrage, elle crée la base de développement.
+L'API écoute sur `https://localhost:5081` (et `http://localhost:5080`, redirigé vers HTTPS). En développement, l'API applique les migrations EF Core existantes. Tant que la migration initiale PostgreSQL n'est pas générée et validée, le démarrage échoue volontairement : `EnsureCreated` n'est pas utilisé.
 
-> **Le modèle de données a changé avec cette version.** Tant qu'il n'y a pas de migration, la base de développement est créée une seule fois et n'est pas mise à jour : **supprimez la base `PilotageForfaits`** (SSMS : clic droit › Supprimer, ou `docker compose down -v` avec Docker) avant de relancer l'API. Elle sera recréée au démarrage.
 > **Recommandé dès maintenant : repartir d'une base propre gérée par migrations** (voir plus bas « Repartir propre et passer aux migrations »). Sans migration, chaque évolution du modèle oblige à supprimer la base de développement, donc à perdre les projets de test. Avec les migrations, la base est mise à jour au démarrage, sans perte. Si la base n'est pas à jour, l'API le signale au démarrage et dans le message d'erreur.
 
 Test rapide : `https://localhost:5081/api/sante`. Le fichier `PilotageForfaits.Api.http` contient des requêtes d'essai.
@@ -125,27 +123,23 @@ Les résultats attendus sont produits par le moteur du POC lui-même (`outils/re
 
 ---
 
-## Base de données : repartir propre et passer aux migrations (une seule fois)
+## Base de données : migrations PostgreSQL
 
-Tant qu'aucune migration n'existe, la base de développement est créée directement au démarrage, puis n'est plus jamais mise à jour. Une seule commande supprime la base de développement (**toutes ses données**), crée la migration initiale et laisse l'API recréer la base au prochain démarrage :
+Le schéma est géré exclusivement par les migrations EF Core. L'API ne crée jamais une base avec `EnsureCreated`, et les scripts ne suppriment ni base ni migrations.
 
-```bash
-./scripts/reinitialiser-base.sh          # macOS / Linux
-.\scripts\reinitialiser-base.ps1         # Windows (PowerShell)
+Pour créer une migration après une modification du modèle, depuis la racine du dépôt :
+
+```powershell
+.\scripts\creer-migration.ps1 -Nom NomDeLEvolution
 ```
 
-Enregistrez ensuite le dossier `backend/src/PilotageForfaits.Infrastructure/Donnees/Migrations` dans Git.
-À partir de là, chaque modification du modèle = une nouvelle migration (si vous l'oubliez, l'API le dit clairement au démarrage), et la base est mise à jour au démarrage **sans perte de données** :
+Ou sous macOS/Linux :
 
 ```bash
-./scripts/creer-migration.sh NomDeLEvolution        # macOS / Linux
-.\scripts\creer-migration.ps1 -Nom NomDeLEvolution  # Windows
+./scripts/creer-migration.sh NomDeLEvolution
 ```
 
-> **Version du 07/10/2026 (brouillons de projet)** : une table s'ajoute (`BrouillonsProjet`). Deux possibilités, l'API arrêtée :
-> - garder vos données : `.\scripts\creer-migration.ps1 -Nom Brouillons`, puis relancer l'API ;
-> - repartir d'une base vide (phase de développement) : `.\scripts\reinitialiser-base.ps1` — supprime la base **et** les anciennes
->   migrations, recrée une seule migration « Initiale » à jour du modèle ; l'API recrée la base au démarrage.
+La migration initiale PostgreSQL doit être générée, revue et validée avant le premier démarrage local. Voir [docs/postgresql-migrations.md](docs/postgresql-migrations.md) pour les commandes et critères de validation. Ne supprimez jamais des migrations déjà partagées pour « repartir propre » : ajoutez une migration corrective.
 
 ---
 
