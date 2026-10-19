@@ -24,13 +24,21 @@ dotnet ef migrations add InitialPostgreSql --project src/PilotageForfaits.Infras
 
 Le dépôt fournit déjà un manifeste d'outils local dans `backend/.config/dotnet-tools.json` avec `dotnet-ef` aligné sur EF Core 10. Restaurer cet outil via `dotnet tool restore` ; ne pas dépendre d'une installation globale non documentée.
 
-Ensuite :
+Ensuite, inspecter le script SQL généré :
 
 ```powershell
-dotnet build PilotageForfaits.sln
-dotnet test PilotageForfaits.sln
 dotnet ef migrations script --project src/PilotageForfaits.Infrastructure --startup-project src/PilotageForfaits.Api
 ```
+
+Pour exécuter le test d'intégration PostgreSQL localement, configurez `POSTGRES_TEST_CONNECTION` avec une base de test dédiée (le test applique les migrations à la base indiquée et ne la supprime pas), puis lancez les tests :
+
+```powershell
+$env:POSTGRES_TEST_CONNECTION = "Host=localhost;Port=5432;Database=pilotage_forfaits_tests;Username=pilotage;Password=pilotage_dev_local_only"
+dotnet build PilotageForfaits.sln
+dotnet test PilotageForfaits.sln
+```
+
+Créez `pilotage_forfaits_tests` dans le conteneur PostgreSQL local avant d'exécuter le test. En CI GitHub Actions, un service PostgreSQL 18 neuf et une base de test dédiée sont fournis automatiquement.
 
 Inspecter la migration et le script SQL généré. Vérifier notamment les clés étrangères, index, colonnes décimales (précision 18, échelle 6), enums stockés en texte, propriétés possédées, jetons de concurrence, noms de tables/colonnes et comportements de suppression. La migration doit être reproductible sur une base PostgreSQL vide.
 
