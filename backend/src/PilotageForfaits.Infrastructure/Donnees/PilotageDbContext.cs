@@ -139,7 +139,7 @@ public sealed class PilotageDbContext(DbContextOptions<PilotageDbContext> option
     /// </summary>
     public async Task<List<string>> ElementsManquantsAsync(CancellationToken annulation = default)
     {
-        var existantes = (await Database.SqlQuery<ColonneSql>($"SELECT table_name AS "NomTable", column_name AS "NomColonne" FROM information_schema.columns WHERE table_schema = 'public'")
+        var existantes = (await Database.SqlQuery<ColonneSql>($"SELECT table_name AS \"NomTable\", column_name AS \"NomColonne\" FROM information_schema.columns WHERE table_schema = 'public'")
                 .ToListAsync(annulation))
             .Select(c => (c.NomTable.ToUpperInvariant(), c.NomColonne.ToUpperInvariant())).ToHashSet();
         var tables = existantes.Select(c => c.Item1).ToHashSet();
