@@ -30,7 +30,7 @@ public sealed partial class ExportsService(
     {
         var role = await acces.ExigerExportAsync(projetId, a);
         // la photo des indicateurs n'est prise que par le chef de projet, et jamais sur un projet archivé (lecture seule)
-        if (acces.PeuModifierSurProjet(role) && !await acces.EstArchiveAsync(projetId, a)) await PhotographierAsync(projetId, NaturePhoto.Copil, null, a);
+        if (acces.PeutModifierSurProjet(role) && !await acces.EstArchiveAsync(projetId, a)) await PhotographierAsync(projetId, NaturePhoto.Copil, null, a);
         var (vue, modele) = await ChargerAsync(projetId, a);
         var feuilles = ExportComites.Copil(vue, modele, horloge.Aujourdhui);
         return new FichierExport(ecrivain.Ecrire(feuilles), $"COPIL - {NomFichier(vue.Fiche.Client, "Projet")} - {NomFichier(vue.Fiche.Projet, "")} - {Calendrier.Iso(horloge.Aujourdhui)}.xlsx".Replace(" -  - ", " - "));
@@ -42,7 +42,7 @@ public sealed partial class ExportsService(
         if (c.Du == default || c.Au == default) throw new RegleMetierException("Indiquez les deux dates de la période.");
         if (c.Du > c.Au) throw new RegleMetierException("La date de début doit précéder la date de fin.");
         if (c.Horizon is not (7 or 14 or 21 or 28)) throw new RegleMetierException("Horizon non proposé.");
-        if (acces.PeuModifierSurProjet(role) && !await acces.EstArchiveAsync(projetId, a)) await PhotographierAsync(projetId, NaturePhoto.Coproj, c.Au, a);
+        if (acces.PeutModifierSurProjet(role) && !await acces.EstArchiveAsync(projetId, a)) await PhotographierAsync(projetId, NaturePhoto.Coproj, c.Au, a);
         var (vue, modele) = await ChargerAsync(projetId, a);
         var feuilles = ExportComites.Coproj(vue, modele, c.Du, c.Au, c.Horizon, horloge.Aujourdhui);
         return new FichierExport(ecrivain.Ecrire(feuilles), $"COPROJ - {NomFichier(vue.Fiche.Client, "Projet")} - {NomFichier(vue.Fiche.Projet, "")} - {Calendrier.Iso(c.Au)}.xlsx".Replace(" -  - ", " - "));
