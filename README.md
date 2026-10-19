@@ -81,7 +81,6 @@ dotnet run --project src/PilotageForfaits.Api
 
 L'API écoute sur `https://localhost:5081` (et `http://localhost:5080`, redirigé vers HTTPS). En développement, l'API applique les migrations EF Core existantes. Tant que la migration initiale PostgreSQL n'est pas générée et validée, le démarrage échoue volontairement : `EnsureCreated` n'est pas utilisé.
 
-> **Le modèle de données a changé avec cette version.** Tant qu'il n'y a pas de migration, la base de développement est créée une seule fois et n'est pas mise à jour : **supprimez la base `PilotageForfaits`** (SSMS : clic droit › Supprimer, ou `docker compose down -v` avec Docker) avant de relancer l'API. Elle sera recréée au démarrage.
 > **Recommandé dès maintenant : repartir d'une base propre gérée par migrations** (voir plus bas « Repartir propre et passer aux migrations »). Sans migration, chaque évolution du modèle oblige à supprimer la base de développement, donc à perdre les projets de test. Avec les migrations, la base est mise à jour au démarrage, sans perte. Si la base n'est pas à jour, l'API le signale au démarrage et dans le message d'erreur.
 
 Test rapide : `https://localhost:5081/api/sante`. Le fichier `PilotageForfaits.Api.http` contient des requêtes d'essai.
