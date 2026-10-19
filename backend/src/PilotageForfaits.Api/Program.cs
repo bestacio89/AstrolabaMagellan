@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
 using PilotageForfaits.Api.Authentification;
@@ -29,10 +30,19 @@ if (mode == "Dev")
 }
 else
 {
+    ValiderConfigurationEntraId(builder.Configuration);
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 }
-builder.Services.AddAuthorization();
+
+// L'API est protégée par défaut. Une route doit explicitement déclarer AllowAnonymous()
+// pour être publique (par exemple /api/sante).
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 // ---------- API REST ----------
 builder.Services.AddControllers()
@@ -76,6 +86,35 @@ static async Task AppliquerMigrationsDeDeveloppementAsync(WebApplication app)
 
     await db.Database.MigrateAsync();
 }
+
+
+
+static void ValiderConfigurationEntraId(IConfiguration configuration)
+{
+    var instance = configuration["AzureAd:Instance"];
+    var tenantId = configuration["AzureAd:TenantId"];
+    var clientId = configuration["AzureAd:ClientId"];
+    var audience = configuration["AzureAd:Audience"];
+
+    if (!Uri.TryCreate(instance, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
+        throw new InvalidOperationException("La configuration AzureAd:Instance doit être une URL HTTPS valide.");
+
+    if (!EstValeurConfiguree(tenantId))
+        throw new InvalidOperationException("AzureAd:TenantId doit être défini via la configuration de l'environnement ou le magasin de secrets.");
+
+    if (!Guid.TryParse(clientId, out _))
+        throw new InvalidOperationException("AzureAd:ClientId doit contenir l'identifiant d'application Entra ID (GUID).");
+
+    if (!EstValeurConfiguree(audience))
+        throw new InvalidOperationException("AzureAd:Audience doit contenir l'audience attendue pour l'API.");
+}
+
+static bool EstValeurConfiguree(string? value) =>
+    !string.IsNullOrWhiteSpace(value)
+    && !value.Contains("A_RENSEIGNER", StringComparison.OrdinalIgnoreCase)
+    && !value.Contains("REPLACE_ME", StringComparison.OrdinalIgnoreCase)
+    && !value.Contains("YOUR_", StringComparison.OrdinalIgnoreCase)
+    && !string.Equals(value, "CHANGEME", StringComparison.OrdinalIgnoreCase);
 
 /// <summary>Rend la classe Program visible des tests d'intégration.</summary>
 public partial class Program;
