@@ -19,7 +19,7 @@ internal sealed class ConfigurationAchatReel : IEntityTypeConfiguration<AchatRee
 {
     public void Configure(EntityTypeBuilder<AchatReel> b)
     {
-        b.ToTable("AchatsReels", t => t.HasCheckConstraint("CK_AchatsReels_Positifs", "CAST([Quantite] AS FLOAT) > 0 AND CAST([CoutUnitaire] AS FLOAT) >= 0 AND CAST([Refacture] AS FLOAT) >= 0"));
+        b.ToTable("AchatsReels", t => t.HasCheckConstraint("CK_AchatsReels_Positifs", "\"Quantite\" > 0 AND \"CoutUnitaire\" >= 0 AND \"Refacture\" >= 0"));
         b.AppartientAuProjet(p => p.AchatsReels);
         b.HasOne<LigneBudgetAchat>().WithMany().HasForeignKey(x => x.LigneBudgetAchatId).IsRequired(false);
         b.Property(x => x.Commentaire).HasMaxLength(Outils.TexteLong);
@@ -31,7 +31,7 @@ internal sealed class ConfigurationFraisReel : IEntityTypeConfiguration<FraisRee
 {
     public void Configure(EntityTypeBuilder<FraisReel> b)
     {
-        b.ToTable("FraisReels", t => t.HasCheckConstraint("CK_FraisReels_Positif", "CAST([Montant] AS FLOAT) > 0"));
+        b.ToTable("FraisReels", t => t.HasCheckConstraint("CK_FraisReels_Positif", "\"Montant\" > 0"));
         b.AppartientAuProjet(p => p.FraisReels);
         b.HasOne<ImportFrais>().WithMany().HasForeignKey(x => x.ImportFraisId).IsRequired(false);
         b.Property(x => x.Commentaire).HasMaxLength(Outils.TexteLong);
