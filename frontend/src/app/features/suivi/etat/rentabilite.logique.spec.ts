@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Financier } from '../api/modeles';
-import { cascadeMarge, detailMarche, DonneesDetail, ecartsTaches, placerCascade, signeE, simulerDepense, TacheMarge } from './rentabilite.logique';
+import { cascadeMarge, detailMarche, DonneesDetail, ecartsTaches, placerCascade, signeE, TacheMarge } from './rentabilite.logique';
 
 /** Indicateurs financiers d'un projet fictif (seuls les champs utiles à l'écran Rentabilité comptent). */
 function financier(partiel: Partial<Financier> = {}): Financier {
@@ -28,7 +28,7 @@ const TACHES: TacheMarge[] = [
 ];
 
 describe('Rentabilité', () => {
-  it('explique tout l’écart entre la marge vendue et la marge à terminaison', () => {
+  it('explique tout l’écart entre la marge vendue et la marge à l’atterrissage', () => {
     const marches = cascadeMarge(financier(), TACHES);
     expect(marches[0]).toMatchObject({ cle: 'vendue', montant: 31000, nature: 'total' });
     expect(marches.at(-1)).toMatchObject({ cle: 'terminaison', montant: 22740, nature: 'total' });
@@ -77,21 +77,6 @@ describe('Rentabilité', () => {
     const marches = cascadeMarge(financier({ caAvenant: 2000, margeNette: 20140 }), TACHES);
     expect(marches.find((m) => m.cle === 'avenants')).toMatchObject({ montant: -2000, nature: 'baisse' });
     expect(marches.some((m) => m.cle === 'autres')).toBe(false);
-  });
-
-  it('simule une dépense sans rien enregistrer', () => {
-    const f = financier();
-    const s = simulerDepense(f, { personnes: 6, jours: 2, transport: 180, sejour: 160, refacture: 0 });
-    expect(s.cout).toBe(6 * 180 + 6 * 2 * 160);
-    expect(s.margeApres).toBe(22740 - 3000);
-    expect(s.tauxApres).toBeCloseTo((22740 - 3000) / (100000 + 2600 + 0), 9);
-    expect(s.ecartPoints).toBeLessThan(0);
-  });
-
-  it('ignore les saisies vides ou négatives et tient compte du refacturé', () => {
-    const s = simulerDepense(financier(), { personnes: -2, jours: Number.NaN, transport: 100, sejour: 100, refacture: 500 });
-    expect(s.cout).toBe(0);
-    expect(s.margeApres).toBe(22740 + 500);
   });
 
   it('signale l’économie fictive d’une tâche validée sans consommé', () => {

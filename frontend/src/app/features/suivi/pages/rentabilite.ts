@@ -1,20 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Fx } from '../ui/fx';
 import { fD, fE, fJ, fP2 } from '../etat/formats';
-import { cascadeMarge, DepenseSimulee, ecartsTaches, placerCascade, simulerDepense } from '../etat/rentabilite.logique';
+import { cascadeMarge, ecartsTaches, placerCascade } from '../etat/rentabilite.logique';
 import { PANNEAU_MARGE, SuiviEtat } from '../etat/suivi.etat';
 import { estFinancier } from '../etat/vigilance';
 import { echEtat, EtatEcheance } from '../etat/vue';
 import { EcheanceCalculee, PointVigilance } from '../api/modeles';
 
-/** Valeurs de départ du simulateur : un déplacement type (à adapter). */
-const DEPENSE_INITIALE: DepenseSimulee = { personnes: 2, jours: 1, transport: 150, sejour: 120, refacture: 0 };
-
 /**
- * Rentabilité réelle du projet : d'où vient l'écart entre la marge vendue et la marge à terminaison (cascade),
- * simulation d'une dépense avant de l'engager, évolutions du périmètre, achats et frais.
- * Tous les montants viennent du calcul du serveur ; le simulateur n'enregistre rien.
+ * Rentabilité réelle du projet : d'où vient l'écart entre la marge vendue et la marge à l’atterrissage (cascade),
+ * évolutions du périmètre, achats et frais. Tous les montants viennent du calcul du serveur.
  */
 @Component({
   selector: 'app-rentabilite',
@@ -38,7 +34,7 @@ const DEPENSE_INITIALE: DepenseSimulee = { personnes: 2, jours: 1, transport: 15
             <div class="s">{{ fE(f.margeNetteVendue) }} au TSP signé</div>
           </div>
           <div class="kpi">
-            <div class="l">Marge nette à terminaison</div>
+            <div class="l">Marge nette à l’atterrissage</div>
             <div class="v"><span [class.neg]="ecartPts < -0.0005">{{ fP2(f.tauxMargeNette) }}</span></div>
             <div class="s">
               <span class="ecart-badge" [class.neg]="ecartPts < -0.0005" [class.pos]="ecartPts > 0.0005">{{ points(ecartPts) }}</span>
@@ -61,9 +57,9 @@ const DEPENSE_INITIALE: DepenseSimulee = { personnes: 2, jours: 1, transport: 15
         </div>
 
         <div class="s-grille">
-          <section class="tdb-carte c-7" aria-labelledby="rt-cascade">
+          <section class="tdb-carte c-12" aria-labelledby="rt-cascade">
             <header>
-              <h2 id="rt-cascade">De la marge vendue à la marge à terminaison <app-fx cle="cascade" /></h2>
+              <h2 id="rt-cascade">De la marge vendue à la marge à l’atterrissage <app-fx cle="cascade" /></h2>
               <span class="tdb-resume">marge nette, en euros</span>
             </header>
             @let pl = placement();
@@ -107,59 +103,6 @@ const DEPENSE_INITIALE: DepenseSimulee = { personnes: 2, jours: 1, transport: 15
             </footer>
           </section>
 
-          <section class="tdb-carte c-5 rt-simu" aria-labelledby="rt-simu">
-            <header>
-              <h2 id="rt-simu">Simuler une dépense <app-fx cle="simu" /></h2>
-              <span class="rt-note">rien n’est enregistré</span>
-            </header>
-            <div class="rt-champs">
-              <label class="rt-champ"
-                >Personnes<input class="in" type="number" min="0" step="1" [value]="depense().personnes" (input)="changer('personnes', $event)"
-              /></label>
-              <label class="rt-champ"
-                >Jours sur place<input class="in" type="number" min="0" step="0.5" [value]="depense().jours" (input)="changer('jours', $event)"
-              /></label>
-              <label class="rt-champ"
-                >Transport par personne (€)<input class="in" type="number" min="0" step="10" [value]="depense().transport" (input)="changer('transport', $event)"
-              /></label>
-              <label class="rt-champ"
-                >Hébergement et repas, par personne et par jour (€)<input
-                  class="in"
-                  type="number"
-                  min="0"
-                  step="10"
-                  [value]="depense().sejour"
-                  (input)="changer('sejour', $event)"
-              /></label>
-              <label class="rt-champ large"
-                >Refacturé au client (€)<input class="in" type="number" min="0" step="50" [value]="depense().refacture" (input)="changer('refacture', $event)"
-              /></label>
-            </div>
-            @let s = simulation();
-            <dl class="rt-resultat">
-              <div>
-                <dt>Coût de la dépense</dt>
-                <dd>{{ fE(s.cout) }}</dd>
-              </div>
-              <div>
-                <dt>Marge nette à terminaison</dt>
-                <dd>
-                  <span class="muted">{{ fP2(s.tauxAvant) }}</span> → <b class="rt-apres" [class.neg]="s.ecartPoints < -0.0005">{{ fP2(s.tauxApres) }}</b>
-                </dd>
-              </div>
-              <div>
-                <dt>Variation</dt>
-                <dd>{{ points(s.ecartPoints) }} · {{ signeE(s.margeApres - s.margeAvant) }}</dd>
-              </div>
-            </dl>
-            @if (f.tauxMargeNetteVendue != null && s.tauxApres < f.tauxMargeNetteVendue - 0.0005 && s.cout > 0) {
-              <p class="rt-alerte">Après cette dépense, la marge serait sous la marge nette vendue ({{ fP2(f.tauxMargeNetteVendue) }}).</p>
-            }
-            <footer>
-              <button type="button" class="btn sm ghost" (click)="depense.set(depenseInitiale)">Réinitialiser</button>
-              <span>Une dépense engagée se saisit dans <a routerLink="../frais">Frais</a>.</span>
-            </footer>
-          </section>
         </div>
 
         <div class="s-grille">
@@ -200,7 +143,7 @@ const DEPENSE_INITIALE: DepenseSimulee = { personnes: 2, jours: 1, transport: 15
                 <span class="rt-n">Réel {{ fE(f.frais.reel) }} · budget {{ fE(f.frais.budget) }}</span>
               </div>
               <div class="rt-mesure fort">
-                <span class="rt-l">Marge nette à terminaison</span>
+                <span class="rt-l">Marge nette à l’atterrissage</span>
                 <b>{{ fE(f.margeNette) }}</b>
                 <span class="rt-n">{{ fP2(f.tauxMargeNette) }} · vendue {{ fP2(f.tauxMargeNetteVendue) }}</span>
                 <span class="rt-n">Taux sur {{ fE(f.ca + f.achats.attRev + f.frais.attRef) }} (CA + refacturé)</span>
@@ -477,70 +420,6 @@ const DEPENSE_INITIALE: DepenseSimulee = { personnes: 2, jours: 1, transport: 15
       background: var(--c-primaire-clair);
       font: 400 14px/20px var(--police-texte);
     }
-    .rt-simu {
-      border-color: var(--c-primaire);
-    }
-    .rt-note {
-      font: 400 12px/16px var(--police-texte);
-      padding: 2px 8px;
-      border-radius: var(--rayon-badge);
-      background: var(--c-violet-fond);
-      color: var(--c-violet);
-    }
-    .rt-champs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: var(--esp-3);
-    }
-    .rt-champ {
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      gap: 4px;
-      font: 400 12px/16px var(--police-texte);
-      color: var(--c-texte-discret);
-    }
-    .rt-champ.large {
-      grid-column: 1 / -1;
-    }
-    .rt-champ .in {
-      width: 100%;
-      box-sizing: border-box;
-      height: 36px;
-    }
-    .rt-resultat {
-      margin: 0;
-      padding-top: var(--esp-3);
-      border-top: 1px solid var(--c-separateur);
-      display: flex;
-      flex-direction: column;
-      gap: var(--esp-2);
-    }
-    .rt-resultat div {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: var(--esp-3);
-      font: 400 14px/20px var(--police-texte);
-    }
-    .rt-resultat dt {
-      color: var(--c-texte-discret);
-    }
-    .rt-resultat dd {
-      margin: 0;
-      text-align: right;
-    }
-    .rt-apres {
-      font: 600 22px/28px var(--police-titre);
-    }
-    .rt-alerte {
-      margin: 0;
-      padding: var(--esp-2) var(--esp-3);
-      border-radius: var(--rayon);
-      background: var(--c-attention-fond);
-      color: var(--c-attention);
-      font: 400 13px/18px var(--police-texte);
-    }
     .rt-table {
       width: 100%;
       border-collapse: collapse;
@@ -679,9 +558,6 @@ const DEPENSE_INITIALE: DepenseSimulee = { personnes: 2, jours: 1, transport: 15
       }
     }
     @container (max-width: 380px) {
-      .rt-champs {
-        grid-template-columns: 1fr;
-      }
       .rt-dep-l {
         grid-template-columns: 1fr 1fr;
       }
@@ -696,9 +572,7 @@ export class Rentabilite {
   protected readonly fJ = fJ;
   protected readonly fP2 = fP2;
   protected readonly abs = Math.abs;
-  protected readonly depenseInitiale = DEPENSE_INITIALE;
 
-  protected readonly depense = signal<DepenseSimulee>(DEPENSE_INITIALE);
 
   /** Points de vigilance sur l'argent (coûts, achats, frais, facturation) : ils ne sont montrés qu'ici. */
   protected readonly pointsFinanciers = computed(() => (this.vue()?.m.vigilance ?? []).filter((p) => p.niveau !== 'ok' && estFinancier(p)));
@@ -732,11 +606,6 @@ export class Rentabilite {
     return l.length ? { n: l.length, montant: -l.reduce((s, e) => s + e.ecart, 0) } : null;
   });
   protected readonly placement = computed(() => placerCascade(this.cascade()));
-  protected readonly simulation = computed(() => {
-    const f = this.financier();
-    return f ? simulerDepense(f, this.depense()) : { cout: 0, margeAvant: 0, margeApres: 0, tauxAvant: 0, tauxApres: 0, ecartPoints: 0 };
-  });
-
   /** La variation qui pèse le plus sur la marge (s'il y en a une négative). */
   protected readonly principaleCause = computed(() => {
     const baisses = this.cascade().filter((m) => m.nature === 'baisse');
@@ -762,11 +631,6 @@ export class Rentabilite {
     });
     return [ligne('achats', 'Achats', f.achats.budget, f.achats.reel, f.achats.impactNet), ligne('frais', 'Frais', f.frais.budget, f.frais.reel, f.frais.impactNet)];
   });
-
-  protected changer(champ: keyof DepenseSimulee, e: Event): void {
-    const valeur = Number((e.target as HTMLInputElement).value.replace(',', '.'));
-    this.depense.update((d) => ({ ...d, [champ]: Number.isFinite(valeur) ? valeur : 0 }));
-  }
 
   /** Montant signé : « +1 200 € », « −860 € ». */
   protected signeE(v: number): string {

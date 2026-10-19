@@ -92,7 +92,7 @@ import { chefs, lignesPortefeuille, lundi, synthese } from './portefeuille.logiq
                   <span role="columnheader" class="c">Santé</span>
                   <span role="columnheader">Avancement / temps écoulé</span>
                   <span role="columnheader" class="n">Atterrissage</span>
-                  <span role="columnheader" title="Marge nette (production, achats et frais) du TSP signé, puis attendue à la fin du projet">Marge nette vendue → à terminaison</span>
+                  <span role="columnheader" title="Marge nette (production, achats et frais) du TSP signé, puis attendue à la fin du projet">Marge nette vendue → à l’atterrissage</span>
                   <span role="columnheader" class="c">Critiques</span>
                   <span role="columnheader">Fin prévue</span>
                 </div>

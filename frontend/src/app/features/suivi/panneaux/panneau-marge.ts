@@ -6,7 +6,7 @@ import { SuiviEtat } from '../etat/suivi.etat';
 import { UiEtat } from '../etat/ui.etat';
 
 /**
- * Détail d'une colonne de la cascade « De la marge vendue à la marge à terminaison » (Rentabilité) :
+ * Détail d'une colonne de la cascade « De la marge vendue à la marge à l’atterrissage » (Rentabilité) :
  * de quoi il s'agit, le calcul, ce qui compose le montant (tâches cliquables, avec un retour ici), et l'écran où agir.
  * Volet de largeur normale : la cascade reste visible et cliquable à côté. Les flèches parcourent les colonnes.
  */

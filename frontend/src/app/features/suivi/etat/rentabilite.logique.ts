@@ -6,7 +6,7 @@ import { fE, fJ, fP2 } from './formats';
  * Fonctions simples, testées sans navigateur (rentabilite.logique.spec.ts).
  */
 
-/** Une marche de la cascade « marge vendue → marge à terminaison ». */
+/** Une marche de la cascade « marge vendue → marge à l’atterrissage ». */
 export interface MarcheCascade {
   cle: string;
   libelle: string;
@@ -57,7 +57,7 @@ export function ecartsTaches(taches: readonly TacheMarge[]): EcartTache[] {
 }
 
 /**
- * Cascade de la marge nette : de la marge vendue (TSP) à la marge nette à terminaison, chaque marche expliquant une partie de l'écart.
+ * Cascade de la marge nette : de la marge vendue (TSP) à la marge nette à l’atterrissage, chaque marche expliquant une partie de l'écart.
  * Les optimisations (tâches qui finissent sous leur charge) et les dépassements sont deux marches distinctes, pour qu'un gain
  * ne soit pas masqué par un dépassement. La dernière variation (« Autres écarts ») garantit que la somme tombe juste
  * (remise, provisions, arrondis). « toutes » : garde aussi les marches de moins d'un euro (détail d'une colonne).
@@ -88,7 +88,7 @@ export function cascadeMarge(f: Financier, taches: readonly TacheMarge[], option
     ...variations
       .filter((v) => options.toutes || Math.abs(v.montant) >= SEUIL)
       .map((v): MarcheCascade => ({ ...v, nature: v.montant >= 0 ? 'hausse' : 'baisse' })),
-    { cle: 'terminaison', libelle: 'Marge nette à terminaison', montant: f.margeNette, nature: 'total', detail: 'Marge nette attendue à la fin du projet' },
+    { cle: 'terminaison', libelle: 'Marge nette à l’atterrissage', montant: f.margeNette, nature: 'total', detail: 'Marge nette attendue à la fin du projet' },
   ];
 }
 
@@ -131,51 +131,6 @@ export function placerCascade(marches: readonly MarcheCascade[]): { barres: Barr
     }),
     zero: pct(0),
     coupee: min > 0,
-  };
-}
-
-/** Dépense envisagée (déplacement, atelier sur site…), saisie dans le simulateur. */
-export interface DepenseSimulee {
-  personnes: number;
-  jours: number;
-  /** Transport aller-retour, par personne. */
-  transport: number;
-  /** Hébergement et repas, par personne et par jour. */
-  sejour: number;
-  /** Montant refacturé au client (0 si rien). */
-  refacture: number;
-}
-
-export interface ResultatSimulation {
-  cout: number;
-  margeAvant: number;
-  margeApres: number;
-  tauxAvant: number;
-  tauxApres: number;
-  /** Variation du taux de marge, en points (0,012 = 1,2 point). */
-  ecartPoints: number;
-}
-
-/** Nombre positif ou zéro (une saisie vide ou négative compte pour 0). */
-const positif = (n: number) => (Number.isFinite(n) && n > 0 ? n : 0);
-
-/**
- * Effet d'une dépense sur la marge nette à terminaison. Même définition que le serveur :
- * marge nette = CA + refacturé − coûts ; taux = marge nette ÷ (CA + refacturé). Rien n'est enregistré.
- */
-export function simulerDepense(f: Financier, d: DepenseSimulee): ResultatSimulation {
-  const cout = positif(d.personnes) * positif(d.transport) + positif(d.personnes) * positif(d.jours) * positif(d.sejour);
-  const refacture = positif(d.refacture);
-  const caNet = f.ca + f.achats.attRev + f.frais.attRef;
-  const margeApres = f.margeNette - cout + refacture;
-  const tauxApres = caNet + refacture !== 0 ? margeApres / (caNet + refacture) : 0;
-  return {
-    cout,
-    margeAvant: f.margeNette,
-    margeApres,
-    tauxAvant: f.tauxMargeNette,
-    tauxApres,
-    ecartPoints: tauxApres - f.tauxMargeNette,
   };
 }
 
@@ -339,7 +294,7 @@ export function detailMarche(cle: string, d: DonneesDetail): DetailMarche | null
       const fictif = l.filter((e) => e.sansConso);
       const tableau = (titre: string, g: EcartTache[]): TableauDetail => ({
         titre,
-        colonnes: [{ libelle: 'Tâche' }, { libelle: 'Prévu', n: true }, { libelle: 'Atterr.', n: true }, { libelle: 'Économie', n: true }],
+        colonnes: [{ libelle: 'Tâche' }, { libelle: 'Prévu', n: true }, { libelle: 'Atterrissage', n: true }, { libelle: 'Économie', n: true }],
         lignes: g.map((e) => ({
           classe: e.sansConso ? 'rd-fictif' : undefined,
           cellules: [
@@ -372,7 +327,7 @@ export function detailMarche(cle: string, d: DonneesDetail): DetailMarche | null
       const l = ec.filter((e) => e.ecart > 0).sort((a, b) => b.ecart - a.ecart);
       const tableau = (titre: string, g: EcartTache[]): TableauDetail => ({
         titre,
-        colonnes: [{ libelle: 'Tâche' }, { libelle: 'Prévu', n: true }, { libelle: 'Atterr.', n: true }, { libelle: 'Surcoût', n: true }],
+        colonnes: [{ libelle: 'Tâche' }, { libelle: 'Prévu', n: true }, { libelle: 'Atterrissage', n: true }, { libelle: 'Surcoût', n: true }],
         lignes: g.map((e) => ({
           cellules: [
             lien(e.t, `consommé ${fJ(e.t.consoTotal)} JH${e.fini ? '' : ` + reste ${fJ(e.t.raf)} JH`}`, { statut: e.t.statut }),
@@ -410,7 +365,7 @@ export function detailMarche(cle: string, d: DonneesDetail): DetailMarche | null
           ? [
               {
                 titre: 'Par ligne',
-                colonnes: [{ libelle: 'Achat' }, { libelle: 'Budget', n: true }, { libelle: 'Atterr.', n: true }, { libelle: 'Refacturé', n: true }, { libelle: 'Effet', n: true }],
+                colonnes: [{ libelle: 'Achat' }, { libelle: 'Budget', n: true }, { libelle: 'Atterrissage', n: true }, { libelle: 'Refacturé', n: true }, { libelle: 'Effet', n: true }],
                 lignes: lignes.map((x) => ({
                   cellules: [{ texte: x.nom, motif: `réel ${fE(x.reel)}` }, { texte: fE(x.budget), n: true }, { texte: fE(x.att), n: true }, { texte: fE(x.ref), n: true }, { texte: signeE(x.effet), n: true, classe: classe(x.effet) }],
                 })),
@@ -448,7 +403,7 @@ export function detailMarche(cle: string, d: DonneesDetail): DetailMarche | null
       return {
         quoi: 'Ce que les autres colonnes n’expliquent pas : remise commerciale, provision pour risque, arrondis du TSP. Cette colonne garantit que la cascade tombe juste.',
         calcul: [
-          { libelle: 'Marge nette à terminaison', valeur: fE(f.margeNette) },
+          { libelle: 'Marge nette à l’atterrissage', valeur: fE(f.margeNette) },
           { libelle: '− Marge nette vendue', valeur: fE(f.margeNetteVendue) },
           { libelle: '− Colonnes expliquées', valeur: signeE(expliques) },
           { libelle: 'Autres écarts', valeur: signeE(autres), total: true },
@@ -467,7 +422,7 @@ export function detailMarche(cle: string, d: DonneesDetail): DetailMarche | null
           { libelle: 'Coût du reste à faire', valeur: '−' + fE(f.coutRaf), note: 'reste à faire × CJM' },
           { libelle: 'Achats', valeur: signeE(A.attRev - A.att), note: `refacturé ${fE(A.attRev)} − atterrissage ${fE(A.att)}` },
           { libelle: 'Frais', valeur: signeE(F.attRef - F.att), note: `refacturé ${fE(F.attRef)} − atterrissage ${fE(F.att)}` },
-          { libelle: 'Marge nette à terminaison', valeur: fE(f.margeNette), note: `${fP2(f.tauxMargeNette)} de ${fE(f.ca + A.attRev + F.attRef)} (CA + refacturé) · vendue ${fP2(f.tauxMargeNetteVendue)}`, total: true },
+          { libelle: 'Marge nette à l’atterrissage', valeur: fE(f.margeNette), note: `${fP2(f.tauxMargeNette)} de ${fE(f.ca + A.attRev + F.attRef)} (CA + refacturé) · vendue ${fP2(f.tauxMargeNetteVendue)}`, total: true },
         ],
         tableaux: [],
       };

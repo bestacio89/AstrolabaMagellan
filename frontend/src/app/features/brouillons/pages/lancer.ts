@@ -9,7 +9,6 @@ import { NotificationsService } from '../../../core/notifications/notifications'
 import { Fenetre } from '../../../shared/ui/fenetre';
 import { Icone } from '../../../shared/ui/icone';
 import { SuiviApi } from '../../suivi/api/suivi.api';
-import { messageErreurFichier, telecharger } from '../../suivi/etat/fichiers';
 import { appliquerTypesParDefaut } from '../../suivi/etat/types-par-defaut';
 import { BrouillonsApi } from '../api/brouillons.api';
 import { Controle } from '../api/brouillons.modeles';
@@ -106,18 +105,6 @@ import { RUBRIQUES } from './rubriques';
               <li><b>Le projet devient visible</b> dans le portefeuille et pour l’équipe. La fiche reste modifiable dans ⚙ Paramètres du projet.</li>
               <li><b>Le suivi commence</b> : consommé, Gantt, plan de charge, facturation, comme pour un TSP importé. Le brouillon disparaît.</li>
             </ol>
-          </section>
-
-          <section class="card" aria-labelledby="ln-excel">
-            <header>
-              <div>
-                <h2 id="ln-excel">TSP au format Excel</h2>
-                <p>Mêmes onglets que le modèle (fiche, profil, workload, planning, échéancier, achats, frais), avec les totaux en formules. Réimportable tel quel.</p>
-              </div>
-            </header>
-            <button type="button" class="btn ln-btn" [disabled]="export()" (click)="exporter()">
-              <app-icone nom="exporter" [taille]="16" />{{ export() ? 'Préparation…' : 'Télécharger le TSP (.xlsx)' }}
-            </button>
           </section>
 
           <section class="card" aria-labelledby="ln-qui">
@@ -416,7 +403,6 @@ export class LancerBrouillon {
   protected readonly confirmation = signal(false);
   protected readonly suppression = signal(false);
   protected readonly lancement = signal(false);
-  protected readonly export = signal(false);
   protected readonly invitation = signal(false);
   protected readonly erreur = signal('');
   protected readonly erreurInvitation = signal('');
@@ -484,20 +470,6 @@ export class LancerBrouillon {
       if (e instanceof HttpErrorResponse && e.status === 409) await this.etat.charger(b.id);
     } finally {
       this.lancement.set(false);
-    }
-  }
-
-  protected async exporter(): Promise<void> {
-    const b = this.etat.brouillon();
-    if (!b) return;
-    this.export.set(true);
-    try {
-      await this.etat.enregistrerMaintenant();
-      telecharger(await firstValueFrom(this.api.exporter(b.id)), 'TSP.xlsx');
-    } catch (e) {
-      this.notifications.erreur(await messageErreurFichier(e));
-    } finally {
-      this.export.set(false);
     }
   }
 
