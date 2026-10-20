@@ -130,6 +130,63 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
         Assert.Empty(contratSansAffectation["projetsAccessibles"]!.AsArray());
         Assert.Equal(HttpStatusCode.NotFound, (await lecteurSansAffectation.GetAsync($"/api/projets/{id}")).StatusCode);
     }
+
+    [Fact]
+    public async Task Planning_et_absences_exigent_un_projet_autorise_et_exposent_les_routes_du_client_Angular()
+    {
+        using var chef = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
+            Guid.NewGuid().ToString(),
+            FabriquePostgreSqlApi.GroupeChef));
+        var reference = "API-" + Guid.NewGuid().ToString("N")[..8];
+        var creation = await chef.PostAsJsonAsync("/api/projets", new
+        {
+            client = "Client endpoints",
+            nom = "Projet endpoints " + reference,
+            reference,
+            debut = "2026-11-02",
+            finContractuelle = "2027-02-26",
+            typeContrat = "Forfait"
+        });
+        Assert.Equal(HttpStatusCode.Created, creation.StatusCode);
+        var id = (await creation.Content.ReadFromJsonAsync<JsonObject>())!["id"]!.GetValue<Guid>();
+        var baseProjet = $"/api/projets/{id}";
+
+        Assert.Equal(HttpStatusCode.OK, (await chef.PutAsJsonAsync($"{baseProjet}/planning/dates", new
+        {
+            cle = "id|AXE1", cote = "debut", valeur = "2026-11-03"
+        })).StatusCode);
+
+        var jalon = await chef.PostAsJsonAsync($"{baseProjet}/planning/jalons", new
+        {
+            libelle = "Lancement", type = "date", debut = "2026-11-04", fin = (string?)null, aConfirmer = false
+        });
+        Assert.Equal(HttpStatusCode.OK, jalon.StatusCode);
+        var jalonId = Guid.Parse((await jalon.Content.ReadFromJsonAsync<JsonObject>())!["ouvrir"]!.GetValue<string>());
+        Assert.Equal(HttpStatusCode.OK, (await chef.PutAsJsonAsync($"{baseProjet}/planning/jalons/{jalonId}", new
+        {
+            libelle = "Lancement confirmé", type = "date", debut = "2026-11-05", fin = (string?)null, aConfirmer = false
+        })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await chef.DeleteAsync($"{baseProjet}/planning/jalons/{jalonId}")).StatusCode);
+
+        Assert.Equal(HttpStatusCode.OK, (await chef.PutAsJsonAsync($"{baseProjet}/absences", new
+        {
+            nom = "Camille Martin", jour = "2026-11-06", moment = "j"
+        })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await chef.PostAsJsonAsync($"{baseProjet}/personnes", new { nom = "Camille Martin" })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await chef.PutAsJsonAsync($"{baseProjet}/parametres/instances", new
+        {
+            valeurs = new[] { "COPIL", "COPROJ" }, ancien = (string?)null, nouveau = (string?)null
+        })).StatusCode);
+
+        using var lecteur = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
+            Guid.NewGuid().ToString(),
+            FabriquePostgreSqlApi.GroupeLecteur));
+        Assert.Equal(HttpStatusCode.NotFound, (await lecteur.PutAsJsonAsync($"{baseProjet}/planning/dates", new
+        {
+            cle = "id|AXE1", cote = "fin", valeur = "2026-12-01"
+        })).StatusCode);
+    }
+
 }
 
 public sealed class FabriquePostgreSqlApi : IAsyncLifetime
