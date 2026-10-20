@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
+using Testcontainers.PostgreSql;
 using PilotageForfaits.Domain.Entites;
 using PilotageForfaits.Infrastructure.Donnees;
 
@@ -31,7 +32,7 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
 
     public PostgreSqlAuthorizationApiTests(FabriquePostgreSqlApi fixture) => _fixture = fixture;
 
-    [PostgreSqlApiFact]
+    [Fact]
     public async Task Validated_group_capability_does_not_bypass_project_assignment()
     {
         var chef = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
@@ -63,7 +64,7 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
         Assert.DoesNotContain(liste!, p => p!["id"]!.GetValue<Guid>() == id);
     }
 
-    [PostgreSqlApiFact]
+    [Fact]
     public async Task Une_habilitation_autorise_la_lecture_sans_accorder_les_capacites_decriture_ni_les_autres_projets()
     {
         var objectIdChef = Guid.NewGuid().ToString();
@@ -140,7 +141,12 @@ public sealed class FabriquePostgreSqlApi : IAsyncLifetime
     public const string GroupeChef = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
     public const string GroupeLecteur = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
     private const string CleTest = "only-for-tests-signing-key-never-use-in-production-2026";
-    private readonly string? _baseConnectionString = Environment.GetEnvironmentVariable("POSTGRES_TEST_CONNECTION");
+    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:18")
+        .WithDatabase("pilotage_forfaits_tests")
+        .WithUsername("pilotage")
+        .WithPassword("pilotage_test_only")
+        .Build();
+    private string? _baseConnectionString;
     private readonly string _schema = "security_it_" + Guid.NewGuid().ToString("N");
     private string _schemaConnectionString = "";
     private HoteApi? _host;
@@ -150,7 +156,9 @@ public sealed class FabriquePostgreSqlApi : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        if (string.IsNullOrWhiteSpace(_baseConnectionString)) return;
+        // Every fixture owns a fresh PostgreSQL container. No developer database or shared CI service is reused.
+        await _postgres.StartAsync();
+        _baseConnectionString = _postgres.GetConnectionString();
 
         var schemaBuilder = new NpgsqlConnectionStringBuilder(_baseConnectionString) { SearchPath = _schema };
         _schemaConnectionString = schemaBuilder.ConnectionString;
@@ -200,13 +208,16 @@ public sealed class FabriquePostgreSqlApi : IAsyncLifetime
     {
         if (_host is not null) await _host.DisposeAsync();
         Client?.Dispose();
-        if (string.IsNullOrWhiteSpace(_baseConnectionString)) return;
+        if (!string.IsNullOrWhiteSpace(_baseConnectionString))
+        {
+            NpgsqlConnection.ClearAllPools();
+            await using var connection = new NpgsqlConnection(_baseConnectionString);
+            await connection.OpenAsync();
+            await using var command = new NpgsqlCommand($"DROP SCHEMA IF EXISTS \"{_schema}\" CASCADE", connection);
+            await command.ExecuteNonQueryAsync();
+        }
 
-        NpgsqlConnection.ClearAllPools();
-        await using var connection = new NpgsqlConnection(_baseConnectionString);
-        await connection.OpenAsync();
-        await using var command = new NpgsqlCommand($"DROP SCHEMA IF EXISTS \"{_schema}\" CASCADE", connection);
-        await command.ExecuteNonQueryAsync();
+        await _postgres.DisposeAsync();
     }
 
     private sealed class HoteApi(string connectionString) : WebApplicationFactory<Program>
@@ -263,12 +274,3 @@ public sealed class FabriquePostgreSqlApi : IAsyncLifetime
     }
 }
 
-/// <summary>Runs only when CI or a developer explicitly configures a disposable PostgreSQL test database.</summary>
-public sealed class PostgreSqlApiFactAttribute : FactAttribute
-{
-    public PostgreSqlApiFactAttribute()
-    {
-        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("POSTGRES_TEST_CONNECTION")))
-            Skip = "POSTGRES_TEST_CONNECTION is not configured.";
-    }
-}
