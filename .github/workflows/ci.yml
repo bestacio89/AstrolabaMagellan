@@ -47,7 +47,7 @@ jobs:
       - name: Build production application
         run: npm run build -- --configuration production
       - name: Verify production build artifact
-        run: test -s dist/pilotage-forfaits/browser/index.html
+        run: test -s dist/pilotage-forfaits/index.html
       - name: Run Angular unit tests
         run: npm test
 
