@@ -291,6 +291,14 @@ public sealed class SuiviController(
 
     // ---------------------------------------------------------------- exports
 
+    /// <summary>Export des registres non financiers ; tout utilisateur autorisé à lire le projet peut l'effectuer.</summary>
+    [HttpPost("exports/registres")]
+    public async Task<IActionResult> Registres(Guid id, CancellationToken a)
+    {
+        var f = await exports.RegistresAsync(id, a);
+        return File(f.Contenu, FichierExport.TypeXlsx, f.Nom);
+    }
+
     /// <summary>Export COPIL (Excel) ; une photo des indicateurs est ajoutée à l'historique.</summary>
     [HttpPost("exports/copil")]
     public async Task<IActionResult> Copil(Guid id, CancellationToken a)
