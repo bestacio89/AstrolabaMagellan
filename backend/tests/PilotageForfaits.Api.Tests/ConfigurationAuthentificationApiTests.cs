@@ -18,7 +18,7 @@ public sealed class ConfigurationAuthentificationApiTests
         var exception = Record.Exception(() => factory.CreateClient());
 
         Assert.NotNull(exception);
-        Assert.Contains("authentification de développement est interdite hors environnement de développement", exception.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("authentification Dev est interdite hors des environnements Development et Tests", exception.ToString(), StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public sealed class ConfigurationAuthentificationApiTests
             builder.UseEnvironment("Production");
             builder.ConfigureAppConfiguration((_, configuration) =>
             {
-                configuration.Sources.Clear();
+                // Append test values last so they override appsettings and environment variables.
                 configuration.AddInMemoryCollection(values);
             });
         }
