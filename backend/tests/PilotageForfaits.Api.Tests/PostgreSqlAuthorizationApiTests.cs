@@ -225,24 +225,30 @@ public sealed class FabriquePostgreSqlApi : IAsyncLifetime
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment("Tests");
+            var testConfiguration = new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:Pilotage"] = connectionString,
+                ["Authentification:Mode"] = "EntraId",
+                ["AzureAd:Instance"] = "https://login.microsoftonline.com/",
+                ["AzureAd:TenantId"] = TenantId,
+                ["AzureAd:ClientId"] = ClientId,
+                ["AzureAd:Audience"] = Audience,
+                [$"AutorisationEntra:GroupesCapacites:{GroupeChef}:0"] = "projets.lire",
+                [$"AutorisationEntra:GroupesCapacites:{GroupeChef}:1"] = "projets.creer",
+                [$"AutorisationEntra:GroupesCapacites:{GroupeChef}:2"] = "projets.modifier",
+                [$"AutorisationEntra:GroupesCapacites:{GroupeChef}:3"] = "consomme.saisir",
+                [$"AutorisationEntra:GroupesCapacites:{GroupeChef}:4"] = "exports.financiers",
+                [$"AutorisationEntra:GroupesCapacites:{GroupeLecteur}:0"] = "projets.lire"
+            };
+
+            // Minimal hosting reads configuration while Program.cs is executing. Apply host settings
+            // as well as the in-memory provider so test overrides are visible during early startup validation.
+            foreach (var pair in testConfiguration)
+                builder.UseSetting(pair.Key, pair.Value ?? string.Empty);
+
             builder.ConfigureAppConfiguration((_, configuration) =>
             {
-                // Append test overrides last to ensure Microsoft.Identity.Web receives the test ClientId.
-                configuration.AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["ConnectionStrings:Pilotage"] = connectionString,
-                    ["Authentification:Mode"] = "EntraId",
-                    ["AzureAd:Instance"] = "https://login.microsoftonline.com/",
-                    ["AzureAd:TenantId"] = TenantId,
-                    ["AzureAd:ClientId"] = ClientId,
-                    ["AzureAd:Audience"] = Audience,
-                    [$"AutorisationEntra:GroupesCapacites:{GroupeChef}:0"] = "projets.lire",
-                    [$"AutorisationEntra:GroupesCapacites:{GroupeChef}:1"] = "projets.creer",
-                    [$"AutorisationEntra:GroupesCapacites:{GroupeChef}:2"] = "projets.modifier",
-                    [$"AutorisationEntra:GroupesCapacites:{GroupeChef}:3"] = "consomme.saisir",
-                    [$"AutorisationEntra:GroupesCapacites:{GroupeChef}:4"] = "exports.financiers",
-                    [$"AutorisationEntra:GroupesCapacites:{GroupeLecteur}:0"] = "projets.lire"
-                });
+                configuration.AddInMemoryCollection(testConfiguration);
             });
 
             builder.ConfigureTestServices(services =>
