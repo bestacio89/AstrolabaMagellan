@@ -31,7 +31,7 @@ internal sealed class ConfigurationTache : IEntityTypeConfiguration<Tache>
         b.HasMany(x => x.Consommes).WithOne().HasForeignKey(c => c.TacheId).IsRequired();
         b.HasMany(x => x.Evolutions).WithOne().HasForeignKey(e => e.TacheId).IsRequired();
         b.Ignore(x => x.EstAnnulee);
-        b.ToTable(t => t.HasCheckConstraint("CK_Taches_Avancement", "\"Avancement\" IS NULL OR (\"Avancement\" >= 0 AND \"Avancement\" <= 1)"));
+        b.ToTable(t => t.HasCheckConstraint("CK_Taches_Avancement", "\"Avancement\" IS NULL OR (CAST(\"Avancement\" AS NUMERIC) >= 0 AND CAST(\"Avancement\" AS NUMERIC) <= 1)"));
     }
 }
 
