@@ -8,7 +8,7 @@ namespace PilotageForfaits.Infrastructure.Migrations;
 
 [DbContext(typeof(PilotageDbContext))]
 [Migration("20261020213000_FixTacheAvancementCheckConstraint")]
-public sealed class FixTacheAvancementCheckConstraint : Migration
+public sealed partial class FixTacheAvancementCheckConstraint : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
     {
