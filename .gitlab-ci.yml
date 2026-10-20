@@ -1,9 +1,8 @@
 # Validation miroir d'AstrolabaMagellan.
-# Les trois jobs s'exécutent en parallèle, comme les jobs GitHub Actions.
+# Les trois jobs s'exécutent en parallèle, exclusivement sur les Pull Requests / Merge Requests.
 workflow:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    - if: '$CI_PIPELINE_SOURCE == "push"'
     - when: never
 
 stages:
@@ -56,12 +55,15 @@ interface_angular:
         - frontend/package.json
     paths:
       - .npm/
+  before_script:
+    - apt-get update && apt-get install --yes --no-install-recommends chromium
   script:
     - cd frontend
     - npm install --cache "$NPM_CONFIG_CACHE" --prefer-offline
     - npm run build -- --configuration production
     - test -s dist/pilotage-forfaits/browser/index.html
-    - npm test
+    - export CHROME_BIN=/usr/bin/chromium
+    - npm test -- --watch=false --browsers=ChromeHeadless
   artifacts:
     when: always
     expire_in: 14 days
