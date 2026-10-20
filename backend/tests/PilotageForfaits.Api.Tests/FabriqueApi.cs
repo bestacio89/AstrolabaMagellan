@@ -82,10 +82,14 @@ public sealed class FabriqueApi : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Tests");
+        var configurationTests = ConfigurationTests();
+        // Mirror test values into the web-host settings as well as app configuration during minimal-host startup.
+        foreach (var pair in configurationTests)
+            builder.UseSetting(pair.Key, pair.Value ?? string.Empty);
+
         builder.ConfigureAppConfiguration((_, configuration) =>
         {
-            // Add test overrides last so they take precedence over appsettings and environment configuration.
-            configuration.AddInMemoryCollection(ConfigurationTests());
+            configuration.AddInMemoryCollection(configurationTests);
         });
 
         builder.ConfigureTestServices(services =>
