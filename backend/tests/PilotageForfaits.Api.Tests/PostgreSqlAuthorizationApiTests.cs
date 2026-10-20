@@ -226,6 +226,8 @@ public sealed class FabriquePostgreSqlApi : IAsyncLifetime
         {
             builder.UseEnvironment("Tests");
             builder.ConfigureAppConfiguration((_, configuration) =>
+            {
+                configuration.Sources.Clear();
                 configuration.AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["ConnectionStrings:Pilotage"] = connectionString,
@@ -240,7 +242,8 @@ public sealed class FabriquePostgreSqlApi : IAsyncLifetime
                     [$"AutorisationEntra:GroupesCapacites:{GroupeChef}:3"] = "consomme.saisir",
                     [$"AutorisationEntra:GroupesCapacites:{GroupeChef}:4"] = "exports.financiers",
                     [$"AutorisationEntra:GroupesCapacites:{GroupeLecteur}:0"] = "projets.lire"
-                }));
+                });
+            });
 
             builder.ConfigureTestServices(services =>
             {

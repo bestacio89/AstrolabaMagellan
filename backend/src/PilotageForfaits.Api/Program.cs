@@ -15,7 +15,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 // ---------- Couches de l'application ----------
 builder.Services.AjouterApplication();
-builder.Services.AjouterInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddTransient<IClaimsTransformation, TransformationGroupesEntra>();
 builder.Services.AddScoped<IUtilisateurCourant, UtilisateurCourantHttp>();
@@ -54,6 +53,10 @@ else
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 }
+
+// Register persistence only after validating authentication configuration, so startup failures
+// report the security configuration error instead of masking it with a missing database setting.
+builder.Services.AjouterInfrastructure(builder.Configuration);
 
 // L'API est protégée par défaut. Une route doit explicitement déclarer AllowAnonymous()
 // pour être publique (par exemple /api/sante).
