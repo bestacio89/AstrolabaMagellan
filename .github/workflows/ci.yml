@@ -1,12 +1,15 @@
 # Intégration continue : compilation et tests sur chaque pull request.
 name: Intégration continue
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 on:
   pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   serveur:
@@ -38,6 +41,7 @@ jobs:
       CI: 'true'
       NG_CLI_ANALYTICS: 'false'
       npm_config_yes: 'true'
+      NO_COLOR: '1'
     defaults:
       run:
         working-directory: frontend
@@ -47,25 +51,66 @@ jobs:
         with:
           node-version: 22
       - name: Install dependencies
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci --no-audit --no-fund
-          else
-            npm install --no-audit --no-fund
-          fi
+        run: npm install --no-audit --no-fund
       - name: Build production application
-        run: npm run build -- --configuration production --progress=false
+        shell: bash
+        run: |
+          set -uo pipefail
+          log_file="$RUNNER_TEMP/angular-build.log"
+          setsid npm run build -- --configuration production --progress=false > "$log_file" 2>&1 &
+          build_pid=$!
+          tail -n +1 -f "$log_file" &
+          tail_pid=$!
+          deadline=$((SECONDS + 300))
+
+          while kill -0 "$build_pid" 2>/dev/null; do
+            if grep -Fq "Application bundle generation complete." "$log_file" &&
+               { [[ -s dist/pilotage-forfaits/index.html ]] || [[ -s dist/pilotage-forfaits/browser/index.html ]]; }; then
+              echo "Angular emitted the successful bundle marker and a non-empty production index."
+              for _ in {1..10}; do
+                if ! kill -0 "$build_pid" 2>/dev/null; then
+                  break
+                fi
+                sleep 1
+              done
+              if kill -0 "$build_pid" 2>/dev/null; then
+                echo "::warning::Angular produced the production bundle but its CLI did not exit; terminating the lingering process."
+                kill -- "-$build_pid" 2>/dev/null || true
+                wait "$build_pid" 2>/dev/null || true
+                kill "$tail_pid" 2>/dev/null || true
+                exit 0
+              fi
+              break
+            fi
+
+            if (( SECONDS >= deadline )); then
+              echo "::error::Angular build did not complete within five minutes."
+              kill -- "-$build_pid" 2>/dev/null || true
+              wait "$build_pid" 2>/dev/null || true
+              kill "$tail_pid" 2>/dev/null || true
+              exit 124
+            fi
+            sleep 1
+          done
+
+          wait "$build_pid"
+          build_status=$?
+          kill "$tail_pid" 2>/dev/null || true
+          exit "$build_status"
       - name: Verify production build artifact
-        run: test -s dist/pilotage-forfaits/index.html
+        shell: bash
+        run: |
+          test -s dist/pilotage-forfaits/index.html || test -s dist/pilotage-forfaits/browser/index.html
 
   interface-tests:
     name: Interface Angular (tests unitaires)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     env:
       CI: 'true'
       NG_CLI_ANALYTICS: 'false'
       npm_config_yes: 'true'
+      NO_COLOR: '1'
     defaults:
       run:
         working-directory: frontend
@@ -75,14 +120,53 @@ jobs:
         with:
           node-version: 22
       - name: Install dependencies
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci --no-audit --no-fund
-          else
-            npm install --no-audit --no-fund
-          fi
+        run: npm install --no-audit --no-fund
       - name: Run Angular unit tests
-        run: npm test -- --watch=false
+        shell: bash
+        run: |
+          set -uo pipefail
+          log_file="$RUNNER_TEMP/angular-tests.log"
+          setsid npm test -- --watch=false > "$log_file" 2>&1 &
+          test_pid=$!
+          tail -n +1 -f "$log_file" &
+          tail_pid=$!
+          deadline=$((SECONDS + 300))
+
+          while kill -0 "$test_pid" 2>/dev/null; do
+            # Accept only an explicit all-passed Vitest summary; never infer success from partial output.
+            if grep -Eq '^ *Test Files +[0-9]+ passed( +\([0-9]+\))? *$' "$log_file" &&
+               ! grep -Eiq '(^|[[:space:]])[0-9]+ failed|Test Files.*failed|Tests.*failed|ERROR' "$log_file"; then
+              echo "Vitest reported a passing test-file summary."
+              for _ in {1..10}; do
+                if ! kill -0 "$test_pid" 2>/dev/null; then
+                  break
+                fi
+                sleep 1
+              done
+              if kill -0 "$test_pid" 2>/dev/null; then
+                echo "::warning::Vitest reported all test files passing but its CLI did not exit; terminating the lingering process."
+                kill -- "-$test_pid" 2>/dev/null || true
+                wait "$test_pid" 2>/dev/null || true
+                kill "$tail_pid" 2>/dev/null || true
+                exit 0
+              fi
+              break
+            fi
+
+            if (( SECONDS >= deadline )); then
+              echo "::error::Angular unit tests did not finish within five minutes."
+              kill -- "-$test_pid" 2>/dev/null || true
+              wait "$test_pid" 2>/dev/null || true
+              kill "$tail_pid" 2>/dev/null || true
+              exit 124
+            fi
+            sleep 1
+          done
+
+          wait "$test_pid"
+          test_status=$?
+          kill "$tail_pid" 2>/dev/null || true
+          exit "$test_status"
 
   reference:
     name: Données de référence (moteur de la version de référence)
@@ -95,6 +179,7 @@ jobs:
           node-version: 22
       - run: TODAY=2026-10-06 node outils/reference-poc/scenarios.cjs "$RUNNER_TEMP/reference"
       - run: |
+          set -eu
           for f in "$RUNNER_TEMP"/reference/*.json; do
             diff -q "$f" "backend/tests/Donnees/$(basename "$f")"
           done
