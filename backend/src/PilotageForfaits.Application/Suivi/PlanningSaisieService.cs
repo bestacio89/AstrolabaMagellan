@@ -343,7 +343,7 @@ public sealed class PlanningSaisieService(SaisieOutils o, ServiceAcces acces, IU
             throw new RegleMetierException("Un jalon de type période doit avoir une fin égale ou postérieure au début.");
         if (c.Type is not ("date" or "periode" or "semaine")) throw new RegleMetierException("Type de jalon inconnu.");
         jalon.Libelle = libelle;
-        jalon.Type = c.Type == "periode" ? TypeJalon.Periode : TypeJalon.Date;
+        jalon.Type = c.Type switch { "periode" => TypeJalon.Periode, "semaine" => TypeJalon.Semaine, _ => TypeJalon.Date };
         jalon.Debut = debut;
         jalon.Fin = jalon.Type == TypeJalon.Periode ? fin : null;
         jalon.AConfirmer = c.AConfirmer;
