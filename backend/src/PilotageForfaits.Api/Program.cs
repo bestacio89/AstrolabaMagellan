@@ -21,6 +21,11 @@ builder.Services.AddScoped<IUtilisateurCourant, UtilisateurCourantHttp>();
 
 // ---------- Authentification : compte d'entreprise (Entra ID), ou utilisateurs fictifs en développement ----------
 var mode = builder.Configuration["Authentification:Mode"] ?? (!EstValeurConfiguree(builder.Configuration["AzureAd:TenantId"]) ? "Dev" : "EntraId");
+if (mode is not ("Dev" or "EntraId"))
+{
+    throw new InvalidOperationException("Authentification:Mode doit être exactement 'Dev' ou 'EntraId'.");
+}
+
 if (mode == "Dev")
 {
     if (!builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("Tests"))
@@ -50,6 +55,7 @@ if (mode == "Dev")
 else
 {
     ValiderConfigurationEntraId(builder.Configuration);
+    TransformationGroupesEntra.ValiderConfiguration(builder.Configuration);
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 }
@@ -125,22 +131,23 @@ static void ValiderConfigurationEntraId(IConfiguration configuration)
     var clientId = configuration["AzureAd:ClientId"];
     var audience = configuration["AzureAd:Audience"];
 
-    // If the AzureAd settings are the placeholder values (e.g. from appsettings.json), skip strict validation.
-    // This allows tests and local runs that override authentication mode to proceed without real Azure config.
-    if (!EstValeurConfiguree(tenantId) && !EstValeurConfiguree(clientId) && !EstValeurConfiguree(audience))
-        return;
-
-    if (!Uri.TryCreate(instance, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
+    // EntraId is a production-capable mode: placeholders must fail fast rather than
+    // allowing the identity middleware to start with an unusable tenant configuration.
+    if (!Uri.TryCreate(instance, UriKind.Absolute, out var uri)
+        || uri.Scheme != Uri.UriSchemeHttps
+        || string.IsNullOrWhiteSpace(uri.Host))
         throw new InvalidOperationException("La configuration AzureAd:Instance doit être une URL HTTPS valide.");
 
     if (!Guid.TryParse(tenantId, out _))
-        throw new InvalidOperationException("AzureAd:TenantId doit contenir l'identifiant de tenant Entra ID (GUID).");
+        throw new InvalidOperationException("AzureAd:TenantId doit contenir l'identifiant de tenant Entra ID (GUID) réel.");
 
     if (!Guid.TryParse(clientId, out _))
-        throw new InvalidOperationException("AzureAd:ClientId doit contenir l'identifiant d'application Entra ID (GUID).");
+        throw new InvalidOperationException("AzureAd:ClientId doit contenir l'identifiant d'application Entra ID (GUID) réel.");
 
-    if (!EstValeurConfiguree(audience))
-        throw new InvalidOperationException("AzureAd:Audience doit contenir l'audience attendue pour l'API.");
+    if (!EstValeurConfiguree(audience)
+        || (!Guid.TryParse(audience, out _) && (!Uri.TryCreate(audience, UriKind.Absolute, out var audienceUri)
+            || string.IsNullOrWhiteSpace(audienceUri.Host))))
+        throw new InvalidOperationException("AzureAd:Audience doit contenir l'identifiant réel de l'audience de l'API (GUID ou URI absolue), sans valeur de remplacement.");
 }
 
 static bool EstValeurConfiguree(string? value) =>
