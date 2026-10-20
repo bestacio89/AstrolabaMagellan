@@ -144,7 +144,7 @@ public static class ConstructeurVueSuivi
                 }).First()),
                 Jalons = d.Jalons.OrderBy(j => j.Debut).ThenBy(j => j.Libelle, StringComparer.Ordinal).Select(j => new JalonVueDto
                 {
-                    Id = j.Id, Version = j.Version, Libelle = j.Libelle, Type = j.Type == TypeJalon.Periode ? "periode" : "date",
+                    Id = j.Id, Version = j.Version, Libelle = j.Libelle, Type = j.Type switch { TypeJalon.Periode => "periode", TypeJalon.Semaine => "semaine", _ => "date" },
                     Debut = j.Debut, Fin = j.Type == TypeJalon.Periode ? j.Fin : null, AConfirmer = j.AConfirmer,
                 }).ToList(),
                 Avant = d.ElementsPlanning.Where(x => x.Nature == NatureElementPlanning.MisEnAvant).Select(x => x.Cle).Distinct().ToDictionary(k => k, _ => true),
