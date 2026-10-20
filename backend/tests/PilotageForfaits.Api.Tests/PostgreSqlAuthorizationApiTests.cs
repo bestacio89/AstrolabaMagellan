@@ -187,6 +187,37 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
         })).StatusCode);
     }
 
+
+    [Fact]
+    public async Task Absences_personnelles_sont_authentifiees_et_limitees_a_la_personne_connectee()
+    {
+        using var utilisateur = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
+            Guid.NewGuid().ToString(),
+            FabriquePostgreSqlApi.GroupeChef));
+
+        var avant = await utilisateur.GetAsync("/api/moi/absences?du=2026-11-01&au=2026-11-30");
+        Assert.Equal(HttpStatusCode.OK, avant.StatusCode);
+
+        var enregistre = await utilisateur.PutAsJsonAsync("/api/moi/absences", new
+        {
+            jour = "2026-11-12",
+            moment = "m"
+        });
+        Assert.Equal(HttpStatusCode.OK, enregistre.StatusCode);
+        var absences = await enregistre.Content.ReadFromJsonAsync<JsonArray>();
+        Assert.Contains(absences!, x => x!["jour"]!.GetValue<string>() == "2026-11-12"
+            && x["moment"]!.GetValue<string>() == "m");
+
+        var efface = await utilisateur.PutAsJsonAsync("/api/moi/absences", new
+        {
+            jour = "2026-11-12",
+            moment = ""
+        });
+        Assert.Equal(HttpStatusCode.OK, efface.StatusCode);
+        var restantes = await efface.Content.ReadFromJsonAsync<JsonArray>();
+        Assert.DoesNotContain(restantes!, x => x!["jour"]!.GetValue<string>() == "2026-11-12");
+    }
+
 }
 
 public sealed class FabriquePostgreSqlApi : IAsyncLifetime
