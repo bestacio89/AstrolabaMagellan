@@ -28,6 +28,7 @@ public sealed class FabriqueEntraApi : WebApplicationFactory<Program>
     {
         builder.UseEnvironment("Tests");
         builder.ConfigureAppConfiguration((_, configuration) =>
+        {
             configuration.Sources.Clear();
             configuration.AddInMemoryCollection(new Dictionary<string, string?>
             {
@@ -37,7 +38,8 @@ public sealed class FabriqueEntraApi : WebApplicationFactory<Program>
                 ["AzureAd:TenantId"] = TenantId,
                 ["AzureAd:ClientId"] = ClientId,
                 ["AzureAd:Audience"] = Audience
-            }));
+            });
+        });
 
         builder.ConfigureTestServices(services =>
         {
