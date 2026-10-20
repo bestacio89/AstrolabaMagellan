@@ -74,6 +74,15 @@ public sealed class TransformationGroupesEntra(IConfiguration configuration) : I
         return Task.FromResult(principal);
     }
 
+    /// <summary>
+    /// Valide le mapping de groupes dès le démarrage, même avant la première requête authentifiée.
+    /// Un mapping vide reste sûr par défaut : aucun groupe ne confère alors de capacité.
+    /// </summary>
+    public static void ValiderConfiguration(IConfiguration configuration)
+    {
+        _ = ChargerMapping(configuration);
+    }
+
     private static IReadOnlyDictionary<string, IReadOnlySet<string>> ChargerMapping(
         IConfiguration configuration)
     {
