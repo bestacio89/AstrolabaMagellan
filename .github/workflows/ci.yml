@@ -1,4 +1,4 @@
-# Intégration continue : compilation et tests sur chaque push et pull request.
+# Intégration continue : compilation et tests sur chaque pull request.
 name: Intégration continue
 
 concurrency:
@@ -50,6 +50,8 @@ jobs:
             npm install --no-audit --no-fund
           fi
       - name: Build production application
+        env:
+          CI: true
         run: npm run build -- --configuration production --progress=false
       - name: Verify production build artifact
         run: test -s dist/pilotage-forfaits/index.html
@@ -74,7 +76,9 @@ jobs:
             npm install --no-audit --no-fund
           fi
       - name: Run Angular unit tests
-        run: npm test
+        env:
+          CI: true
+        run: npm test -- --watch=false --progress=false
 
   reference:
     name: Données de référence (moteur de la version de référence)
