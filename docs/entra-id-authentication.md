@@ -17,7 +17,9 @@ Supply these values through deployment environment variables, a secret store, or
 | `AzureAd:ClientId` | `AzureAd__ClientId` | Application (client) ID of the API registration, as a GUID |
 | `AzureAd:Audience` | `AzureAd__Audience` | Expected access-token audience, normally the exposed API Application ID URI |
 
-The API validates that the authority is HTTPS, the client ID is a GUID, and tenant/audience values are present and are not sample placeholders. Startup fails when the Entra configuration is incomplete instead of silently accepting an unusable identity configuration.
+At startup, the API validates that the authority is an HTTPS URL, the tenant and API client IDs are real GUIDs, and the audience is a real GUID or absolute URI. Placeholder values such as `A_RENSEIGNER` are rejected. Unknown authentication modes are rejected. The configured group-to-capability mapping is also validated at startup so malformed group IDs or unsupported capabilities do not remain latent until a request arrives.
+
+An empty `AutorisationEntra:GroupesCapacites` mapping is deliberately fail-closed: authentication can succeed, but no Entra group-derived application capabilities are granted. Configure the actual group object IDs and approved capability names before expecting users to access protected business operations.
 
 ## Entra app registration checklist
 
@@ -34,6 +36,19 @@ Local development may use the synthetic identities in `appsettings.Development.j
 
 The API authentication tests use a local signing key and fixed test-only tenant/application identifiers. They do not call a real tenant or require a client secret. Production token validation remains configured through Microsoft.Identity.Web and the deployment's Entra settings.
 
-## Scope boundary
+## Authorization behavior already implemented
 
-This stage authenticates callers and establishes the API's default authentication boundary. Mapping Entra groups to application capabilities and enforcing project assignments are later roadmap stages; a valid token alone does not imply access to every project or operation.
+After a valid bearer token is accepted, `TransformationGroupesEntra` removes any capability claims supplied by the token and derives capabilities only from the server-side `AutorisationEntra:GroupesCapacites` mapping. Unknown groups grant nothing. Group-overage indicators grant no group-derived capabilities; the API does not attempt to infer or grant access when the complete group list is unavailable.
+
+The API's fallback authorization policy requires an authenticated principal. Capability policies require the corresponding server-derived `capability` claim. Business services also enforce project membership and the relevant project permissions; the frontend's screen visibility is not a security boundary. A valid token alone does not imply access to every project or operation.
+
+## What still requires the real tenant
+
+Code and automated tests can validate configuration structure, token validation behavior using test signing keys, group-to-capability mapping, and project authorization without a tenant. Only the following require the target organization's actual Entra/Azure environment:
+
+- Replace the sample values in the API's `appsettings.json` or, preferably, the Azure deployment configuration with the real tenant ID, API application client ID, exact audience, and group object IDs.
+- Register the API and expose the required delegated scope; configure the Angular client registration and redirect URI/token request when the frontend's Entra sign-in flow is enabled.
+- Ensure Entra emits group claims for the API access token and validate the real token's issuer, audience, and group claim shape.
+- Deploy the configuration and verify sign-in, 401/403 behavior, project access, and operational logging end to end.
+
+The API does not need a client secret merely to validate bearer access tokens. Do not commit real tenant IDs or secrets to source control; use Azure application settings, environment variables, or a secret store for deployed environments.
