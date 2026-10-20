@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using PilotageForfaits.Api.Authentification;
 using PilotageForfaits.Application.Abstractions;
 using PilotageForfaits.Infrastructure.Donnees;
@@ -82,6 +83,11 @@ public sealed class FabriqueApi : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Tests");
+        builder.ConfigureLogging(logging =>
+        {
+            logging.AddConsole();
+            logging.SetMinimumLevel(LogLevel.Error);
+        });
         var configurationTests = ConfigurationTests();
         // Mirror test values into the web-host settings as well as app configuration during minimal-host startup.
         foreach (var pair in configurationTests)
