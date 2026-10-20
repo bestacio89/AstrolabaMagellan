@@ -44,7 +44,7 @@ public enum ImpactRisque { Faible, Moyenne, Forte, Critique }
 public enum TypeRisque { Retard, Qualite, Budget }
 
 /// <summary>Jalon du planning : une date ou une période.</summary>
-public enum TypeJalon { Date, Periode }
+public enum TypeJalon { Date, Periode, Semaine }
 
 /// <summary>Élément choisi par le chef de projet sur le planning : mis en avant (affiché sous sa ligne) ou ligne masquée.</summary>
 public enum NatureElementPlanning { MisEnAvant, Masque }

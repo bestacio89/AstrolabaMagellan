@@ -36,6 +36,7 @@ public static class DependencyInjection
         services.AddScoped<ReferencesService>();
         services.AddScoped<MisesAJourService>();
         services.AddScoped<PointsHebdoService>();
+        services.AddScoped<PlanningSaisieService>();
         return services;
     }
 }
