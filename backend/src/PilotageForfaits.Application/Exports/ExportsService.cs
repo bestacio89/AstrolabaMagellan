@@ -49,6 +49,64 @@ public sealed partial class ExportsService(
     }
 
     /// <summary>
+    /// Exporte les registres non financiers (actions, décisions, risques). Tout utilisateur qui peut lire le projet
+    /// peut les exporter ; les informations financières restent réservées aux exports COPIL/COPROJ.
+    /// </summary>
+    public async Task<FichierExport> RegistresAsync(Guid projetId, CancellationToken a)
+    {
+        _ = await acces.ExigerAccesAsync(projetId, a);
+        var projet = await db.Projets.AsNoTracking().FirstAsync(p => p.Id == projetId, a);
+        var actions = await db.Actions.AsNoTracking().Where(x => x.ProjetId == projetId && x.Libelle != "")
+            .OrderBy(x => x.Reference).ToListAsync(a);
+        var decisions = await db.Decisions.AsNoTracking().Where(x => x.ProjetId == projetId && x.Libelle != "")
+            .OrderBy(x => x.Reference).ToListAsync(a);
+        var risques = await db.Risques.AsNoTracking().Where(x => x.ProjetId == projetId && x.Libelle != "")
+            .OrderBy(x => x.Reference).ToListAsync(a);
+
+        var feuilles = new List<Feuille>
+        {
+            new()
+            {
+                Nom = "Actions",
+                Colonnes = [12, 45, 25, 18, 14, 14, 14, 50],
+                Lignes =
+                [
+                    C.L(C.T($"Actions — {projet.Nom}")),
+                    C.L(C.H("Référence"), C.H("Libellé"), C.H("Porteur"), C.H("Instance"), C.H("Créée le"), C.H("Échéance"), C.H("Statut"), C.H("Commentaire")),
+                    .. actions.Select(x => C.L(x.Reference, x.Libelle, x.Porteur, x.Instance ?? "", C.D(x.CreeeLe), C.D(x.DateCible), x.Statut.ToString(), x.Commentaire))
+                ]
+            },
+            new()
+            {
+                Nom = "Décisions",
+                Colonnes = [12, 14, 45, 25, 20, 18, 18, 50],
+                Lignes =
+                [
+                    C.L(C.T($"Décisions — {projet.Nom}")),
+                    C.L(C.H("Référence"), C.H("Date"), C.H("Libellé"), C.H("Décideur"), C.H("Instance"), C.H("Impact"), C.H("Statut"), C.H("Commentaire")),
+                    .. decisions.Select(x => C.L(x.Reference, C.D(x.Date), x.Libelle, x.Decideur ?? "", x.Instance ?? "", x.Impact ?? "", x.Statut.ToString(), x.Commentaire))
+                ]
+            },
+            new()
+            {
+                Nom = "Risques",
+                Colonnes = [12, 45, 18, 18, 18, 30, 40, 40, 25, 18, 50],
+                Lignes =
+                [
+                    C.L(C.T($"Risques — {projet.Nom}")),
+                    C.L(C.H("Référence"), C.H("Libellé"), C.H("Probabilité"), C.H("Importance"), C.H("Criticité"), C.H("Type"), C.H("Cause"), C.H("Plan"), C.H("Responsable"), C.H("Statut"), C.H("Commentaire")),
+                    .. risques.Select(x => C.L(x.Reference, x.Libelle, x.Probabilite.ToString(), x.Impact.ToString(),
+                        ( (int)x.Probabilite + 1) * ((int)x.Impact + 1), x.Type?.ToString() ?? "", x.Cause ?? "", x.Plan ?? "",
+                        x.Responsable ?? "", x.Statut.ToString(), x.Commentaire))
+                ]
+            }
+        };
+
+        return new FichierExport(ecrivain.Ecrire(feuilles),
+            $"Registres - {NomFichier(projet.Client, "Projet")} - {NomFichier(projet.Nom, "")} - {Calendrier.Iso(horloge.Aujourdhui)}.xlsx".Replace(" -  - ", " - "));
+    }
+
+    /// <summary>
     /// Photo des indicateurs (une par jour et par type de comité, remplacée si elle existe déjà).
     /// COPROJ : la date du dernier COPROJ est retenue (elle ne recule jamais, même si l'on refait un COPROJ sur une période passée).
     /// </summary>
