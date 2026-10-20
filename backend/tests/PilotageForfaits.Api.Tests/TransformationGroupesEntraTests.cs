@@ -79,6 +79,38 @@ public sealed class TransformationGroupesEntraTests
     }
 
     [Fact]
+    public void Validation_au_demarrage_refuse_un_identifiant_de_groupe_invalide()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["AutorisationEntra:GroupesCapacites:not-a-guid:0"] = CapacitesApplication.ProjetsLire
+            })
+            .Build();
+
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => TransformationGroupesEntra.ValiderConfiguration(configuration));
+
+        Assert.Contains("identifiant d'objet de groupe Entra", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Validation_au_demarrage_refuse_une_capacite_inconnue()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [$"AutorisationEntra:GroupesCapacites:{GroupeA}:0"] = "administrateur-total"
+            })
+            .Build();
+
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => TransformationGroupesEntra.ValiderConfiguration(configuration));
+
+        Assert.Contains("n'est pas reconnue", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Mapping_refuse_une_capacite_inconnue()
     {
         var sut = Creer(new Dictionary<string, string?>

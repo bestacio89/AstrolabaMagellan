@@ -40,6 +40,38 @@ public sealed class ConfigurationAuthentificationApiTests
     }
 
     [Fact]
+    public void Une_audience_entra_placeholder_est_refusee_au_demarrage()
+    {
+        using var factory = new FabriqueConfigurationApi(new Dictionary<string, string?>
+        {
+            ["Authentification:Mode"] = "EntraId",
+            ["AzureAd:Instance"] = "https://login.microsoftonline.com/",
+            ["AzureAd:TenantId"] = "11111111-1111-4111-8111-111111111111",
+            ["AzureAd:ClientId"] = "22222222-2222-4222-8222-222222222222",
+            ["AzureAd:Audience"] = "api://A_RENSEIGNER"
+        });
+
+        var exception = Record.Exception(() => factory.CreateClient());
+
+        Assert.NotNull(exception);
+        Assert.Contains("AzureAd:Audience", exception.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Un_mode_authentification_inconnu_est_refuse_au_demarrage()
+    {
+        using var factory = new FabriqueConfigurationApi(new Dictionary<string, string?>
+        {
+            ["Authentification:Mode"] = "EntaId"
+        });
+
+        var exception = Record.Exception(() => factory.CreateClient());
+
+        Assert.NotNull(exception);
+        Assert.Contains("Authentification:Mode", exception.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Un_tenant_entra_qui_n_est_pas_un_guid_est_refuse_au_demarrage()
     {
         using var factory = new FabriqueConfigurationApi(new Dictionary<string, string?>
