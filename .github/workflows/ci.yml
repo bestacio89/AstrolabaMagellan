@@ -1,20 +1,18 @@
-# Intégration continue : à chaque envoi (push) et à chaque demande de fusion (pull request),
-# on compile tout et on lance tous les tests. Une étape rouge = on ne fusionne pas.
+# Intégration continue : compilation et tests sur chaque pull request.
 name: Intégration continue
 
-# Do not queue a full matrix for every intermediate commit on the same branch.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 on:
-  push:
   pull_request:
 
 jobs:
   serveur:
     name: Serveur .NET (compilation et tests)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: backend
@@ -22,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
-          global-json-file: global.json
+          global-json-file: backend/global.json
       - run: dotnet restore PilotageForfaits.sln
       - run: dotnet build PilotageForfaits.sln --no-restore --configuration Release
       - run: dotnet test PilotageForfaits.sln --no-build --configuration Release --logger "trx;LogFileName=resultats.trx" --results-directory resultats-tests
@@ -32,9 +30,10 @@ jobs:
           name: resultats-tests-serveur
           path: backend/resultats-tests
 
-  interface:
-    name: Interface Angular (compilation et tests)
+  interface-build:
+    name: Interface Angular (compilation de production)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: frontend
@@ -43,17 +42,48 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install --no-audit --no-fund
+          fi
       - name: Build production application
-        run: npm run build -- --configuration production
+        env:
+          CI: true
+        run: npm run build -- --configuration production --progress=false
       - name: Verify production build artifact
-        run: test -s dist/pilotage-forfaits/browser/index.html
+        run: test -s dist/pilotage-forfaits/index.html
+
+  interface-tests:
+    name: Interface Angular (tests unitaires)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install --no-audit --no-fund
+          fi
       - name: Run Angular unit tests
-        run: npm test
+        env:
+          CI: true
+        run: npm test -- --watch=false --progress=false
 
   reference:
     name: Données de référence (moteur de la version de référence)
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

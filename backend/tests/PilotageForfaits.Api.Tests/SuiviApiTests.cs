@@ -381,7 +381,7 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
         await consultant.GetAsync("/api/moi");
         await ModifierBaseAsync(async db =>
         {
-            var u = await db.Utilisateurs.FirstAsync(x => x.IdentifiantExterne == "oid-consultant");
+            var u = await db.Utilisateurs.FirstAsync(x => x.IdentifiantExterne == "tenant-tests:oid-consultant");
             db.Habilitations.Add(new Habilitation { ProjetId = id, UtilisateurId = u.Id, Role = RoleProjet.Consultant, Depuis = DateTimeOffset.UtcNow });
         });
         JsonObject r;
@@ -515,7 +515,7 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
         await consultant.GetAsync("/api/moi"); // crée sa fiche
         await ModifierBaseAsync(async db =>
         {
-            var u = await db.Utilisateurs.FirstAsync(x => x.IdentifiantExterne == "oid-consultant");
+            var u = await db.Utilisateurs.FirstAsync(x => x.IdentifiantExterne == "tenant-tests:oid-consultant");
             db.Habilitations.Add(new Habilitation { ProjetId = id, UtilisateurId = u.Id, Role = RoleProjet.Consultant, Depuis = DateTimeOffset.UtcNow });
         });
 

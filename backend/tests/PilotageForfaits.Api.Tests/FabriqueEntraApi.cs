@@ -27,18 +27,21 @@ public sealed class FabriqueEntraApi : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Tests");
+        var testConfiguration = new Dictionary<string, string?>
+        {
+            ["ConnectionStrings:Pilotage"] = "Host=localhost;Database=unused_tests;Username=unused;Password=unused",
+            ["Authentification:Mode"] = "EntraId",
+            ["AzureAd:Instance"] = "https://login.microsoftonline.com/",
+            ["AzureAd:TenantId"] = TenantId,
+            ["AzureAd:ClientId"] = ClientId,
+            ["AzureAd:Audience"] = Audience
+        };
+        foreach (var pair in testConfiguration)
+            builder.UseSetting(pair.Key, pair.Value ?? string.Empty);
+
         builder.ConfigureAppConfiguration((_, configuration) =>
         {
-            // Append test values so AzureAd settings remain the effective configuration.
-            configuration.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:Pilotage"] = "Host=localhost;Database=unused_tests;Username=unused;Password=unused",
-                ["Authentification:Mode"] = "EntraId",
-                ["AzureAd:Instance"] = "https://login.microsoftonline.com/",
-                ["AzureAd:TenantId"] = TenantId,
-                ["AzureAd:ClientId"] = ClientId,
-                ["AzureAd:Audience"] = Audience
-            });
+            configuration.AddInMemoryCollection(testConfiguration);
         });
 
         builder.ConfigureTestServices(services =>

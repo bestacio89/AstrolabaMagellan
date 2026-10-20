@@ -57,7 +57,8 @@
           "options": {
             "buildTarget": "pilotage-forfaits:build:development",
             "tsConfig": "tsconfig.spec.json",
-            "runner": "vitest"
+            "runner": "vitest",
+            "watch": false
           }
         }
       }
