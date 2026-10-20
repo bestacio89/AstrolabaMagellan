@@ -42,6 +42,16 @@ After a valid bearer token is accepted, `TransformationGroupesEntra` removes any
 
 The API's fallback authorization policy requires an authenticated principal. Capability policies require the corresponding server-derived `capability` claim. Business services also enforce project membership and the relevant project permissions; the frontend's screen visibility is not a security boundary. A valid token alone does not imply access to every project or operation.
 
+## Frontend configuration boundary
+
+The Angular MSAL sign-in and token-acquisition flow is already present, but its production values are configured separately in `frontend/src/environments/environment.ts`:
+
+- `auth.clientId`: client ID of the Angular single-page application registration (not the API registration's client ID).
+- `auth.authority`: tenant-specific Entra authority URL.
+- `auth.scopeApi`: the exposed API scope requested by Angular, currently shaped as `api://<api-application-id>/acces`.
+
+These values are public application configuration, not secrets, but they must match the real registrations. With the current design, populating only the API's `appsettings.json` is not sufficient to enable real Angular sign-in; the Angular environment values must also be supplied. Consolidating these into runtime configuration would be a separate frontend configuration change and is intentionally outside this API-focused change.
+
 ## What still requires the real tenant
 
 Code and automated tests can validate configuration structure, token validation behavior using test signing keys, group-to-capability mapping, and project authorization without a tenant. Only the following require the target organization's actual Entra/Azure environment:
