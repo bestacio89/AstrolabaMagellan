@@ -271,7 +271,7 @@ public sealed class PlanningSaisieService(SaisieOutils o, ServiceAcces acces, IU
         var utilisateur = await acces.UtilisateurAsync(a);
         var cle = Personnes.Cle($"{courant.Prenom} {courant.Nom}");
         return await o.Db.Absences.AsNoTracking()
-            .Where(x => x.Jour >= du && x.Jour <= au && (x.UtilisateurId == utilisateur.Id || x.PersonneCle == cle))
+            .Where(x => x.Jour >= du && x.Jour <= au && (x.UtilisateurId == utilisateur.Id || (x.UtilisateurId == null && x.PersonneCle == cle)))
             .OrderBy(x => x.Jour)
             .Select(x => new MonAbsenceDto(x.Jour.ToString("yyyy-MM-dd"), CodeMoment(x.Moment)))
             .ToListAsync(a);
@@ -282,8 +282,16 @@ public sealed class PlanningSaisieService(SaisieOutils o, ServiceAcces acces, IU
         var utilisateur = await acces.UtilisateurAsync(a);
         var nom = Limiter(SaisieOutils.Nettoyer($"{courant.Prenom} {courant.Nom}"), 200);
         var cle = Personnes.Cle(nom);
-        var absence = await o.Db.Absences.FirstOrDefaultAsync(x => x.UtilisateurId == utilisateur.Id && x.Jour == jour, a)
-            ?? await o.Db.Absences.FirstOrDefaultAsync(x => x.PersonneCle == cle && x.Jour == jour, a);
+        var absence = await o.Db.Absences.FirstOrDefaultAsync(x => x.UtilisateurId == utilisateur.Id && x.Jour == jour, a);
+        if (absence is null)
+        {
+            // A manager-created, unlinked absence can be claimed by the matching account. Never mutate another
+            // account's record merely because two people happen to have the same display name.
+            var parNom = await o.Db.Absences.FirstOrDefaultAsync(x => x.PersonneCle == cle && x.Jour == jour, a);
+            if (parNom is not null && parNom.UtilisateurId is not null && parNom.UtilisateurId != utilisateur.Id)
+                throw new RegleMetierException("Une autre personne possède déjà une absence pour ce jour avec le même nom affiché. Contactez le responsable du projet pour lever l'ambiguïté.");
+            absence = parNom;
+        }
         if (momentCode == "")
         {
             if (absence is not null) o.Db.Absences.Remove(absence);
