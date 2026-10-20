@@ -21,7 +21,7 @@
   <ItemGroup>
     <Compile Include="..\Commun\*.cs" Link="Commun\%(Filename)%(Extension)" />
   </ItemGroup>
-<ItemGroup>
+  <ItemGroup>
     <Using Include="Xunit" />
     <Using Include="PilotageForfaits.Tests.Commun" />
   </ItemGroup>
