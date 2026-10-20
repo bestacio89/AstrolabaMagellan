@@ -178,6 +178,10 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
             valeurs = new[] { "COPIL", "COPROJ" }, ancien = (string?)null, nouveau = (string?)null
         })).StatusCode);
 
+        var exportRegistres = await chef.PostAsJsonAsync($"{baseProjet}/exports/registres", new { });
+        Assert.Equal(HttpStatusCode.OK, exportRegistres.StatusCode);
+        Assert.Contains("spreadsheetml.sheet", exportRegistres.Content.Headers.ContentType!.MediaType);
+
         using var lecteur = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
             Guid.NewGuid().ToString(),
             FabriquePostgreSqlApi.GroupeLecteur));
