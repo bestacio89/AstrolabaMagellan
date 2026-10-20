@@ -2341,7 +2341,7 @@ namespace PilotageForfaits.Infrastructure.Migrations
 
                     b.ToTable("Taches", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Taches_Avancement", "\"Avancement\" IS NULL OR (CAST(\"Avancement\" AS NUMERIC) >= 0 AND CAST(\"Avancement\" AS NUMERIC) <= 1)");
+                            t.HasCheckConstraint("CK_Taches_Avancement", "\"Avancement\" IS NULL OR (\"Avancement\" >= 0 AND \"Avancement\" <= 1)");
                         });
                 });
 
