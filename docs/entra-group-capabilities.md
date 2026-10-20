@@ -24,4 +24,4 @@ Supported capabilities are `projets.lire`, `projets.lire-tous`, `projets.creer`,
 
 Entra can omit a complete group list when membership exceeds token limits. The transformer treats `hasgroups` and `_claim_names` markers as overage signals and grants no group-derived capabilities in that case. This stage does not call Microsoft Graph; any future resolver must be deliberately designed, permissioned, and tested. Missing or unresolved group membership never implies access.
 
-Named policies use `capacite:{identifier}`. The project-authorization stage must apply capability policies together with project-assignment checks. A capability alone must not imply access to every project.
+Named policies use `capacite:{identifier}`. The API's current project-authorization services must continue to apply capability checks together with project-assignment checks on each operation. A capability alone must not imply access to every project.
