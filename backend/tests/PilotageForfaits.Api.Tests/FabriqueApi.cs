@@ -2,13 +2,14 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Npgsql;
+using Testcontainers.PostgreSql;
 using PilotageForfaits.Api.Authentification;
 using PilotageForfaits.Application.Abstractions;
 using PilotageForfaits.Infrastructure.Donnees;
@@ -16,18 +17,33 @@ using PilotageForfaits.Infrastructure.Donnees;
 namespace PilotageForfaits.Api.Tests;
 
 /// <summary>
-/// Démarre l'API complète en mémoire, avec une base SQLite en mémoire réservée aux tests,
-/// des utilisateurs fictifs et une date du jour fixe (06/10/2026, celle des scénarios de référence).
-/// La configuration est injectée dans l'hôte de test : aucun état de configuration global du processus n'est modifié.
+/// API de bout en bout sur un vrai PostgreSQL isolé par Testcontainers.
+/// Chaque appel à PreparerBase recrée le schéma et rejoue les migrations pour isoler chaque test.
 /// </summary>
 public sealed class FabriqueApi : WebApplicationFactory<Program>
 {
-    private readonly SqliteConnection _connexion = new("DataSource=:memory:");
+    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:18")
+        .WithDatabase("pilotage_forfaits_tests")
+        .WithUsername("pilotage")
+        .WithPassword("pilotage_test_only")
+        .Build();
+
+    private readonly string _schema = "api_it_" + Guid.NewGuid().ToString("N");
+    private string _baseConnectionString = "";
+    private string _schemaConnectionString = "";
 
     public FabriqueApi()
     {
-        // La base SQLite en mémoire vit tant que la connexion reste ouverte.
-        _connexion.Open();
+        _postgres.StartAsync().GetAwaiter().GetResult();
+        _baseConnectionString = _postgres.GetConnectionString();
+        _schemaConnectionString = new NpgsqlConnectionStringBuilder(_baseConnectionString)
+        {
+            SearchPath = _schema
+        }.ConnectionString;
+
+        CreerSchema();
+        using var scope = Services.CreateScope();
+        scope.ServiceProvider.GetRequiredService<PilotageDbContext>().Database.Migrate();
     }
 
     private static Dictionary<string, string?> ConfigurationTests()
@@ -41,7 +57,6 @@ public sealed class FabriqueApi : WebApplicationFactory<Program>
         var capacitesChef = new[] { "projets.lire", "projets.creer", "projets.modifier", "consomme.saisir", "exports.financiers" };
         var capacitesConsultant = new[] { "projets.lire", "consomme.saisir" };
         var capacitesPilotage = new[] { "projets.lire", "projets.lire-tous", "exports.financiers" };
-        var capacitesLectureSeule = new[] { "projets.lire" };
         var utilisateurs = new[]
         {
             (Cle: "chef", Oid: "oid-chef", Prenom: "Camille", Nom: "Martin", Role: "ChefDeProjet", Capacites: capacitesChef),
@@ -69,10 +84,6 @@ public sealed class FabriqueApi : WebApplicationFactory<Program>
         return configuration;
     }
 
-    /// <summary>
-    /// Date du jour fixe (06/10/2026). L'heure (« Maintenant ») peut être réglée par un test pour dater des saisies
-    /// (ex. rejouer un scénario où les ajouts ont eu lieu à des dates différentes).
-    /// </summary>
     public sealed class HorlogeFixe : IHorloge
     {
         public static readonly DateTimeOffset ParDefaut = new(2026, 10, 6, 10, 0, 0, TimeSpan.Zero);
@@ -88,19 +99,16 @@ public sealed class FabriqueApi : WebApplicationFactory<Program>
             logging.AddConsole();
             logging.SetMinimumLevel(LogLevel.Error);
         });
+
         var configurationTests = ConfigurationTests();
-        // Mirror test values into the web-host settings as well as app configuration during minimal-host startup.
+        configurationTests["ConnectionStrings:Pilotage"] = _schemaConnectionString;
         foreach (var pair in configurationTests)
             builder.UseSetting(pair.Key, pair.Value ?? string.Empty);
-
         builder.ConfigureAppConfiguration((_, configuration) =>
-        {
-            configuration.AddInMemoryCollection(configurationTests);
-        });
+            configuration.AddInMemoryCollection(configurationTests));
 
         builder.ConfigureTestServices(services =>
         {
-            // Pin the test host to the development scheme explicitly so test requests use the intended identity handler.
             services.AddAuthentication(options =>
             {
                 options.DefaultScheme = AuthentificationDev.Schema;
@@ -108,11 +116,9 @@ public sealed class FabriqueApi : WebApplicationFactory<Program>
                 options.DefaultChallengeScheme = AuthentificationDev.Schema;
                 options.DefaultForbidScheme = AuthentificationDev.Schema;
             });
-
-            // La base SQLite en mémoire est réservée aux tests d'intégration API.
             services.RemoveAll<DbContextOptions<PilotageDbContext>>();
             services.RemoveAll<IDbContextOptionsConfiguration<PilotageDbContext>>();
-            services.AddDbContext<PilotageDbContext>(o => o.UseSqlite(_connexion));
+            services.AddDbContext<PilotageDbContext>(options => options.UseNpgsql(_schemaConnectionString));
             services.RemoveAll<IHorloge>();
             services.AddSingleton<IHorloge, HorlogeFixe>();
         });
@@ -124,7 +130,6 @@ public sealed class FabriqueApi : WebApplicationFactory<Program>
         client.DefaultRequestHeaders.Add("X-Utilisateur-Dev", "chef");
     }
 
-    /// <summary>Client HTTP connecté sous l'identité d'un utilisateur fictif (chef, chef2, consultant, pilotage).</summary>
     public HttpClient ClientPour(string utilisateur)
     {
         var client = CreateClient();
@@ -133,21 +138,43 @@ public sealed class FabriqueApi : WebApplicationFactory<Program>
         return client;
     }
 
-    /// <summary>Crée la base (une seule fois) avant le premier test.</summary>
     public void PreparerBase()
     {
+        NpgsqlConnection.ClearAllPools();
+        using (var connection = new NpgsqlConnection(_baseConnectionString))
+        {
+            connection.Open();
+            using var command = new NpgsqlCommand($"DROP SCHEMA IF EXISTS \"{_schema}\" CASCADE; CREATE SCHEMA \"{_schema}\";", connection);
+            command.ExecuteNonQuery();
+        }
+
         using var scope = Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<PilotageDbContext>();
-        db.Database.EnsureCreated();
-        // Chaque test repart d'une base sans projet : un même TSP ne peut être importé qu'une fois (unicité des projets).
-        foreach (var id in db.Projets.Select(p => p.Id).ToList())
-            db.MarquerProjetPourSuppressionAsync(id).GetAwaiter().GetResult();
-        db.SaveChanges();
+        scope.ServiceProvider.GetRequiredService<PilotageDbContext>().Database.Migrate();
+    }
+
+    private void CreerSchema()
+    {
+        using var connection = new NpgsqlConnection(_baseConnectionString);
+        connection.Open();
+        using var command = new NpgsqlCommand($"CREATE SCHEMA \"{_schema}\"", connection);
+        command.ExecuteNonQuery();
     }
 
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        if (disposing) _connexion.Dispose();
+        if (!disposing) return;
+        try
+        {
+            NpgsqlConnection.ClearAllPools();
+            using var connection = new NpgsqlConnection(_baseConnectionString);
+            connection.Open();
+            using var command = new NpgsqlCommand($"DROP SCHEMA IF EXISTS \"{_schema}\" CASCADE", connection);
+            command.ExecuteNonQuery();
+        }
+        finally
+        {
+            _postgres.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        }
     }
 }
