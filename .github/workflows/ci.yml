@@ -34,6 +34,10 @@ jobs:
     name: Interface Angular (compilation de production)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      CI: 'true'
+      NG_CLI_ANALYTICS: 'false'
+      npm_config_yes: 'true'
     defaults:
       run:
         working-directory: frontend
@@ -45,13 +49,11 @@ jobs:
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ]; then
-            npm ci
+            npm ci --no-audit --no-fund
           else
             npm install --no-audit --no-fund
           fi
       - name: Build production application
-        env:
-          CI: true
         run: npm run build -- --configuration production --progress=false
       - name: Verify production build artifact
         run: test -s dist/pilotage-forfaits/index.html
@@ -60,6 +62,10 @@ jobs:
     name: Interface Angular (tests unitaires)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      CI: 'true'
+      NG_CLI_ANALYTICS: 'false'
+      npm_config_yes: 'true'
     defaults:
       run:
         working-directory: frontend
@@ -71,14 +77,12 @@ jobs:
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ]; then
-            npm ci
+            npm ci --no-audit --no-fund
           else
             npm install --no-audit --no-fund
           fi
       - name: Run Angular unit tests
-        env:
-          CI: true
-        run: npm test -- --watch=false --progress=false
+        run: npm test -- --watch=false
 
   reference:
     name: Données de référence (moteur de la version de référence)
