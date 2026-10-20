@@ -1,12 +1,9 @@
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
-using PilotageForfaits.Infrastructure.Donnees;
 
 #nullable disable
 
 namespace PilotageForfaits.Infrastructure.Migrations;
 
-[DbContext(typeof(PilotageDbContext))]
 [Migration("20261020213000_FixTacheAvancementCheckConstraint")]
 public sealed partial class FixTacheAvancementCheckConstraint : Migration
 {
