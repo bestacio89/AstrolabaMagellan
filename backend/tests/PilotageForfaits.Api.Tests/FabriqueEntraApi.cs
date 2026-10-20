@@ -28,8 +28,10 @@ public sealed class FabriqueEntraApi : WebApplicationFactory<Program>
     {
         builder.UseEnvironment("Tests");
         builder.ConfigureAppConfiguration((_, configuration) =>
+            configuration.Sources.Clear();
             configuration.AddInMemoryCollection(new Dictionary<string, string?>
             {
+                ["ConnectionStrings:Pilotage"] = "Host=localhost;Database=unused_tests;Username=unused;Password=unused",
                 ["Authentification:Mode"] = "EntraId",
                 ["AzureAd:Instance"] = "https://login.microsoftonline.com/",
                 ["AzureAd:TenantId"] = TenantId,
@@ -45,6 +47,7 @@ public sealed class FabriqueEntraApi : WebApplicationFactory<Program>
                 options.Authority = null;
                 options.MetadataAddress = null;
                 options.ConfigurationManager = null;
+                options.MapInboundClaims = false;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -77,7 +80,9 @@ public sealed class FabriqueEntraApi : WebApplicationFactory<Program>
                 new Claim("oid", "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"),
                 new Claim("name", "Utilisateur de test")
             ],
-            notBefore: maintenant.AddMinutes(-1),
+            notBefore: expirationUtc.HasValue && expirationUtc.Value < maintenant
+                ? expirationUtc.Value.AddMinutes(-5)
+                : maintenant.AddMinutes(-1),
             expires: expirationUtc ?? maintenant.AddMinutes(5),
             signingCredentials: new SigningCredentials(CleSignature, SecurityAlgorithms.HmacSha256));
 

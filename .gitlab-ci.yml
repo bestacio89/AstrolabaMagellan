@@ -18,7 +18,6 @@ serveur_dotnet:
   image: mcr.microsoft.com/dotnet/sdk:10.0
   services:
     - name: docker:27-dind
-      alias: docker
       command: ["--tls=false"]
   variables:
     DOCKER_HOST: "tcp://docker:2375"
@@ -26,10 +25,19 @@ serveur_dotnet:
     DOCKER_DRIVER: overlay2
     TESTCONTAINERS_HOST_OVERRIDE: "docker"
   before_script:
-    - dotnet --info
-    - docker info
+    - apt-get update
+    - apt-get install --yes --no-install-recommends docker.io
+    - |
+      for attempt in $(seq 1 30); do
+        if docker info >/dev/null 2>&1; then
+          break
+        fi
+        sleep 2
+      done
+      docker info
   script:
     - cd backend
+    - dotnet --info
     - dotnet restore PilotageForfaits.sln
     - dotnet build PilotageForfaits.sln --no-restore --configuration Release
     - dotnet test PilotageForfaits.sln --no-build --configuration Release --logger "trx;LogFileName=resultats.trx" --results-directory resultats-tests
@@ -45,12 +53,12 @@ interface_angular:
   cache:
     key:
       files:
-        - frontend/package-lock.json
+        - frontend/package.json
     paths:
       - .npm/
   script:
     - cd frontend
-    - if [ -f package-lock.json ]; then npm ci --cache "$NPM_CONFIG_CACHE"; else npm install --cache "$NPM_CONFIG_CACHE"; fi
+    - npm install --cache "$NPM_CONFIG_CACHE" --prefer-offline
     - npm run build -- --configuration production
     - test -s dist/pilotage-forfaits/browser/index.html
     - npm test

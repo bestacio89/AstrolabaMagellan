@@ -27,7 +27,6 @@ public sealed class ConfigurationAuthentificationApiTests
         using var factory = new FabriqueConfigurationApi(new Dictionary<string, string?>
         {
             ["Authentification:Mode"] = "EntraId",
-            ["ConnectionStrings:Pilotage"] = "Host=localhost;Database=unused;Username=unused;Password=unused",
             ["AzureAd:Instance"] = "http://login.microsoftonline.com/",
             ["AzureAd:TenantId"] = "11111111-1111-4111-8111-111111111111",
             ["AzureAd:ClientId"] = "22222222-2222-4222-8222-222222222222",
@@ -65,7 +64,10 @@ public sealed class ConfigurationAuthentificationApiTests
         {
             builder.UseEnvironment("Production");
             builder.ConfigureAppConfiguration((_, configuration) =>
-                configuration.AddInMemoryCollection(values));
+            {
+                configuration.Sources.Clear();
+                configuration.AddInMemoryCollection(values);
+            });
         }
     }
 }

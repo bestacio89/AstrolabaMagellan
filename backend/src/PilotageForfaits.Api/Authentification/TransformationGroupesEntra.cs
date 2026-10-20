@@ -52,9 +52,14 @@ public sealed class TransformationGroupesEntra(IConfiguration configuration) : I
 
         var capacitesAjoutees = new HashSet<string>(StringComparer.Ordinal);
 
-        foreach (var groupe in principal.FindAll(TypeGroupe)
-                     .Select(c => c.Value)
-                     .Distinct(StringComparer.OrdinalIgnoreCase))
+        // Snapshot group values before adding claims: FindAll enumerates the same mutable
+        // ClaimsIdentity collection that receives the derived capability claims below.
+        var groupes = principal.FindAll(TypeGroupe)
+            .Select(c => c.Value)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        foreach (var groupe in groupes)
         {
             if (!_capacitesParGroupe.Value.TryGetValue(groupe, out var capacites))
                 continue;

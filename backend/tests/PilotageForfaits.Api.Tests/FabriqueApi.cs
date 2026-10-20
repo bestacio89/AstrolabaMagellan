@@ -32,7 +32,7 @@ public sealed class FabriqueApi : WebApplicationFactory<Program>
         var configuration = new Dictionary<string, string?>
         {
             ["Authentification:Mode"] = "Dev",
-            ["ConnectionStrings:Pilotage"] = "Server=localhost;Database=unused_tests;User Id=unused;Password=unused;TrustServerCertificate=True",
+            ["ConnectionStrings:Pilotage"] = "Host=localhost;Database=unused_tests;Username=unused;Password=unused",
         };
 
         var capacitesChef = new[] { "projets.lire", "projets.creer", "projets.modifier", "consomme.saisir", "exports.financiers" };
@@ -81,7 +81,11 @@ public sealed class FabriqueApi : WebApplicationFactory<Program>
     {
         builder.UseEnvironment("Tests");
         builder.ConfigureAppConfiguration((_, configuration) =>
-            configuration.AddInMemoryCollection(ConfigurationTests()));
+        {
+            // These tests must not inherit production appsettings or environment overrides.
+            configuration.Sources.Clear();
+            configuration.AddInMemoryCollection(ConfigurationTests());
+        });
 
         builder.ConfigureTestServices(services =>
         {
