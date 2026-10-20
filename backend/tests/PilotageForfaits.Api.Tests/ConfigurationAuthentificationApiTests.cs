@@ -63,9 +63,12 @@ public sealed class ConfigurationAuthentificationApiTests
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment("Production");
+            // Make the intended values available during minimal-host startup and app configuration.
+            foreach (var pair in values)
+                builder.UseSetting(pair.Key, pair.Value ?? string.Empty);
+
             builder.ConfigureAppConfiguration((_, configuration) =>
             {
-                // Append test values last so they override appsettings and environment variables.
                 configuration.AddInMemoryCollection(values);
             });
         }
