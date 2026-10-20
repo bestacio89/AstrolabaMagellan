@@ -227,7 +227,7 @@ public sealed class FabriquePostgreSqlApi : IAsyncLifetime
             builder.UseEnvironment("Tests");
             builder.ConfigureAppConfiguration((_, configuration) =>
             {
-                configuration.Sources.Clear();
+                // Append test overrides last to ensure Microsoft.Identity.Web receives the test ClientId.
                 configuration.AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["ConnectionStrings:Pilotage"] = connectionString,
