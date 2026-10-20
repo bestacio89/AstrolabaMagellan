@@ -29,7 +29,7 @@ public sealed class FabriqueEntraApi : WebApplicationFactory<Program>
         builder.UseEnvironment("Tests");
         builder.ConfigureAppConfiguration((_, configuration) =>
         {
-            configuration.Sources.Clear();
+            // Append test values so AzureAd settings remain the effective configuration.
             configuration.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:Pilotage"] = "Host=localhost;Database=unused_tests;Username=unused;Password=unused",
