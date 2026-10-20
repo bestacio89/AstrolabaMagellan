@@ -140,7 +140,9 @@ public sealed class FabriqueApi : WebApplicationFactory<Program>
 
     public void PreparerBase()
     {
-        NpgsqlConnection.ClearAllPools();
+        using (var poolConnection = new NpgsqlConnection(_schemaConnectionString))
+            NpgsqlConnection.ClearPool(poolConnection);
+
         using (var connection = new NpgsqlConnection(_baseConnectionString))
         {
             connection.Open();
@@ -164,17 +166,9 @@ public sealed class FabriqueApi : WebApplicationFactory<Program>
     {
         base.Dispose(disposing);
         if (!disposing) return;
-        try
-        {
-            NpgsqlConnection.ClearAllPools();
-            using var connection = new NpgsqlConnection(_baseConnectionString);
-            connection.Open();
-            using var command = new NpgsqlCommand($"DROP SCHEMA IF EXISTS \"{_schema}\" CASCADE", connection);
-            command.ExecuteNonQuery();
-        }
-        finally
-        {
-            _postgres.DisposeAsync().AsTask().GetAwaiter().GetResult();
-        }
+
+        // The database belongs exclusively to this fixture; disposing the container removes its schema and data.
+        // Avoid opening a new connection during teardown or clearing unrelated fixture pools globally.
+        _postgres.DisposeAsync().AsTask().GetAwaiter().GetResult();
     }
 }
