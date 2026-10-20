@@ -270,11 +270,12 @@ public sealed class PlanningSaisieService(SaisieOutils o, ServiceAcces acces, IU
         if (au.DayNumber - du.DayNumber > 366) throw new RegleMetierException("La période ne peut pas dépasser 367 jours.");
         var utilisateur = await acces.UtilisateurAsync(a);
         var cle = Personnes.Cle($"{courant.Prenom} {courant.Nom}");
-        return await o.Db.Absences.AsNoTracking()
+        var lignes = await o.Db.Absences.AsNoTracking()
             .Where(x => x.Jour >= du && x.Jour <= au && (x.UtilisateurId == utilisateur.Id || (x.UtilisateurId == null && x.PersonneCle == cle)))
             .OrderBy(x => x.Jour)
-            .Select(x => new MonAbsenceDto(x.Jour.ToString("yyyy-MM-dd"), CodeMoment(x.Moment)))
+            .Select(x => new { x.Jour, x.Moment })
             .ToListAsync(a);
+        return lignes.Select(x => new MonAbsenceDto(x.Jour.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), CodeMoment(x.Moment))).ToList();
     }
 
     public async Task<IReadOnlyList<MonAbsenceDto>> DefinirMonAbsenceAsync(DateOnly jour, string momentCode, CancellationToken a)
