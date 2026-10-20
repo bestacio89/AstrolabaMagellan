@@ -216,7 +216,7 @@ public sealed class ConstructeurProjetCalcul(IContexteDonnees db)
             Groupes = d.DatesPlanning.GroupBy(x => x.Cle).ToDictionary(g => g.Key, g => new DatesLignePlanningCalcul { Debut = g.First().Debut, Fin = g.First().Fin, Nom = g.First().Nom }),
             Jalons = d.Jalons.Select(j => new JalonCalcul
             {
-                Id = j.Id.ToString(), Libelle = j.Libelle, Type = j.Type == TypeJalon.Periode ? "periode" : "date",
+                Id = j.Id.ToString(), Libelle = j.Libelle, Type = j.Type switch { TypeJalon.Periode => "periode", TypeJalon.Semaine => "semaine", _ => "date" },
                 Debut = j.Debut, Fin = j.Type == TypeJalon.Periode ? j.Fin : null, AConfirmer = j.AConfirmer,
             }).ToList(),
         };
