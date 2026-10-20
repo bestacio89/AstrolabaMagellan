@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
-          global-json-file: global.json
+          global-json-file: backend/global.json
       - run: dotnet restore PilotageForfaits.sln
       - run: dotnet build PilotageForfaits.sln --no-restore --configuration Release
       - run: dotnet test PilotageForfaits.sln --no-build --configuration Release --logger "trx;LogFileName=resultats.trx" --results-directory resultats-tests
