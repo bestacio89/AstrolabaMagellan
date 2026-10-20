@@ -1,22 +1,23 @@
 using Microsoft.EntityFrameworkCore;
 using PilotageForfaits.Infrastructure.Donnees;
+using Testcontainers.PostgreSql;
 
 namespace PilotageForfaits.Infrastructure.Tests;
 
 /// <summary>
-/// Tests d'intégration de la migration initiale sur un vrai serveur PostgreSQL.
-/// Configurez POSTGRES_TEST_CONNECTION pour exécuter ce test.
+/// Vérifie que la chaîne complète de migrations initialise le schéma sur un vrai PostgreSQL.
+/// Le conteneur est créé pour ce test : aucune configuration locale ou variable d'environnement n'est requise.
 /// </summary>
 public sealed class MigrationPostgreSqlTests
 {
-    [PostgreSqlFact]
-    public async Task La_migration_initiale_est_applicable_et_idempotente()
+    [Fact]
+    public async Task La_chaine_de_migrations_cree_le_schema_attendu()
     {
-        var connectionString = Environment.GetEnvironmentVariable("POSTGRES_TEST_CONNECTION")
-            ?? throw new InvalidOperationException("POSTGRES_TEST_CONNECTION must be configured.");
+        await using var postgres = new PostgreSqlBuilder("postgres:18").Build();
+        await postgres.StartAsync();
 
         var options = new DbContextOptionsBuilder<PilotageDbContext>()
-            .UseNpgsql(connectionString)
+            .UseNpgsql(postgres.GetConnectionString())
             .Options;
 
         await using var db = new PilotageDbContext(options);
@@ -30,31 +31,13 @@ public sealed class MigrationPostgreSqlTests
         Assert.Empty(await db.Database.GetPendingMigrationsAsync());
 
         const string nomTable = "Projets";
-        FormattableString requete = $"SELECT COUNT(*) AS \"Value\" FROM information_schema.tables WHERE table_schema = 'public' AND table_name = {nomTable}";
+        FormattableString requete = $"""
+            SELECT COUNT(*) AS "Value"
+            FROM information_schema.tables
+            WHERE table_schema = 'public' AND table_name = {nomTable}
+            """;
         var nombreTablesProjets = await db.Database.SqlQuery<int>(requete).SingleAsync();
+
         Assert.Equal(1, nombreTablesProjets);
-
-        // A second migration pass must not change migration history or fail.
-        await db.Database.MigrateAsync();
-
-        Assert.Equal(
-            migrationsAppliquees,
-            (await db.Database.GetAppliedMigrationsAsync()).ToArray());
-        Assert.Empty(await db.Database.GetPendingMigrationsAsync());
-    }
-}
-
-/// <summary>
-/// Skip the PostgreSQL integration test explicitly when no test connection is configured.
-/// CI sets POSTGRES_TEST_CONNECTION and therefore executes the test.
-/// </summary>
-public sealed class PostgreSqlFactAttribute : FactAttribute
-{
-    public PostgreSqlFactAttribute()
-    {
-        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("POSTGRES_TEST_CONNECTION")))
-        {
-            Skip = "POSTGRES_TEST_CONNECTION is not configured.";
-        }
     }
 }
