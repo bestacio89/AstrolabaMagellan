@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -7,6 +8,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using PilotageForfaits.Api.Authentification;
 using PilotageForfaits.Application.Abstractions;
 using PilotageForfaits.Infrastructure.Donnees;
 
@@ -88,6 +90,15 @@ public sealed class FabriqueApi : WebApplicationFactory<Program>
 
         builder.ConfigureTestServices(services =>
         {
+            // Pin the test host to the development scheme explicitly so test requests use the intended identity handler.
+            services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = AuthentificationDev.Schema;
+                options.DefaultAuthenticateScheme = AuthentificationDev.Schema;
+                options.DefaultChallengeScheme = AuthentificationDev.Schema;
+                options.DefaultForbidScheme = AuthentificationDev.Schema;
+            });
+
             // La base SQLite en mémoire est réservée aux tests d'intégration API.
             services.RemoveAll<DbContextOptions<PilotageDbContext>>();
             services.RemoveAll<IDbContextOptionsConfiguration<PilotageDbContext>>();
