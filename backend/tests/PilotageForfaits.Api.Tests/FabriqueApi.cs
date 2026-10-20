@@ -82,8 +82,7 @@ public sealed class FabriqueApi : WebApplicationFactory<Program>
         builder.UseEnvironment("Tests");
         builder.ConfigureAppConfiguration((_, configuration) =>
         {
-            // These tests must not inherit production appsettings or environment overrides.
-            configuration.Sources.Clear();
+            // Add test overrides last so they take precedence over appsettings and environment configuration.
             configuration.AddInMemoryCollection(ConfigurationTests());
         });
 
