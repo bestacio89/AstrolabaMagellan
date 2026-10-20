@@ -17,7 +17,7 @@ namespace PilotageForfaits.Api.Controleurs;
 public sealed class SuiviController(
     SuiviService suivi, SaisiesTachesService taches, PerimetreService perimetre, AteliersLivrablesService ateliers,
     FacturationService facturation, RegistresService registres, DepensesService depenses, ParametresService parametres, ExportsService exports,
-    ReferencesService references, MisesAJourService misesAJour, PointsHebdoService pointsHebdo)
+    ReferencesService references, MisesAJourService misesAJour, PointsHebdoService pointsHebdo, PlanningSaisieService planningSaisie)
     : ControllerBase
 {
     /// <summary>Saisies, indicateurs calculés et droits de l'utilisateur sur le projet.</summary>
@@ -142,6 +142,50 @@ public sealed class SuiviController(
     [HttpPut("references/{referenceId:guid}/taches/{uid}/derive")]
     public Task<ResultatSaisieDto> Derive(Guid id, Guid referenceId, string uid, DeriveCommande c, CancellationToken a) =>
         references.DefinirDeriveAsync(id, referenceId, uid, c, a);
+
+    // ---------------------------------------------------------------- planning, prévisionnel et absences
+
+    [HttpPut("planning/dates")]
+    public Task<ResultatSaisieDto> DatePlanning(Guid id, DatePlanningCommande c, CancellationToken a) => planningSaisie.DefinirDateAsync(id, c, a);
+
+    [HttpPost("planning/dates/effacer")]
+    public Task<ResultatSaisieDto> EffacerDatesPlanning(Guid id, ClePlanningCommande c, CancellationToken a) => planningSaisie.EffacerDatesAsync(id, c, a);
+
+    [HttpPut("planning/sous-parties/nom")]
+    public Task<ResultatSaisieDto> NomSousPartie(Guid id, NomSousPartieCommande c, CancellationToken a) => planningSaisie.NommerSousPartieAsync(id, c, a);
+
+    [HttpPost("planning/jalons")]
+    public Task<ResultatSaisieDto> AjouterJalon(Guid id, JalonCommande c, CancellationToken a) => planningSaisie.AjouterJalonAsync(id, c, a);
+
+    [HttpPut("planning/jalons/{jalonId:guid}")]
+    public Task<ResultatSaisieDto> ModifierJalon(Guid id, Guid jalonId, JalonCommande c, CancellationToken a) => planningSaisie.ModifierJalonAsync(id, jalonId, c, a);
+
+    [HttpDelete("planning/jalons/{jalonId:guid}")]
+    public Task<ResultatSaisieDto> SupprimerJalon(Guid id, Guid jalonId, CancellationToken a) => planningSaisie.SupprimerJalonAsync(id, jalonId, a);
+
+    [HttpPut("planning/elements")]
+    public Task<ResultatSaisieDto> ElementPlanning(Guid id, ElementPlanningCommande c, CancellationToken a) => planningSaisie.DefinirElementAsync(id, c, a);
+
+    [HttpPost("planning/elements/retirer")]
+    public Task<ResultatSaisieDto> RetirerElementsPlanning(Guid id, ClesPlanningCommande c, CancellationToken a) => planningSaisie.RetirerElementsAsync(id, c, a);
+
+    [HttpPut("previsionnel")]
+    public Task<ResultatSaisieDto> Previsionnel(Guid id, PrevisionnelCommande c, CancellationToken a) => planningSaisie.DefinirPrevisionnelAsync(id, c, a);
+
+    [HttpPost("previsionnel/reinitialiser")]
+    public Task<ResultatSaisieDto> ReinitialiserPrevisionnel(Guid id, CancellationToken a) => planningSaisie.ReinitialiserPrevisionnelAsync(id, a);
+
+    [HttpPut("absences")]
+    public Task<ResultatSaisieDto> Absence(Guid id, AbsenceCommande c, CancellationToken a) => planningSaisie.DefinirAbsenceProjetAsync(id, c, a);
+
+    [HttpPost("personnes")]
+    public Task<ResultatSaisieDto> AjouterPersonne(Guid id, PersonneCommande c, CancellationToken a) => planningSaisie.AjouterPersonneAsync(id, c, a);
+
+    [HttpDelete("personnes/{personneId:guid}")]
+    public Task<ResultatSaisieDto> RetirerPersonne(Guid id, Guid personneId, CancellationToken a) => planningSaisie.RetirerPersonneAsync(id, personneId, a);
+
+    [HttpPut("parametres/instances")]
+    public Task<ResultatSaisieDto> Instances(Guid id, InstancesCommande c, CancellationToken a) => planningSaisie.DefinirInstancesAsync(id, c, a);
 
     // ---------------------------------------------------------------- facturation
 
