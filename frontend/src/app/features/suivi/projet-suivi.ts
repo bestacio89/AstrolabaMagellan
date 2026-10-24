@@ -485,6 +485,12 @@ export class ProjetSuivi {
       this.etat.ouvrirPhase(ph.dataset['openph']);
       return;
     }
+    const commentaire = cible.closest<HTMLElement>('[data-open-comments]');
+    if (commentaire?.dataset['openComments']) {
+      e.preventDefault();
+      this.etat.ouvrirTacheCommentaires(commentaire.dataset['openComments']);
+      return;
+    }
     const t = cible.closest<HTMLElement>('[data-open]');
     if (t?.dataset['open']) {
       e.preventDefault();

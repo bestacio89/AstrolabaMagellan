@@ -280,7 +280,7 @@ import { Fx } from '../ui/fx';
                   </td>
                   <td>
                     @if (dernierCommentaire || t.commentaire) {
-                      <button type="button" class="cmt" [attr.data-open]="t.uid" [title]="dernierCommentaire?.texte || t.commentaire" [attr.aria-label]="'Ouvrir les commentaires de ' + t.label">💬</button>
+                      <button type="button" class="cmt" [attr.data-open-comments]="t.uid" [title]="dernierCommentaire?.texte || t.commentaire" [attr.aria-label]="'Ouvrir les commentaires de ' + t.label">💬</button>
                     }
                   </td>
                 </tr>

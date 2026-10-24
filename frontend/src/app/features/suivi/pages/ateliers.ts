@@ -324,17 +324,14 @@ import { Fx } from '../ui/fx';
                           {{ fJ(t.raf) }}
                         }
                         @case ('com') {
-                          <textarea
-                            class="in cmt-auto"
-                            rows="1"
-                            placeholder="Commentaire"
-                            aria-label="Commentaire"
-                            [title]="t.commentaire"
-                            [value]="t.commentaire"
-                            [disabled]="lecture()"
-                            #cm
-                            (change)="commentaire(t, cm)"
-                          ></textarea>
+                          <div class="cmt-cell">
+                            @if (v.projet.commentaires?.[t.uid]?.[0]; as cm) {
+                              <button type="button" class="cmt-extrait" [title]="cm.texte" (click)="etat.ouvrirTacheCommentaires(t.uid)">{{ cm.texte }}</button>
+                            } @else {
+                              <span class="muted">—</span>
+                            }
+                            <button type="button" class="btn sm ghost cmt-open" [attr.aria-label]="'Ouvrir les commentaires de ' + t.label" title="Ouvrir les commentaires" (click)="etat.ouvrirTacheCommentaires(t.uid)">💬</button>
+                          </div>
                         }
                       }
                     </td>
