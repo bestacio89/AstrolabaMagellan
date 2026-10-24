@@ -61,10 +61,9 @@ public sealed class FacturationService(SaisieOutils o)
         if (axeCode.Length > 50) throw new RegleMetierException("Code d’axe invalide.");
         var axe = axeCode.Length == 0 ? null : await o.Db.Axes.FirstOrDefaultAsync(x => x.ProjetId == projetId && x.Code == axeCode, a)
             ?? throw new IntrouvableException("Axe introuvable.");
+        await using var transaction = await o.Db.Database.BeginTransactionAsync(a);
         var selection = axe is null ? (c.Phases ?? new List<string>()).Select(SaisieOutils.Nettoyer).Where(x => x.Length > 0).Distinct().ToList() : new List<string>();
         var tachesCochees = axe is null ? (c.Taches ?? new List<string>()).ToHashSet() : new HashSet<string>();
-        e.AxeCode = axe?.Code;
-
         var phases = await o.Db.Phases.Where(x => x.ProjetId == projetId).ToListAsync(a);
         var liens = await o.Db.LiensEcheancePhase.Where(x => x.ProjetId == projetId).ToListAsync(a);
         // liens de cette échéance qui ne sont plus voulus
@@ -90,7 +89,14 @@ public sealed class FacturationService(SaisieOutils o)
         var taches = await o.Db.Taches.Where(t => t.ProjetId == projetId && !t.EstSection).ToListAsync(a);
         if (axe is not null)
         {
-            foreach (var autre in await o.Db.Echeances.Where(x => x.ProjetId == projetId && x.Id != e.Id && x.AxeCode == axe.Code).ToListAsync(a)) autre.AxeCode = null;
+            var autres = await o.Db.Echeances.Where(x => x.ProjetId == projetId && x.Id != e.Id && x.AxeCode == axe.Code).ToListAsync(a);
+            if (autres.Count > 0)
+            {
+                e.AxeCode = null;
+                foreach (var autre in autres) autre.AxeCode = null;
+                await o.Db.SaveChangesAsync(a); // libère l’index unique avant d’affecter l’axe à une autre échéance
+            }
+            e.AxeCode = axe.Code;
             var phasesDeAxe = taches.Where(t => t.AxeId == axe.Id).Select(t => PhaseDe(t, phases)).Where(x => x.Length > 0).ToHashSet(StringComparer.Ordinal);
             var idsPhasesDeAxe = phases.Where(p => phasesDeAxe.Contains(p.Code)).Select(p => p.Id).ToHashSet();
             o.Db.LiensEcheancePhase.RemoveRange(liens.Where(l => idsPhasesDeAxe.Contains(l.PhaseId)).ToList());
@@ -102,9 +108,10 @@ public sealed class FacturationService(SaisieOutils o)
             if (tachesCochees.Contains(t.Repere)) t.EcheanceId = e.Id;
             else if (t.EcheanceId == e.Id) t.EcheanceId = null;
         }
+        if (axe is null) e.AxeCode = null;
         o.Noter(projetId, u, "Échéance", e.Id, $"n° {numero} · périmètre lié", null,
             string.Join(", ", (axe is null ? selection.Select(p => "phase " + p).Concat(tachesCochees) : new[] { "axe " + axe.Code })));
-        return await o.TerminerAsync(projetId, new List<MessageDto>(), a, apres: m =>
+        var resultat = await o.TerminerAsync(projetId, new List<MessageDto>(), a, apres: m =>
         {
             var ech = m.Echeancier.First(x => x.N == numero);
             return new[]
@@ -112,6 +119,8 @@ public sealed class FacturationService(SaisieOutils o)
                 new MessageDto($"Échéance n° {numero} : {ech.NLies} tâche(s) liée(s){(ech.Phases.Count > 0 ? $" (dont via {ech.Phases.Count} phase(s))" : "")}.", "succes"),
             };
         });
+        await transaction.CommitAsync(a);
+        return resultat;
     }
 
     /// <summary>
