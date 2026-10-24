@@ -13,7 +13,7 @@ export const ROUTES_SUIVI: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'tableau-de-bord' },
       { path: 'tableau-de-bord', title: 'Tableau de bord', loadComponent: () => import('./pages/tableau-de-bord').then((m) => m.TableauDeBord) },
-      { path: 'point-hebdo', title: 'Point hebdo', loadComponent: () => import('./pages/point-hebdo').then((m) => m.PointHebdo) },
+      { path: 'point-hebdo', title: 'Revue bimensuelle', loadComponent: () => import('./pages/point-hebdo').then((m) => m.PointHebdo) },
       { path: 'workload', title: 'Workload', loadComponent: () => import('./pages/workload').then((m) => m.Workload) },
       { path: 'gantt', title: 'Planning', loadComponent: () => import('./pages/planning').then((m) => m.Planning) },
       { path: 'absences', title: 'Absences', loadComponent: () => import('./pages/absences').then((m) => m.Absences) },
