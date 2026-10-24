@@ -65,6 +65,8 @@ export const PANNEAU_AVANCEMENT = 'av:';
 export const PANNEAU_REGISTRE = 'ad:';
 /** Préfixe de « panneau » pour le volet d'une ligne du Planning (vue d'ensemble). */
 export const PANNEAU_PLANNING = 'pl:';
+/** Préfixe du volet de détail d'un axe (« ax:AXE1 »). */
+export const PANNEAU_AXE = 'ax:';
 /** Préfixe de « panneau » pour le détail d'une colonne de la cascade de la marge (Rentabilité). */
 export const PANNEAU_MARGE = 'rt:';
 /**
@@ -97,6 +99,8 @@ export class SuiviEtat {
   readonly retourMarge = signal<string | null>(null);
   /** La tâche a été ouverte depuis le volet d'une ligne du Planning : clé de la ligne, pour y revenir (« ‹ Planning »). */
   readonly retourPlanning = signal<string | null>(null);
+  /** Carte à mettre en évidence lors de l'ouverture du volet d'un axe. */
+  readonly sectionAxe = signal<'nom' | 'fact' | null>(null);
   /** La tâche a été ouverte depuis une action (« Tâche concernée ») : « act:<id> », pour y revenir. */
   readonly retourAction = signal<string | null>(null);
   readonly fenetre = signal<FenetreDemandee | null>(null);
@@ -290,6 +294,15 @@ export class SuiviEtat {
     this.retourAvancement.set(false);
     this.retourMarge.set(null);
     this.panneau.set(PANNEAU_MARGE + cle);
+  }
+
+  ouvrirAxe(code: string, section: 'nom' | 'fact' = 'nom'): void {
+    this.retourAction.set(null);
+    this.retourPlanning.set(null);
+    this.retourAvancement.set(false);
+    this.retourMarge.set(null);
+    this.sectionAxe.set(section);
+    this.panneau.set(PANNEAU_AXE + code);
   }
 
   ouvrirPhase(phase: string, depuisAvancement = false): void {

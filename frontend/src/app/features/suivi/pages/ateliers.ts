@@ -135,7 +135,7 @@ import { Fx } from '../ui/fx';
                     (basculer)="basculerGroupe(g.cleRepli)"
                   >
                     @if (v.m.dim.key === 'id') {
-                      <button type="button" class="grp-name" groupe-nom [title]="'Détails de l’axe ' + g.cle" (click)="etat.ouvrirLignePlanning(g.cle)">{{ g.nom }} <span aria-hidden="true">↗</span></button>
+                      <button type="button" class="grp-name" groupe-nom [title]="'Détails de l’axe ' + g.cle" (click)="etat.ouvrirAxe(g.cle, 'nom')">{{ g.nom }} <span aria-hidden="true">↗</span></button>
                     } @else if (v.m.dim.key === 'lot' && v.droits.peutModifier) {
                       <button type="button" class="grp-name" groupe-nom [title]="'Renommer le lot ' + g.cle" (click)="etat.fenetre.set({ type: 'lot', code: g.cle })">{{ g.nom }} <span aria-hidden="true">✎</span></button>
                     } @else {

@@ -13,10 +13,11 @@ import { messageErreurFichier, telecharger } from './etat/fichiers';
 import { Onglet, ONGLETS } from './etat/constantes';
 import { cheminEntree, ecranDeMontants, entreeActive, groupeEcran, groupesVisibles, libelleEcran } from './etat/navigation.logique';
 import { fD } from './etat/formats';
-import { PANNEAU_AVANCEMENT, PANNEAU_MARGE, PANNEAU_PLANNING, PANNEAU_REGISTRE, SuiviEtat } from './etat/suivi.etat';
+import { PANNEAU_AXE, PANNEAU_AVANCEMENT, PANNEAU_MARGE, PANNEAU_PLANNING, PANNEAU_REGISTRE, SuiviEtat } from './etat/suivi.etat';
 import { UiEtat } from './etat/ui.etat';
 import { Fenetres } from './fenetres/fenetres';
 import { PanneauAvancement } from './panneaux/panneau-avancement';
+import { PanneauAxe } from './panneaux/panneau-axe';
 import { PanneauMarge } from './panneaux/panneau-marge';
 import { PanneauPhase } from './panneaux/panneau-phase';
 import { PanneauPlanning } from './panneaux/panneau-planning';
@@ -64,7 +65,7 @@ const REGROUPEMENTS: { cle: 'id' | 'lot' | 'phase'; libelle: string; colonne: st
  */
 @Component({
   selector: 'app-projet-suivi',
-  imports: [RouterOutlet, RouterLink, PanneauTache, PanneauPhase, PanneauAvancement, PanneauMarge, PanneauPlanning, PanneauRegistre, Fenetres, Toasts, ConfirmationFenetre],
+  imports: [RouterOutlet, RouterLink, PanneauTache, PanneauPhase, PanneauAxe, PanneauAvancement, PanneauMarge, PanneauPlanning, PanneauRegistre, Fenetres, Toasts, ConfirmationFenetre],
   providers: [SuiviEtat, UiEtat],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -241,7 +242,9 @@ const REGROUPEMENTS: { cle: 'id' | 'lot' | 'phase'; libelle: string; colonne: st
       </main>
 
       @if (etat.panneau(); as p) {
-        @if (p.startsWith('ph:')) {
+        @if (p.startsWith(PANNEAU_AXE)) {
+          <app-panneau-axe [code]="p.slice(PANNEAU_AXE.length)" />
+        } @else if (p.startsWith('ph:')) {
           <app-panneau-phase [phase]="p.slice(3)" />
         } @else if (p === panneauAvancement) {
           <app-panneau-avancement />
@@ -273,6 +276,7 @@ const REGROUPEMENTS: { cle: 'id' | 'lot' | 'phase'; libelle: string; colonne: st
   `,
 })
 export class ProjetSuivi {
+  protected readonly panneauAxe = PANNEAU_AXE;
   protected readonly panneauAvancement = PANNEAU_AVANCEMENT;
   protected readonly panneauMarge = PANNEAU_MARGE;
   protected readonly panneauPlanning = PANNEAU_PLANNING;
