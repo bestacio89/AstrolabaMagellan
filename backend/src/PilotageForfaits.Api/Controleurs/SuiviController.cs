@@ -133,7 +133,7 @@ public sealed class SuiviController(
     public Task<ResultatSaisieDto> MiseAJour(Guid id, string uid, MiseAJourCommande c, CancellationToken a) => misesAJour.AjouterAsync(id, uid, c, a);
 
     [HttpPost("commentaires/{cibleType}/{cibleId:guid}")]
-    public Task<ResultatSaisieDto> AjouterCommentaire(Guid id, string cibleType, Guid cibleId, CommentaireCommande c, CancellationToken a) => misesAJour.AjouterCibleAsync(id, cibleType, cibleId, c, a);
+    public Task<ResultatSaisieDto> AjouterCommentaire(Guid id, string cibleType, Guid cibleId, NouveauCommentaireCommande c, CancellationToken a) => misesAJour.AjouterCibleAsync(id, cibleType, cibleId, c, a);
 
     [HttpPut("commentaires/{commentaireId:guid}")]
     public Task<ResultatSaisieDto> ModifierCommentaire(Guid id, Guid commentaireId, ModifierCommentaireCommande c, CancellationToken a) => misesAJour.ModifierAsync(id, commentaireId, c, a);

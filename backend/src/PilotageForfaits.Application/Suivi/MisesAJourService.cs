@@ -13,10 +13,10 @@ public sealed class MisesAJourService(SaisieOutils o)
     public async Task<ResultatSaisieDto> AjouterAsync(Guid projetId, string uid, MiseAJourCommande c, CancellationToken a)
     {
         var t = await o.TacheAsync(projetId, uid, a);
-        return await AjouterCibleAsync(projetId, "Tache", t.Id, new CommentaireCommande(c.Texte), a);
+        return await AjouterCibleAsync(projetId, "Tache", t.Id, new NouveauCommentaireCommande(c.Texte), a);
     }
 
-    public async Task<ResultatSaisieDto> AjouterCibleAsync(Guid projetId, string cibleType, Guid cibleId, CommentaireCommande c, CancellationToken a)
+    public async Task<ResultatSaisieDto> AjouterCibleAsync(Guid projetId, string cibleType, Guid cibleId, NouveauCommentaireCommande c, CancellationToken a)
     {
         var u = await o.ExigerSaisieConsommeAsync(projetId, a);
         var (type, libelle) = await ExigerCibleAsync(projetId, cibleType, cibleId, a);
