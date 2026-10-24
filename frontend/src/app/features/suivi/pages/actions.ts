@@ -529,7 +529,7 @@ export class Actions {
     const u = this.ui.ui();
     const A = v.projet.actions;
     const ouvertsR = new Set(v.risquesOuverts.map((r) => r.id));
-    const l = listesRegistres({ actions: A, decisions: v.projet.decisions, risques: v.projet.risques, risquesOuverts: ouvertsR }, u as FiltresRegistres, v.aujourdhui);
+    const l = listesRegistres({ actions: A, decisions: v.projet.decisions, risques: v.projet.risques, risquesOuverts: ouvertsR, commentaires: v.projet.commentaires }, u as FiltresRegistres, v.aujourdhui);
     const ouv = A.filter(ouverte);
     const lim = addDays(v.aujourdhui, v.alerteActions);
     const iDe = (liste: readonly string[], val: string, def: string) => Math.max(0, liste.indexOf(val || def));
