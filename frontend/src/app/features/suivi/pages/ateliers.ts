@@ -5,7 +5,8 @@ import { fD, fDi, fJ, stSlug } from '../etat/formats';
 import { joursEntre, sum } from '../etat/outils';
 import { SuiviEtat } from '../etat/suivi.etat';
 import { UiEtat } from '../etat/ui.etat';
-import { atHoraire, atRealise, axeName, couleurGroupe, groupByAxe, isOver, lvLivre, lvPrevue, lvValide, TacheVue, Vue } from '../etat/vue';
+import { atHoraire, atRealise, axeName, couleurGroupe, defaultAxeName, groupByAxe, idName, isOver, lvLivre, lvPrevue, lvValide, TacheVue, Vue } from '../etat/vue';
+import { calculerJaugeGroupe } from '../etat/entete-groupe.logique';
 import { BarreFiltres } from '../ui/barre-filtres';
 import { LienTache } from '../ui/tache';
 import { Triable } from '../ui/triable';
@@ -18,14 +19,19 @@ interface Colonne {
   n?: boolean;
 }
 
-/** Colonnes masquées par défaut : « Responsable principal » et « Commentaire ». */
-const MASQUEES_PAR_DEFAUT: Record<string, boolean> = { resp: true, com: true };
+/** Colonnes secondaires masquées au premier affichage ; la clé versionnée ignore les anciens réglages. */
+const MASQUEES_PAR_DEFAUT: Record<string, boolean> = { real: true, inv: true, charge: true, conso: true, raf: true, com: true };
+
+/** Versionne les préférences du registre pour que les anciens réglages ne changent pas les nouveaux défauts. */
+function cleRegistre(type: string): string {
+  return `${type}:v2`;
+}
 /** Charge, consommé et RAF : côte à côte, et une seule case « Charge, consommé, RAF » dans le menu Colonnes. */
 const CHIFFRES = ['charge', 'conso', 'raf'];
 
 /**
  * Ateliers & livrables : un registre par type de tâche (types gérés dans ⚙ Paramètres du projet), regroupé par axe, lot ou phase.
- * Atelier : date planifiée, réalisé, invitation, destinataires. Livrable : livraison, validation client. Autres : dates.
+ * Atelier : date planifiée, réalisé, invitation, participants. Livrable : livraison, validation client. Autres : dates.
  */
 import { Fx } from '../ui/fx';
 @Component({
@@ -114,13 +120,22 @@ import { Fx } from '../ui/fx';
             @for (g of m.groupes; track g.cle) {
               <tr class="grp axg" [style.--axc]="g.couleur">
                 <td [attr.colspan]="m.colonnes.length">
-                  <span class="grp-stk"
-                    >{{ g.nom }} <span class="muted">· {{ g.taches.length }}</span></span
+                  <span class="grp-stk">
+                    <button type="button" class="fold grp-fold" [attr.aria-expanded]="!ui.ui().groupesReplis[g.cleRepli]" [attr.aria-label]="(ui.ui().groupesReplis[g.cleRepli] ? 'Déplier' : 'Replier') + ' le groupe ' + g.nom" [title]="(ui.ui().groupesReplis[g.cleRepli] ? 'Déplier' : 'Replier') + ' le groupe'" (click)="basculerGroupe(g.cleRepli)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                    </button>
+                    {{ g.nom }} <span class="muted">· {{ g.taches.length }}</span>
+                    <span class="grp-jauge" [title]="g.jauge.infoBulle">
+                      @if (g.jauge.terminee) { <span class="grp-jauge-ok" aria-label="Tout est validé">✓</span> }
+                      @else { <span class="grp-jauge-bar"><i [style.width.%]="g.jauge.pourcentage"></i></span> }
+                      <span>{{ g.jauge.valides }} / {{ g.jauge.total }} {{ g.jauge.mot }}</span>
+                    </span>
+                  </span
                   >
                 </td>
               </tr>
               @for (t of g.taches; track t.uid) {
-                <tr class="axr" [class.is-annul]="t.annulee" [class.is-sel]="etat.panneau() === t.uid" [style.--axc]="g.couleur">
+                <tr class="axr" [hidden]="ui.ui().groupesReplis[g.cleRepli]" [class.is-annul]="t.annulee" [class.is-sel]="etat.panneau() === t.uid" [style.--axc]="g.couleur">
                   @for (c of m.colonnes; track c.k) {
                     <td
                       [class.n]="c.n"
@@ -133,7 +148,13 @@ import { Fx } from '../ui/fx';
                     >
                       @switch (c.k) {
                         @case ('lot') {
-                          <span class="ell" [title]="t.lot">{{ t.lot }}</span>
+                          @if (v.m.dim.key === 'id') {
+                            <span class="ell" [title]="t.lot">{{ t.lot || '—' }}</span>
+                          } @else if (t.axe) {
+                            <span class="axp" [style.--axc]="couleurGroupe(v, t.axe)" [title]="idName(v, t.axe)">{{ t.axe === '0' ? 'Pilotage' : defaultAxeName(t.axe) }}</span>
+                          } @else {
+                            <span class="muted">—</span>
+                          }
                         }
                         @case ('lib') {
                           <app-lien-tache [t]="t" />
@@ -173,7 +194,7 @@ import { Fx } from '../ui/fx';
                           }
                         }
                         @case ('dest') {
-                          <button type="button" class="dest-n" [attr.data-open]="t.uid" [title]="destinataires(t) || (lecture() ? 'Aucun destinataire' : 'Aucun destinataire — cliquer pour en ajouter')">
+                          <button type="button" class="dest-n" [attr.data-open]="t.uid" [title]="participants(t) || (lecture() ? 'Aucun participant' : 'Aucun participant — cliquer pour en ajouter')">
                             @if (t.tr.atelier?.dest?.length) {
                               👥 {{ t.tr.atelier?.dest?.length }}
                             } @else if (lecture()) {
@@ -246,10 +267,7 @@ import { Fx } from '../ui/fx';
                         @case ('fin') {
                           {{ fD(t.fin) }}
                         }
-                        @case ('resp') {
-                          {{ t.responsable }}
-                        }
-                        @case ('statut') {
+                                                @case ('statut') {
                           @if (t.annulee) {
                             <span class="pill st-annul" [title]="'Annulée le ' + fDi(t.annul?.at) + (t.annul?.motif ? ' — ' + t.annul?.motif : '')">Annulée</span>
                           } @else {
@@ -295,9 +313,14 @@ import { Fx } from '../ui/fx';
     }
   `,
   styles: `
-    :host {
-      display: contents;
-    }
+    :host { display: contents; }
+    .grp-fold { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; margin-right: 4px; border: 0; background: transparent; color: inherit; cursor: pointer; }
+    .grp-fold svg { width: 14px; height: 14px; transition: transform 120ms ease; }
+    .grp-fold[aria-expanded="false"] svg { transform: rotate(-90deg); }
+    .grp-jauge { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; font-size: 11px; color: var(--c-texte-2, #667085); white-space: nowrap; }
+    .grp-jauge-bar { display: inline-block; width: 42px; height: 5px; border-radius: 5px; overflow: hidden; background: var(--c-neutre-fond, #e4e8f0); }
+    .grp-jauge-bar i { display: block; height: 100%; background: var(--c-ok, #3fb97c); }
+    .grp-jauge-ok { display: inline-grid; place-items: center; width: 15px; height: 15px; border-radius: 50%; color: #147d4b; background: #d9f5e5; font-weight: 700; }
   `,
 })
 export class Ateliers {
@@ -349,11 +372,10 @@ export class Ateliers {
     const liste = source.filter((t) => (!u.axe || (u.axe === '__none' ? !t.grp : t.grp === u.axe)) && (!q || t.label.toLowerCase().includes(q)) && garder(t));
 
     const debut: Colonne[] = [
-      { k: 'lot', l: 'Lot', w: 110 },
+      { k: 'lot', l: v.m.dim.key === 'id' ? 'Rattachement · Lot' : 'Rattachement · Axe', w: 150 },
       { k: 'lib', l: 'Intitulé', w: 250 },
     ];
     const fin: Colonne[] = [
-      { k: 'resp', l: 'Responsable principal', w: 180 },
       { k: 'statut', l: 'Statut', w: 150 },
       { k: 'charge', l: 'Charge', w: 64, n: true },
       { k: 'conso', l: 'Consommé', w: 88, n: true },
@@ -368,7 +390,7 @@ export class Ateliers {
         { k: 'date', l: 'Date planifiée', w: 160 },
         { k: 'real', l: 'Réalisé le', w: 120 },
         { k: 'inv', l: 'Invitation', w: 100 },
-        { k: 'dest', l: 'Destinataires', w: 100 },
+        { k: 'dest', l: 'Participants', w: 120 },
       ];
       filtres = [
         ['', 'Tout'],
@@ -394,7 +416,8 @@ export class Ateliers {
       ];
     }
     const toutes = [...debut, ...milieu, ...fin];
-    const masquees = { ...(u.regHide[cur] ?? MASQUEES_PAR_DEFAUT) };
+    const clePrefs = cleRegistre(cur);
+    const masquees = { ...(u.regHide[clePrefs] ?? MASQUEES_PAR_DEFAUT) };
     const visibles = toutes.filter((c) => c.k === 'lib' || !(masquees[c.k] || (masquees['chiffres'] && CHIFFRES.includes(c.k))));
     const total = sum(visibles.map((c) => c.w));
     return {
@@ -411,7 +434,14 @@ export class Ateliers {
       colonnes: visibles.map((c) => ({ ...c, pct: +((c.w / total) * 100).toFixed(2) })),
       lotVisible: visibles.some((c) => c.k === 'lot'),
       largeurMin: Math.round(total * 0.8),
-      groupes: groupByAxe(v, liste).map(([cle, taches]) => ({ cle, nom: axeName(v, cle), couleur: couleurGroupe(v, cle), taches })),
+      groupes: groupByAxe(v, liste).map(([cle, taches]) => ({
+        cle,
+        cleRepli: `${v.m.dim.key}|${cle}`,
+        nom: axeName(v, cle),
+        couleur: couleurGroupe(v, cle),
+        taches,
+        jauge: calculerJaugeGroupe(taches, cur === 'Atelier' ? 'réalisés' : cur === 'Livrable' ? 'livrés' : 'validées'),
+      })),
     };
   });
 
@@ -449,6 +479,13 @@ export class Ateliers {
     return null;
   }
 
+  protected basculerGroupe(cle: string): void {
+    const groupesReplis = { ...this.ui.ui().groupesReplis };
+    if (groupesReplis[cle]) delete groupesReplis[cle];
+    else groupesReplis[cle] = true;
+    this.ui.maj({ groupesReplis });
+  }
+
   protected changerType(id: string): void {
     this.gardees.set(new Map());
     this.ui.maj({ alType: id });
@@ -456,23 +493,24 @@ export class Ateliers {
 
   protected masquer(type: string, k: string, oui: boolean): void {
     const u = this.ui.ui();
-    const h = { ...(u.regHide[type] ?? MASQUEES_PAR_DEFAUT) };
+    const cle = cleRegistre(type);
+    const h = { ...(u.regHide[cle] ?? MASQUEES_PAR_DEFAUT) };
     if (oui) h[k] = true;
     else {
       delete h[k];
       if (k === 'chiffres') for (const x of CHIFFRES) delete h[x]; // réafficher aussi d'anciens choix colonne par colonne
     }
-    this.ui.maj({ regHide: { ...u.regHide, [type]: h } });
+    this.ui.maj({ regHide: { ...u.regHide, [cle]: h } });
   }
 
   protected reinitialiser(type: string): void {
     const regHide = { ...this.ui.ui().regHide };
-    delete regHide[type];
+    delete regHide[cleRegistre(type)];
     this.ui.maj({ regHide });
     this.etat.afficher('Affichage du registre réinitialisé.', 'succes');
   }
 
-  protected destinataires(t: TacheVue): string {
+  protected participants(t: TacheVue): string {
     return (t.tr.atelier?.dest ?? []).join('\n');
   }
 
