@@ -52,7 +52,7 @@ const RANG: Record<ElementATraiter['niveau'], number> = { crit: 0, warn: 1, ia: 
                 <rect x="3" y="4" width="18" height="13" rx="2" />
                 <path d="M8 21h8M12 17v4M7 13l3-3 2 2 4-4" />
               </svg>
-              Point hebdo (PowerPoint)
+              Revue bimensuelle (PowerPoint)
             </a>
           </span>
         }
@@ -159,7 +159,7 @@ const RANG: Record<ElementATraiter['niveau'], number> = { crit: 0, warn: 1, ia: 
         <div class="c-5 tdb-col">
           @let vg = vigilance();
           @let nCrit = nbCritiques();
-          <section class="tdb-carte tdb-vig" aria-labelledby="tdb-vig-t">
+          <section class="tdb-carte tdb-vig" aria-labelledby="tdb-vig-t" [style.display]="afficherPointsDeVigilance ? null : 'none'">
             <details class="vig-plie" [open]="ui.ui().vigOuverte" (toggle)="basculerVigilance($event)">
               <summary>
                 <span id="tdb-vig-t" class="vig-titre">Points de vigilance</span>
@@ -306,6 +306,8 @@ export class TableauDeBord {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   protected readonly vue = this.etat.vue;
+  /** Gardée calculée pour les exports, masquée dans le tableau de bord selon la revue du 21/10. */
+  protected readonly afficherPointsDeVigilance = false;
 
   protected readonly fD = fD;
   protected readonly fJ = fJ;
