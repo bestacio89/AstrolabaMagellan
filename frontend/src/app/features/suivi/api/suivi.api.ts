@@ -250,6 +250,15 @@ export class SuiviApi {
   nomLot(id: string, code: string, nom: string) {
     return this.put(id, `lots/${encodeURIComponent(code)}`, { nom });
   }
+  ajouterCommentaire(id: string, cibleType: 'Tache' | 'Action' | 'Decision' | 'Risque', cibleId: string, texte: string) {
+    return this.post(id, `commentaires/${cibleType}/${encodeURIComponent(cibleId)}`, { texte });
+  }
+  modifierCommentaire(id: string, commentaireId: string, texte: string) {
+    return this.put(id, `commentaires/${encodeURIComponent(commentaireId)}`, { texte });
+  }
+  supprimerCommentaire(id: string, commentaireId: string) {
+    return this.delete(id, `commentaires/${encodeURIComponent(commentaireId)}`);
+  }
   fiche(id: string, champ: 'client' | 'projet' | 'reference', valeur: string, version?: number) {
     return this.put(id, 'fiche', { champ, valeur, version });
   }

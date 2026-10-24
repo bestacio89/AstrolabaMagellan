@@ -22,6 +22,7 @@ export interface Droits {
   voitMontants: boolean;
   peutExporter: boolean;
   utilisateur: string;
+  utilisateurId?: string;
   /** Projet archivé : tout est en lecture seule. */
   archive?: boolean;
   /** Chef de projet (même archivé) : peut restaurer le projet, ou le supprimer s'il a été créé par erreur. */
@@ -100,6 +101,7 @@ export interface ProjetSuivi {
   causes: string[];
   /** Fil de mises à jour de chaque tâche (clé : repère), du plus récent au plus ancien. */
   misesAJour: Record<string, MiseAJour[]>;
+  commentaires?: Record<string, Commentaire[]>;
   /** Personnes ajoutées à la main au planning des absences (hors profils du TSP). */
   personnesAjoutees?: { id: string; nom: string }[];
   /** Absences de l'équipe sur la période du projet (personne = nom normalisé ; moment : j, m ou a). */
@@ -148,6 +150,15 @@ export interface LigneReference {
   charge: number;
   cause: string | null;
   motif: string | null;
+}
+
+export interface Commentaire {
+  id: string;
+  at: string;
+  by: string;
+  auteurId: string | null;
+  texte: string;
+  modifieLe: string | null;
 }
 
 export interface MiseAJour {
