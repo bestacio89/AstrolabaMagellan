@@ -35,7 +35,8 @@ public sealed record NouvelleTacheCommande(
     List<ChargeNouvelleTacheCommande>? Charges, NouveauProfilCommande? NouveauProfil, decimal? NouveauProfilJh,
     string? Motif, string? Hypothese,
     // Repère de la tâche après laquelle insérer la nouvelle (sinon : après la dernière tâche du même groupe).
-    string? Apres);
+    string? Apres,
+    DateOnly? AtelierDate = null, string? AtelierHeureDebut = null, string? AtelierHeureFin = null, List<string>? AtelierParticipants = null);
 
 // ---- ateliers et livrables ----
 public sealed record AtelierDateCommande(DateOnly? Date);
