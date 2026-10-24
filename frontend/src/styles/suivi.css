@@ -611,9 +611,10 @@
 .suivi .dr-crumbs .dr-axe { background: color-mix(in srgb, var(--axc) 20%, var(--surface)); color: var(--ink); }
 .suivi .dr-title { font-size: 18px; margin-top: 8px; line-height: 1.3; }
 .suivi .dr-meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
-.suivi .dr-body { padding: 6px 18px 40px; display: flex; flex-direction: column; }
-.suivi .dr-body section { padding: 14px 0; border-bottom: 1px solid var(--line); }
-.suivi .dr-body section:last-child { border-bottom: 0; }
+.suivi .dr-body { padding: 12px 18px 40px; display: flex; flex-direction: column; gap: 10px; background: var(--surface-2); }
+.suivi .dr-body section { padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+.suivi .dr-body section:last-child { border-bottom: 1px solid var(--line); }
+.suivi .dr-kpis-head { margin-top: 10px; }
 .suivi .dr-body h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 8px; }
 .suivi .dr-choices { display: flex; gap: 6px; flex-wrap: wrap; }
 .suivi .dr-choices .pill { border: 2px solid transparent; cursor: pointer; padding: 5px 11px; font-size: 12.5px; opacity: .7; }

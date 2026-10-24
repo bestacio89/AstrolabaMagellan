@@ -126,6 +126,33 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
               }
               · Profil principal : {{ t.responsable }}
             </div>
+            <div class="dr-kpis dr-kpis-head">
+                <div>
+                  <span>
+                    @if (t.annulee) {
+                      Prévu <small>({{ fJ(t.chargeInit) }} − {{ fJ(t.chargeAnnulee) }} annulés)</small>
+                    } @else if (t.chargeAjout) {
+                      @if (t.estAjout) {
+                        Prévu <small>(tâche ajoutée)</small>
+                      } @else {
+                        Prévu <small>({{ fJ(t.chargeTSP) }} vendus + {{ fJ(t.chargeAjout) }} ajoutés)</small>
+                      }
+                    } @else {
+                      Prévu <small>(= vendu)</small>
+                    }
+                  </span>
+                  <b>{{ fJ(t.charge) }} JH</b>
+                </div>
+                <div>
+                  <span>Consommé</span><b [class.over]="isOver(t)">{{ fJ(t.consoTotal) }} JH</b>
+                </div>
+                <div>
+                  <span>Atterrissage</span><b>{{ fJ(t.atterrissage) }} JH</b>
+                </div>
+                <div>
+                  <span>Écart</span><b data-ecart [class]="sgn(t.ecart)">{{ fSigned(t.ecart) }} JH</b>
+                </div>
+              </div>
           </div>
 
           <div class="dr-body">
@@ -424,33 +451,7 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
             <section>
               <h3>Charges</h3>
-              <div class="dr-kpis">
-                <div>
-                  <span>
-                    @if (t.annulee) {
-                      Prévu <small>({{ fJ(t.chargeInit) }} − {{ fJ(t.chargeAnnulee) }} annulés)</small>
-                    } @else if (t.chargeAjout) {
-                      @if (t.estAjout) {
-                        Prévu <small>(tâche ajoutée)</small>
-                      } @else {
-                        Prévu <small>({{ fJ(t.chargeTSP) }} vendus + {{ fJ(t.chargeAjout) }} ajoutés)</small>
-                      }
-                    } @else {
-                      Prévu <small>(= vendu)</small>
-                    }
-                  </span>
-                  <b>{{ fJ(t.charge) }} JH</b>
-                </div>
-                <div>
-                  <span>Consommé</span><b [class.over]="isOver(t)">{{ fJ(t.consoTotal) }} JH</b>
-                </div>
-                <div>
-                  <span>Atterrissage</span><b>{{ fJ(t.atterrissage) }} JH</b>
-                </div>
-                <div>
-                  <span>Écart</span><b data-ecart [class]="sgn(t.ecart)">{{ fSigned(t.ecart) }} JH</b>
-                </div>
-              </div>
+              
               @if (!t.annulee) {
                 <label class="field" style="margin-top: 10px">
                   <span [title]="aideRaf"
