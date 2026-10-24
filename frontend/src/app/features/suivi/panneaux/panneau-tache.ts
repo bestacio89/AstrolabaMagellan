@@ -725,6 +725,12 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
                       >Échéance définie par la phase <b>{{ t.phase }}</b> : elle s’applique à toutes ses tâches.</span
                     ><button type="button" class="btn sm" [attr.data-openph]="t.phase">Ouvrir la phase</button>
                   </div>
+                } @else if (t.echViaAxe) {
+                  <div class="lockline">
+                    <span class="lock-ic" aria-hidden="true">🔒</span>
+                    <span>Échéance définie par l’axe <b>{{ v.projet.axes?.[t.axe] || t.axe }}</b> : elle s’applique à toutes ses tâches.</span>
+                    <button type="button" class="btn sm" (click)="etat.ouvrirAxe(t.axe, 'fact')">Ouvrir l’axe</button>
+                  </div>
                 } @else {
                   <label class="field"
                     >Échéance liée
@@ -746,7 +752,12 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
                         <span class="tag-ok">Prête à facturer</span>
                       }
                     </div>
-                  </div>
+                                      @if (t.echViaAxe) {
+                      @let axeCompte = compteAxe(v, t);
+                      <p class="muted">via l’axe · échéance n° {{ e.n }}</p>
+                      <p class="muted">Prête à facturer quand les {{ axeCompte.n }} tâche(s) de l’axe sont validées · {{ axeCompte.valides }} / {{ axeCompte.n }} aujourd’hui</p>
+                    }
+</div>
                 } @else if (!t.echViaPhase) {
                   <span class="auto"
                     >Liez la tâche à l’échéance de facturation qu’elle conditionne
@@ -1258,6 +1269,11 @@ export class PanneauTache {
     );
     if (choix !== 'ok') return;
     await this.etat.saisir((id2) => this.api.annulerReaffectation(id2, t.uid, id));
+  }
+
+  protected compteAxe(v: Vue, t: TacheVue): { n: number; valides: number } {
+    const axe = v.tasks.filter((x) => x.axe === t.axe && !x.annulee);
+    return { n: axe.length, valides: axe.filter((x) => x.statut === 'Validé').length };
   }
 
   protected async retablir(t: TacheVue): Promise<void> {
