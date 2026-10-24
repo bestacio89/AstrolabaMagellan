@@ -8,6 +8,7 @@ import { UiEtat } from '../etat/ui.etat';
 import { atHoraire, atRealise, axeName, couleurGroupe, defaultAxeName, groupByAxe, idName, isOver, lvLivre, lvPrevue, lvValide, TacheVue, Vue } from '../etat/vue';
 import { calculerJaugeGroupe } from '../etat/entete-groupe.logique';
 import { EnteteGroupe } from '../ui/entete-groupe';
+import { initialesParticipant } from '../etat/participants.logique';
 import { BarreFiltres } from '../ui/barre-filtres';
 import { LienTache } from '../ui/tache';
 import { Triable } from '../ui/triable';
@@ -196,7 +197,14 @@ import { Fx } from '../ui/fx';
                         @case ('dest') {
                           <button type="button" class="dest-n" [attr.data-open]="t.uid" [title]="participants(t) || (lecture() ? 'Aucun participant' : 'Aucun participant — cliquer pour en ajouter')">
                             @if (t.tr.atelier?.dest?.length) {
-                              👥 {{ t.tr.atelier?.dest?.length }}
+                              <span class="dest-pastilles" aria-label="Participants">
+                                @for (p of participantsVisibles(t); track p) {
+                                  <span class="dest-pastille" [title]="p">{{ initiales(p) }}</span>
+                                }
+                                @if ((t.tr.atelier?.dest?.length ?? 0) > 3) {
+                                  <span class="dest-plus">+{{ (t.tr.atelier?.dest?.length ?? 0) - 3 }}</span>
+                                }
+                              </span>
                             } @else if (lecture()) {
                               <span class="muted">—</span>
                             } @else {
@@ -321,6 +329,9 @@ import { Fx } from '../ui/fx';
     .grp-jauge-bar { display: inline-block; width: 42px; height: 5px; border-radius: 5px; overflow: hidden; background: var(--c-neutre-fond, #e4e8f0); }
     .grp-jauge-bar i { display: block; height: 100%; background: var(--c-ok, #3fb97c); }
     .grp-jauge-ok { display: inline-grid; place-items: center; width: 15px; height: 15px; border-radius: 50%; color: #147d4b; background: #d9f5e5; font-weight: 700; }
+    .dest-pastilles { display: inline-flex; align-items: center; gap: 3px; }
+    .dest-pastille, .dest-plus { display: inline-grid; place-items: center; min-width: 23px; height: 23px; padding: 0 4px; border-radius: 50%; color: var(--c-texte, #243044); background: var(--c-neutre-fond, #e4e8f0); font-size: 10px; font-weight: 700; }
+    .dest-plus { border-radius: 12px; width: auto; background: var(--c-primaire-fond, #e7efff); }
   `,
 })
 export class Ateliers {
@@ -514,6 +525,12 @@ export class Ateliers {
   protected participants(t: TacheVue): string {
     return (t.tr.atelier?.dest ?? []).join('\n');
   }
+
+  protected participantsVisibles(t: TacheVue): string[] {
+    return (t.tr.atelier?.dest ?? []).slice(0, 3);
+  }
+
+  protected readonly initiales = initialesParticipant;
 
   protected enRetard(v: Vue, t: TacheVue): boolean {
     const pv = lvPrevue(t);
