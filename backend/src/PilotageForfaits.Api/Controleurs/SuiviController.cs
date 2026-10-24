@@ -274,8 +274,14 @@ public sealed class SuiviController(
     [HttpPut("parametres/dates")]
     public Task<ResultatSaisieDto> DatesProjet(Guid id, ChampCommande c, CancellationToken a) => parametres.DefinirDateAsync(id, c, a);
 
+    [HttpPut("axes/{code}")]
+    public Task<ResultatSaisieDto> Axe(Guid id, string code, AxeCommande c, CancellationToken a) => parametres.DefinirAxeAsync(id, code, c, a);
+
     [HttpPut("axes/{code}/nom")]
     public Task<ResultatSaisieDto> NomAxe(Guid id, string code, NomAxeCommande c, CancellationToken a) => parametres.NommerAxeAsync(id, code, c, a);
+
+    [HttpPut("lots/{code}")]
+    public Task<ResultatSaisieDto> Lot(Guid id, string code, NomLotCommande c, CancellationToken a) => parametres.NommerLotAsync(id, code, c, a);
 
     [HttpPut("fiche")]
     public Task<ResultatSaisieDto> Fiche(Guid id, FicheCommande c, CancellationToken a) => parametres.DefinirFicheAsync(id, c, a);

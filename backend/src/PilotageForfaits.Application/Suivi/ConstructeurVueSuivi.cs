@@ -186,6 +186,8 @@ public static class ConstructeurVueSuivi
             Journal = journal.Select(j => new JournalVueDto(new DateTimeOffset(DateTime.SpecifyKind(j.Le, DateTimeKind.Utc)), j.UtilisateurId is { } u && nomsJournal.TryGetValue(u, out var nom) ? nom : "",
                 j.Objet, j.Champ, j.AncienneValeur, j.NouvelleValeur)).ToList(),
             References = complements?.References ?? new List<ReferenceVueDto>(),
+            DatesLimitesAxes = complements?.DatesLimitesAxes ?? new Dictionary<string, DateOnly?>(),
+            Lots = complements?.Lots ?? new Dictionary<string, string>(),
             Causes = CausesDerive.Liste.ToList(),
             MisesAJour = complements?.MisesAJour ?? new Dictionary<string, List<MiseAJourVueDto>>(),
         };

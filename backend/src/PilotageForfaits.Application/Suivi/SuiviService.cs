@@ -83,6 +83,8 @@ public sealed class SuiviService(IContexteDonnees db, ServiceAcces acces, Constr
     private async Task<ComplementsVue> ComplementsAsync(Guid projetId, IReadOnlyList<Tache> taches, CancellationToken annulation)
     {
         var repere = taches.ToDictionary(t => t.Id, t => t.Repere);
+        var axes = await db.Axes.AsNoTracking().Where(x => x.ProjetId == projetId).ToListAsync(annulation);
+        var lots = await db.Lots.AsNoTracking().Where(x => x.ProjetId == projetId).ToListAsync(annulation);
         var plans = await db.PlansReference.AsNoTracking().Where(x => x.ProjetId == projetId).ToListAsync(annulation);
         var lignes = await db.LignesPlanReference.AsNoTracking().Where(x => x.ProjetId == projetId).ToListAsync(annulation);
         var messages = await db.MisesAJour.AsNoTracking().Where(x => x.ProjetId == projetId).ToListAsync(annulation);
@@ -104,6 +106,6 @@ public sealed class SuiviService(IContexteDonnees db, ServiceAcces acces, Constr
             g => g.Key,
             g => g.OrderByDescending(m => m.Le).Take(TailleFil)
                 .Select(m => new MiseAJourVueDto(new DateTimeOffset(DateTime.SpecifyKind(m.Le, DateTimeKind.Utc)), Nom(m.AuteurId) ?? "", m.Texte)).ToList());
-        return new ComplementsVue(references, fil);
+        return new ComplementsVue(references, fil, axes.GroupBy(x => x.Code).ToDictionary(g => g.Key, g => g.First().DateLimite), lots.GroupBy(x => x.Code).ToDictionary(g => g.Key, g => g.First().Nom));
     }
 }

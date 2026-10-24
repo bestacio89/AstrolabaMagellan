@@ -80,6 +80,10 @@ public sealed class ProjetVueDto
     public required ReferentielCalcul Ref { get; init; }
     /// <summary>Nom choisi pour chaque code d'axe.</summary>
     public Dictionary<string, string> Axes { get; init; } = new();
+    /// <summary>Date limite facultative par code d'axe.</summary>
+    public Dictionary<string, DateOnly?> DatesLimitesAxes { get; init; } = new();
+    /// <summary>Noms personnalisés de lots ; les codes restent ceux des tâches.</summary>
+    public Dictionary<string, string> Lots { get; init; } = new();
     public List<TypeTacheCalcul> Types { get; init; } = new();
     public List<FraisBudgetCalcul> Frais { get; init; } = new();
     public List<AchatBudgetCalcul> Achats { get; init; } = new();
@@ -140,7 +144,7 @@ public sealed class LigneReferenceVueDto
 public sealed record MiseAJourVueDto(DateTimeOffset At, string By, string Texte);
 
 /// <summary>Ce que la vue du suivi ajoute aux données du moteur, chargé à part (références, fil des tâches).</summary>
-public sealed record ComplementsVue(List<ReferenceVueDto> References, Dictionary<string, List<MiseAJourVueDto>> MisesAJour);
+public sealed record ComplementsVue(List<ReferenceVueDto> References, Dictionary<string, List<MiseAJourVueDto>> MisesAJour, Dictionary<string, DateOnly?> DatesLimitesAxes, Dictionary<string, string> Lots);
 
 public sealed class FicheVueDto
 {

@@ -87,6 +87,8 @@ public sealed record AlerteCommande(string Champ, int Jours);
 public sealed record ProfilIaCommande(Guid? ProfilId);
 public sealed record ListeIaCommande(List<string>? Valeurs);
 public sealed record NomAxeCommande(string? Nom);
+public sealed record AxeCommande(string? Nom, DateOnly? DateLimite);
+public sealed record NomLotCommande(string? Nom);
 /// <summary>Champ : client, projet ou reference.</summary>
 public sealed record FicheCommande(string Champ, string? Valeur, int? Version);
 public sealed record TypeCommande(string? Nom);
