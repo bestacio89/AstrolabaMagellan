@@ -63,7 +63,28 @@ const FILTRES: [string, string][] = [
                 >Nom de l’axe
                 <input class="in" maxlength="200" [value]="m.nomAxe" [placeholder]="defaultAxeName(m.id)" [disabled]="!m.modif" #na (change)="nommerAxe(m.id, na.value)" (keydown.enter)="na.blur()" />
               </label>
+              <label class="field pl-champ">Date limite
+                <input class="in" type="date" [value]="m.dateLimite ?? ''" [disabled]="!m.modif" #dl (change)="definirAxe(m.id, m.nomAxe, dl.value || null)" />
+              </label>
+              @if (m.etatDateLimite; as edl) {
+                <span class="pill" [class]="'pill lv-' + (edl.niveau || 'neutre')">{{ edl.libelle }}</span>
+                @if (edl.auDela.length) {
+                  <div class="pl-dl-alert" role="status">
+                    {{ edl.auDela.length }} tâche(s) finissent après le {{ fD(edl.date) }} :
+                    @for (t of edl.auDela.slice(0, 4); track t.uid; let last = $last) {
+                      <button type="button" class="linkbtn" [attr.data-open]="t.uid">{{ t.libelle }}</button>{{ last ? '' : ' · ' }}
+                    }
+                  </div>
+                }
+              }
               <span class="auto">Utilisé partout (tableaux, Gantt, exports), comme dans les paramètres du projet.</span>
+            </section>
+          } @else if (m.dim === 'lot' && m.id) {
+            <section>
+              <label class="field pl-champ">Nom du lot
+                <input class="in" maxlength="200" [value]="m.nomLot" [placeholder]="'Lot ' + m.id" [disabled]="!m.modif" #nl (change)="nommerLot(m.id, nl.value)" (keydown.enter)="nl.blur()" />
+              </label>
+              <span class="auto">Code du TSP (colonne B) : {{ m.id }}. Le code ne change pas : seul le nom affiché change.</span>
             </section>
           }
 
@@ -335,6 +356,9 @@ export class PanneauPlanning {
       masquee: !!v.projet.planning?.masque?.[this.cle()],
       nomTSP: sp?.nomTSP ?? '',
       nomAxe: groupe ? (v.projet.axes?.[groupe.id] ?? '') : '',
+      dateLimite: groupe && dim === 'id' ? (v.projet.datesLimitesAxes?.[groupe.id] ?? null) : null,
+      etatDateLimite: groupe && dim === 'id' ? (v.m.datesLimitesAxes?.find((x) => x.code === groupe.id) ?? null) : null,
+      nomLot: groupe && dim === 'lot' ? (v.projet.lots?.[groupe.id] ?? '') : '',
       axeCalc: !l.sous && !!groupe?.planCalcule,
       planAncien: groupe?.planAncien ?? null,
       etatDates: g.planSaisi ? (g.planDebutSaisi && g.planFinSaisi ? 'Saisies' : g.planDebutSaisi ? 'Début saisi' : 'Fin saisie') : 'Calculées',
@@ -406,6 +430,14 @@ export class PanneauPlanning {
 
   protected nommerAxe(code: string, nom: string): void {
     void this.etat.saisir((id) => this.api.nomAxe(id, code, nom.trim()));
+  }
+
+  protected definirAxe(code: string, nom: string, dateLimite: string | null): void {
+    void this.etat.saisir((id) => this.api.axe(id, code, nom.trim(), dateLimite));
+  }
+
+  protected nommerLot(code: string, nom: string): void {
+    void this.etat.saisir((id) => this.api.nomLot(id, code, nom.trim()));
   }
 
   protected masquer(masquer: boolean): void {
