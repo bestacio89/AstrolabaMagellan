@@ -66,21 +66,11 @@ const FILTRES: [string, string][] = [
               <label class="field pl-champ">Date limite
                 <input class="in" type="date" [value]="m.dateLimite ?? ''" [disabled]="!m.modif" #dl (change)="definirAxe(m.id, m.nomAxe, dl.value || null)" />
               </label>
+
               <label class="field pl-champ">Échéance de facturation
                 <select class="in" [value]="m.echeanceAxe?.n ?? ''" [disabled]="!m.modif" #ea (change)="lierEcheanceAxe(m.id, m.echeanceAxe?.n ?? null, ea.value)">
                   <option value="">— Aucune —</option>
-                  @for (e of v.m.echeancier; track e.n) {
-                    <option [value]="e.n" [disabled]="!!e.realiseLe && m.echeanceAxe?.n !== e.n">n° {{ e.n }} · {{ e.nom }}</option>
-                  }
-                </select>
-              </label>
-              @if (m.echeanceAxe; as ea) {
-                <span class="auto">Lié à l’échéance n° {{ ea.n }} · {{ fE(ea.montant) }}. Toutes les tâches de l’axe, y compris les ajouts futurs, suivent cette échéance.</span>
-              }
-              <label class="field pl-champ">Échéance de facturation
-                <select class="in" [value]="m.echeanceAxe?.n ?? ''" [disabled]="!m.modif" #ea (change)="lierEcheanceAxe(m.id, m.echeanceAxe?.n ?? null, ea.value)">
-                  <option value="">— Aucune —</option>
-                  @for (e of v.m.echeancier; track e.n) {
+                  @for (e of m.echeancier; track e.n) {
                     <option [value]="e.n" [disabled]="!!e.realiseLe && m.echeanceAxe?.n !== e.n">n° {{ e.n }} · {{ e.nom }}</option>
                   }
                 </select>
@@ -332,6 +322,7 @@ export class PanneauPlanning {
   protected readonly ui = inject(UiEtat);
   private readonly api = inject(SuiviApi);
   protected readonly fD = fD;
+  protected readonly fE = fE;
   protected readonly fJ = fJ;
   protected readonly fP = fP;
   protected readonly stSlug = stSlug;
@@ -380,7 +371,7 @@ export class PanneauPlanning {
       nomAxe: groupe ? (v.projet.axes?.[groupe.id] ?? '') : '',
       dateLimite: groupe && dim === 'id' ? (v.projet.datesLimitesAxes?.[groupe.id] ?? null) : null,
       etatDateLimite: groupe && dim === 'id' ? (v.m.datesLimitesAxes?.find((x) => x.code === groupe.id) ?? null) : null,
-      echeanceAxe: groupe && dim === 'id' ? (v.m.echeancier.find((e) => e.axeCode === groupe.id) ?? null) : null,
+      echeancier: v.m.echeancier,
       echeanceAxe: groupe && dim === 'id' ? (v.m.echeancier.find((e) => e.axeCode === groupe.id) ?? null) : null,
       nomLot: groupe && dim === 'lot' ? (v.projet.lots?.[groupe.id] ?? '') : '',
       axeCalc: !l.sous && !!groupe?.planCalcule,
@@ -474,24 +465,6 @@ export class PanneauPlanning {
     if (!cible || (cible.realiseLe && cible.n !== ancienne)) { this.etat.afficher('Une échéance déjà facturée ne peut pas être affectée à un autre axe.', 'attention'); return; }
     void this.etat.saisir((id) => this.api.perimetreEcheance(id, cible.n, cible.phases ?? [], cible.lies ?? [], code));
   }
-  protected lierEcheanceAxe(code: string, ancienne: number | null, valeur: string): void {
-    const v = this.etat.vue();
-    if (!v) return;
-    const numero = valeur ? Number(valeur) : null;
-    if (numero === null) {
-      if (ancienne === null) return;
-      const ancienneEch = v.m.echeancier.find((e) => e.n === ancienne);
-      if (ancienneEch) void this.etat.saisir((id) => this.api.perimetreEcheance(id, ancienneEch.n, ancienneEch.phases ?? [], ancienneEch.lies ?? [], null));
-      return;
-    }
-    const cible = v.m.echeancier.find((e) => e.n === numero);
-    if (!cible || (cible.realiseLe && cible.n !== ancienne)) {
-      this.etat.afficher('Une échéance déjà facturée ne peut pas être affectée à un autre axe.', 'attention');
-      return;
-    }
-    void this.etat.saisir((id) => this.api.perimetreEcheance(id, cible.n, cible.phases ?? [], cible.lies ?? [], code));
-  }
-
   protected nommerLot(code: string, nom: string): void {
     void this.etat.saisir((id) => this.api.nomLot(id, code, nom.trim()));
   }

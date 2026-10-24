@@ -202,7 +202,7 @@ const RANG: Record<ElementATraiter['niveau'], number> = { crit: 0, warn: 1, ia: 
               }
             </details>
           </section>
-          @if (v.m.datesLimitesAxes.length) {
+          @if ((v.m.datesLimitesAxes?.length ?? 0)) {
             <section class="tdb-carte tdb-dl" aria-labelledby="tdb-dl-t">
               <header>
                 <h2 id="tdb-dl-t">Dates limites des axes</h2>
