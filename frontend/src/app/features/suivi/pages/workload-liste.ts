@@ -154,6 +154,7 @@ import { Fx } from '../ui/fx';
               </tr>
               @for (t of g.taches; track t.uid) {
                 @let finDepassee = !!t.tr.fin && t.statut !== 'Validé' && !t.annulee && t.tr.fin < v.aujourdhui;
+                @let dernierCommentaire = v.projet.commentaires?.[t.uid]?.[0];
                 <tr class="axr" [hidden]="ui.ui().groupesReplis[g.cleRepli]" [class.is-annul]="t.annulee" [class.is-sel]="etat.panneau() === t.uid" [style.--axc]="g.couleur">
                   @if (m.meta) {
                     <td><ng-container *ngTemplateOutlet="col1; context: { $implicit: t }" /></td>
@@ -259,8 +260,8 @@ import { Fx } from '../ui/fx';
                     <span data-ecart [class]="sgn(t.ecart)">{{ fSigned(t.ecart) }}</span>
                   </td>
                   <td>
-                    @if (t.commentaire) {
-                      <button type="button" class="cmt" [attr.data-open]="t.uid" [title]="t.commentaire">💬</button>
+                    @if (dernierCommentaire || t.commentaire) {
+                      <button type="button" class="cmt" [attr.data-open]="t.uid" [title]="dernierCommentaire?.texte || t.commentaire" [attr.aria-label]="'Ouvrir les commentaires de ' + t.label">💬</button>
                     }
                   </td>
                 </tr>
