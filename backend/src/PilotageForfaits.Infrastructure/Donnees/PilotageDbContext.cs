@@ -30,6 +30,7 @@ public sealed class PilotageDbContext(DbContextOptions<PilotageDbContext> option
     public DbSet<Echeance> Echeances => Set<Echeance>();
     public DbSet<LienEcheancePhase> LiensEcheancePhase => Set<LienEcheancePhase>();
     public DbSet<Axe> Axes => Set<Axe>();
+    public DbSet<Lot> Lots => Set<Lot>();
     public DbSet<Phase> Phases => Set<Phase>();
     public DbSet<Etape> Etapes => Set<Etape>();
     public DbSet<TypeTache> TypesTache => Set<TypeTache>();

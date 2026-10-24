@@ -11,6 +11,19 @@ internal sealed class ConfigurationAxe : IEntityTypeConfiguration<Axe>
         b.ToTable("Axes");
         b.AppartientAuProjet(p => p.Axes);
         b.Property(x => x.Code).HasMaxLength(50).IsRequired();
+        b.Property(x => x.Nom).HasMaxLength(400).IsRequired();
+        b.HasIndex(x => new { x.ProjetId, x.Code }).IsUnique();
+    }
+}
+
+internal sealed class ConfigurationLot : IEntityTypeConfiguration<Lot>
+{
+    public void Configure(EntityTypeBuilder<Lot> b)
+    {
+        b.ToTable("Lots");
+        b.AppartientAuProjet();
+        b.Property(x => x.Code).HasMaxLength(50).IsRequired();
+        b.Property(x => x.Nom).HasMaxLength(400).IsRequired();
         b.HasIndex(x => new { x.ProjetId, x.Code }).IsUnique();
     }
 }

@@ -27,6 +27,7 @@ public interface IContexteDonnees
     DbSet<Echeance> Echeances { get; }
     DbSet<LienEcheancePhase> LiensEcheancePhase { get; }
     DbSet<Axe> Axes { get; }
+    DbSet<Lot> Lots { get; }
     DbSet<Phase> Phases { get; }
     DbSet<Etape> Etapes { get; }
     DbSet<TypeTache> TypesTache { get; }
