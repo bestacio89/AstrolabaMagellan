@@ -202,6 +202,48 @@ const RANG: Record<ElementATraiter['niveau'], number> = { crit: 0, warn: 1, ia: 
               }
             </details>
           </section>
+          @if (v.m.datesLimitesAxes.length) {
+            <section class="tdb-carte tdb-dl" aria-labelledby="tdb-dl-t">
+              <header>
+                <h2 id="tdb-dl-t">Dates limites des axes</h2>
+                <span class="tdb-resume">{{ v.m.datesLimitesAxes.length }} date(s) fixée(s)</span>
+              </header>
+              <div class="tdb-dl-list">
+                @for (x of datesLimites(); track x.code) {
+                  <button type="button" class="tdb-dl-line" (click)="etat.ouvrirLignePlanning(x.code)" [attr.aria-label]="'Ouvrir l’axe ' + x.code">
+                    <span class="tdb-dl-dot" [class]="'tdb-dl-dot lv-' + (x.niveau || 'neutre')" aria-hidden="true"></span>
+                    <span class="tdb-dl-main">
+                      <span class="tdb-dl-name">{{ x.nom }}</span>
+                      @if (x.date) {
+                        <span class="tdb-dl-date">{{ fD(x.date) }} · {{ x.jours > 0 ? 'dans ' + x.jours + ' j' : x.jours === 0 ? 'aujourd’hui' : 'dépassée de ' + (-x.jours) + ' j' }}</span>
+                      } @else {
+                        <span class="tdb-dl-date">Aucune date limite</span>
+                      }
+                      <span class="tdb-dl-progress"><span class="tdb-dl-bar" [style.width.%]="x.progression"></span></span>
+                      <span class="tdb-dl-count">{{ x.valides }} / {{ x.n }} validées</span>
+                    </span>
+                    @if (x.etat === 'tenue') {
+                      <span class="pill lv-ok">Tenue</span>
+                    } @else if (x.etat === 'tard') {
+                      <span class="pill lv-attention">Terminée tard</span>
+                    } @else if (x.etat === 'depassee') {
+                      <span class="pill lv-critique">Dépassée</span>
+                    } @else if (x.etat === 'risque') {
+                      <span class="pill lv-critique">Risque</span>
+                    } @else if (!x.date) {
+                      <span class="pill tdb-dl-neutre">+ Fixer</span>
+                    } @else {
+                      <span class="pill tdb-dl-neutre">À suivre</span>
+                    }
+                  </button>
+                }
+              </div>
+              <footer class="tdb-dl-foot">
+                <span>Fixées dans Workload, en cliquant sur le nom d’un axe.</span>
+                <button type="button" class="linkbtn" (click)="aller('planning', {})">Voir dans le Planning →</button>
+              </footer>
+            </section>
+          }
           <section class="tdb-carte" aria-labelledby="tdb-livrables">
             <header>
               <h2 id="tdb-livrables">Livrables et ateliers <app-fx cle="livrables" /></h2>
@@ -410,6 +452,29 @@ export class TableauDeBord {
   });
   protected readonly aTraiterVisibles = computed(() => (this.todoOuvert() ? this.aTraiter() : this.aTraiter().slice(0, this.maxTodo)));
   protected readonly retardTotal = computed(() => this.aTraiter().filter((x) => x.niveau === 'crit').length);
+
+  protected readonly datesLimites = computed(() => {
+    const v = this.vue();
+    if (!v) return [];
+    const etats = new Map((v.m.datesLimitesAxes ?? []).map((x) => [x.code, x]));
+    return Object.entries(v.projet.axes ?? {}).map(([code, nom]) => {
+      const etat = etats.get(code) ?? null;
+      const taches = v.m.tasks.filter((t) => t.axe === code && !t.annulee);
+      const n = etat?.n ?? taches.length;
+      const valides = etat?.valides ?? taches.filter((t) => t.statut === 'Validé').length;
+      return {
+        code, nom: nom || code, date: etat?.date ?? null, etat: etat?.etat ?? 'ok',
+        niveau: etat?.niveau ?? '', jours: etat?.jours ?? 0, n, valides,
+        progression: n > 0 ? Math.max(0, Math.min(100, Math.round(valides / n * 100))) : 0,
+      };
+    }).sort((a, b) => {
+      if (!a.date && b.date) return 1;
+      if (a.date && !b.date) return -1;
+      const ca = a.niveau === 'critique' ? 0 : 1;
+      const cb = b.niveau === 'critique' ? 0 : 1;
+      return ca - cb || String(a.date ?? '').localeCompare(String(b.date ?? '')) || a.code.localeCompare(b.code, 'fr');
+    });
+  });
 
   protected readonly vigilance = computed(() => {
     // les points sur l'argent sont dans Rentabilité : le tableau de bord ne montre aucun montant

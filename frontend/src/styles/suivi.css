@@ -1425,3 +1425,21 @@
 /* Rentabilité : détail d'une colonne de la cascade ouvert dans le volet → les cartes passent sur toute la largeur, la cascade reste lisible à côté */
 .suivi.rt-volet .s-grille > [class*="c-"] { grid-column: 1 / -1; }
 .suivi.rt-volet .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* Dates limites des axes — carte de pilotage de la revue bimensuelle. */
+.suivi .tdb-dl-list { display:flex; flex-direction:column; gap:2px; }
+.suivi .tdb-dl-line { display:grid; grid-template-columns:8px minmax(0,1fr) auto; align-items:center; gap:10px; width:100%; padding:10px 0; text-align:left; border:0; border-bottom:1px solid var(--line); background:transparent; color:inherit; cursor:pointer; }
+.suivi .tdb-dl-line:last-child { border-bottom:0; }
+.suivi .tdb-dl-line:hover .tdb-dl-name { text-decoration:underline; }
+.suivi .tdb-dl-dot { width:8px; height:8px; border-radius:50%; background:#98a2b3; }
+.suivi .tdb-dl-dot.lv-critique { background:#d92d20; }
+.suivi .tdb-dl-dot.lv-attention { background:#dc8b14; }
+.suivi .tdb-dl-dot.lv-ok { background:#12b76a; }
+.suivi .tdb-dl-dot.lv-neutre { background:#98a2b3; }
+.suivi .tdb-dl-main { display:grid; grid-template-columns:minmax(0,1fr); gap:3px; min-width:0; }
+.suivi .tdb-dl-name { font-size:13px; font-weight:650; }
+.suivi .tdb-dl-date,.suivi .tdb-dl-count { color:var(--ink-2); font-size:11px; }
+.suivi .tdb-dl-progress { display:block; height:4px; overflow:hidden; border-radius:999px; background:var(--line); }
+.suivi .tdb-dl-bar { display:block; height:100%; border-radius:inherit; background:var(--accent); }
+.suivi .tdb-dl-neutre { background:var(--surface-2); color:var(--ink-2); }
+.suivi .tdb-dl-foot { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding-top:12px; color:var(--ink-2); font-size:11px; }
