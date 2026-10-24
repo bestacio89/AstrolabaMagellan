@@ -5,7 +5,7 @@ import { STATUTS } from '../etat/constantes';
 import { fD, fE, fJ, fP, stSlug } from '../etat/formats';
 import { sum } from '../etat/outils';
 import { SuiviEtat } from '../etat/suivi.etat';
-import { TacheVue, echEtat, defaultAxeName } from '../etat/vue';
+import { TacheVue, defaultAxeName } from '../etat/vue';
 import { Barre, MiniBarre } from '../ui/petits';
 import { EtiquetteAjout } from '../ui/tache';
 
@@ -127,7 +127,6 @@ export class PanneauAxe {
   protected readonly fSigned = fSigned;
   protected readonly stSlug = stSlug;
   protected readonly defaultAxeName = defaultAxeName;
-  protected readonly echEtat = echEtat;
   protected readonly vue = this.etat.vue;
 
   protected readonly d = computed(() => {
@@ -135,7 +134,7 @@ export class PanneauAxe {
     if (!v) return null;
     const code = this.code();
     const taches = v.tasks.filter((t) => t.axe === code);
-    if (!taches.length && !v.projet.axeIds?.includes(code)) return null;
+    if (!taches.length && !v.m.axeIdsActifs?.includes(code)) return null;
     const S = (f: (t: TacheVue) => number) => sum(taches.map(f));
     const charge = S((t) => t.charge), conso = S((t) => t.consoTotal), raf = S((t) => t.raf);
     const mn = (l: (string | null | undefined)[]) => l.filter((x): x is string => !!x).sort()[0] ?? null;
