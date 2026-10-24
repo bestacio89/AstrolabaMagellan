@@ -134,7 +134,11 @@ import { Fx } from '../ui/fx';
                     [replie]="!!ui.ui().groupesReplis[g.cleRepli]"
                     (basculer)="basculerGroupe(g.cleRepli)"
                   >
-                    <span groupe-nom>{{ g.nom }}</span>
+                    @if (v.m.dim.key === 'lot' && v.droits.peutModifier) {
+                      <button type="button" class="grp-name" groupe-nom [title]="'Renommer le lot ' + g.cle" (click)="etat.fenetre.set({ type: 'lot', code: g.cle })">{{ g.nom }} <span aria-hidden="true">✎</span></button>
+                    } @else {
+                      <span groupe-nom>{{ g.nom }}</span>
+                    }
                   </app-entete-groupe>
                 </td>
               </tr>
