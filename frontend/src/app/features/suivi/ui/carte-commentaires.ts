@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, signal } f
 import { Commentaire } from '../api/modeles';
 import { SuiviApi } from '../api/suivi.api';
 import { SuiviEtat } from '../etat/suivi.etat';
+import { morceaux } from '../etat/fil.logique';
 
 /** Carte partagée d'historique : tâches, actions, décisions et risques. */
 @Component({
@@ -30,7 +31,7 @@ import { SuiviEtat } from '../etat/suivi.etat';
                 <textarea class="in com-input" [value]="texteEdition()" (input)="texteEdition.set($any($event.target).value)" (keydown)="clavierEdition($event)"></textarea>
                 <div class="com-actions"><button type="button" class="btn sm ghost" (click)="annulerEdition()">Annuler</button><button type="button" class="btn sm primary" [disabled]="!texteEdition().trim() || occupe()" (click)="enregistrerEdition(c)">Enregistrer</button></div>
               } @else {
-                <p class="com-text">{{ c.texte }}</p>
+                <p class="com-text">@for (x of morceaux(c.texte); track $index) { @if (x.mention) { <span class="com-mention">{{ x.texte }}</span> } @else { {{ x.texte }} } }</p>
                 @if (estAuteur(c)) {
                   <div class="com-actions">
                     <button type="button" class="linkbtn" (click)="commencerEdition(c)">Modifier</button>
@@ -82,6 +83,7 @@ import { SuiviEtat } from '../etat/suivi.etat';
     .com-meta { display:flex; align-items:baseline; flex-wrap:wrap; gap:7px; color:var(--ink-2); font-size:12px; }
     .com-meta b { color:var(--ink); font-size:13px; }
     .com-text { margin:5px 0 0; white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.45; font-size:13px; }
+    .com-mention { color:var(--accent); font-weight:650; background:var(--surface-2); border-radius:4px; padding:1px 3px; }
     .com-actions { margin-top:5px; }
     .com-actions .danger { color:var(--danger,#b42318); }
     .com-confirm { margin-top:8px; padding:8px; border:1px solid var(--line); border-radius:8px; background:var(--surface-2); }
@@ -97,6 +99,7 @@ export class CarteCommentaires {
   readonly ancienCommentaire = input<string | null>(null);
   private readonly etat = inject(SuiviEtat);
   private readonly api = inject(SuiviApi);
+  protected readonly morceaux = morceaux;
   protected readonly brouillon = signal('');
   protected readonly editionId = signal<string | null>(null);
   protected readonly texteEdition = signal('');
