@@ -159,7 +159,7 @@ import { Fx } from '../ui/fx';
                       @switch (c.k) {
                         @case ('lot') {
                           @if (v.m.dim.key === 'id') {
-                            <span class="ell" [title]="t.lot">{{ t.lot || '—' }}</span>
+                            <span class="ell" [title]="t.lot">{{ t.lot ? (v.projet.lots?.[t.lot] ? 'Lot ' + t.lot + ' – ' + v.projet.lots[t.lot] : 'Lot ' + t.lot) : '—' }}</span>
                           } @else if (t.axe) {
                             <span class="axp" [style.--axc]="couleurGroupe(v, t.axe)" [title]="idName(v, t.axe)">{{ t.axe === '0' ? 'Pilotage' : defaultAxeName(t.axe) }}</span>
                           } @else {

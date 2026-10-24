@@ -182,7 +182,7 @@ interface LigneProfil {
                         <td class="smc sm-id" [title]="nomAxe(v, t.axe)">{{ t.axe === '0' ? 'Pilotage' : t.axe ? defaultAxeName(t.axe) : '—' }}</td>
                       }
                       @case ('lot') {
-                        <td class="smc sm-lot">{{ t.lot }}</td>
+                        <td class="smc sm-lot">{{ t.lot ? (v.projet.lots?.[t.lot] ? 'Lot ' + t.lot + ' – ' + v.projet.lots[t.lot] : 'Lot ' + t.lot) : '—' }}</td>
                       }
                       @case ('phase') {
                         <td class="smc sm-phase">

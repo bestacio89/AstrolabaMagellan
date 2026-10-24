@@ -301,7 +301,7 @@ import { Fx } from '../ui/fx';
           @if (v.m.dim.key === 'lot') {
             <ng-container *ngTemplateOutlet="pastille; context: { $implicit: t }" />
           } @else {
-            @let lot = t.lot || defaultAxeName(t.id || t.tr.axe || '');
+            @let lot = t.lot ? (v.projet.lots?.[t.lot] ? 'Lot ' + t.lot + ' – ' + v.projet.lots[t.lot] : 'Lot ' + t.lot) : defaultAxeName(t.id || t.tr.axe || '');
             <span class="muted ell" [title]="t.lot || ''">{{ lot }}</span>
           }
         } @else {
