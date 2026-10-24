@@ -257,7 +257,7 @@ export class SuiviApi {
     return this.put(id, `commentaires/${encodeURIComponent(commentaireId)}`, { texte });
   }
   supprimerCommentaire(id: string, commentaireId: string) {
-    return this.delete(id, `commentaires/${encodeURIComponent(commentaireId)}`);
+    return this.supprimer(id, `commentaires/${encodeURIComponent(commentaireId)}`);
   }
   fiche(id: string, champ: 'client' | 'projet' | 'reference', valeur: string, version?: number) {
     return this.put(id, 'fiche', { champ, valeur, version });
