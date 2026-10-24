@@ -109,6 +109,8 @@ internal sealed class ConfigurationEcheance : IEntityTypeConfiguration<Echeance>
         b.AppartientAuProjet(p => p.Echeances);
         b.Property(x => x.MoisTsp).HasMaxLength(7);
         b.Property(x => x.Commentaire).HasMaxLength(Outils.TexteLong);
+        b.Property(x => x.AxeCode).HasMaxLength(50);
+        b.HasIndex(x => new { x.ProjetId, x.AxeCode }).IsUnique();
         b.HasIndex(x => new { x.ProjetId, x.Numero }).IsUnique();
         b.HasMany(x => x.Phases).WithOne().HasForeignKey(l => l.EcheanceId).IsRequired();
         b.Ignore(x => x.EstSelectionnable);

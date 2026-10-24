@@ -132,6 +132,15 @@ public sealed class SuiviController(
     [HttpPost("taches/{uid}/mises-a-jour")]
     public Task<ResultatSaisieDto> MiseAJour(Guid id, string uid, MiseAJourCommande c, CancellationToken a) => misesAJour.AjouterAsync(id, uid, c, a);
 
+    [HttpPost("commentaires/{cibleType}/{cibleId:guid}")]
+    public Task<ResultatSaisieDto> AjouterCommentaire(Guid id, string cibleType, Guid cibleId, NouveauCommentaireCommande c, CancellationToken a) => misesAJour.AjouterCibleAsync(id, cibleType, cibleId, c, a);
+
+    [HttpPut("commentaires/{commentaireId:guid}")]
+    public Task<ResultatSaisieDto> ModifierCommentaire(Guid id, Guid commentaireId, ModifierCommentaireCommande c, CancellationToken a) => misesAJour.ModifierAsync(id, commentaireId, c, a);
+
+    [HttpDelete("commentaires/{commentaireId:guid}")]
+    public Task<ResultatSaisieDto> SupprimerCommentaire(Guid id, Guid commentaireId, CancellationToken a) => misesAJour.SupprimerAsync(id, commentaireId, a);
+
     // ---------------------------------------------------------------- planning de référence
 
     /// <summary>Fige le planning actuel comme référence.</summary>
@@ -195,6 +204,10 @@ public sealed class SuiviController(
     [HttpPut("echeances/{numero:int}/perimetre")]
     public Task<ResultatSaisieDto> PerimetreEcheance(Guid id, int numero, PerimetreEcheanceCommande c, CancellationToken a) =>
         facturation.LierPerimetreAsync(id, numero, c, a);
+
+    [HttpPut("axes/{code}/facturation")]
+    public Task<ResultatSaisieDto> FacturationAxe(Guid id, string code, LienAxeEcheanceCommande c, CancellationToken a) =>
+        facturation.LierAxeAsync(id, code, c, a);
 
     [HttpPut("phases/{code}/echeance")]
     public Task<ResultatSaisieDto> EcheancePhase(Guid id, string code, EcheancePhaseCommande c, CancellationToken a) =>
@@ -274,8 +287,14 @@ public sealed class SuiviController(
     [HttpPut("parametres/dates")]
     public Task<ResultatSaisieDto> DatesProjet(Guid id, ChampCommande c, CancellationToken a) => parametres.DefinirDateAsync(id, c, a);
 
+    [HttpPut("axes/{code}")]
+    public Task<ResultatSaisieDto> Axe(Guid id, string code, AxeCommande c, CancellationToken a) => parametres.DefinirAxeAsync(id, code, c, a);
+
     [HttpPut("axes/{code}/nom")]
     public Task<ResultatSaisieDto> NomAxe(Guid id, string code, NomAxeCommande c, CancellationToken a) => parametres.NommerAxeAsync(id, code, c, a);
+
+    [HttpPut("lots/{code}")]
+    public Task<ResultatSaisieDto> Lot(Guid id, string code, NomLotCommande c, CancellationToken a) => parametres.NommerLotAsync(id, code, c, a);
 
     [HttpPut("fiche")]
     public Task<ResultatSaisieDto> Fiche(Guid id, FicheCommande c, CancellationToken a) => parametres.DefinirFicheAsync(id, c, a);

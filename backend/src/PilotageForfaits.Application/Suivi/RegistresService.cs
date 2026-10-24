@@ -103,6 +103,7 @@ public sealed class RegistresService(SaisieOutils o)
         var u = await o.ExigerChefAsync(projetId, a);
         var x = await o.Db.Actions.FirstOrDefaultAsync(y => y.ProjetId == projetId && y.Id == id, a) ?? throw new IntrouvableException("Action introuvable.");
         foreach (var r in await o.Db.Risques.Where(r => r.ActionId == id).ToListAsync(a)) r.ActionId = null;
+        o.Db.Commentaires.RemoveRange(await o.Db.Commentaires.Where(c => c.ProjetId == projetId && c.CibleType == "Action" && c.CibleId == x.Id).ToListAsync(a));
         o.Db.Actions.Remove(x);
         o.Noter(projetId, u, "Action", x.Id, "suppression", $"{x.Reference} {x.Libelle}", null);
         return await o.TerminerAsync(projetId, new List<MessageDto>(), a);
@@ -153,6 +154,7 @@ public sealed class RegistresService(SaisieOutils o)
         var u = await o.ExigerChefAsync(projetId, a);
         var x = await o.Db.Decisions.FirstOrDefaultAsync(y => y.ProjetId == projetId && y.Id == id, a) ?? throw new IntrouvableException("Décision introuvable.");
         foreach (var e in await o.Db.Evolutions.Where(e => e.DecisionId == id).ToListAsync(a)) e.DecisionId = null;
+        o.Db.Commentaires.RemoveRange(await o.Db.Commentaires.Where(c => c.ProjetId == projetId && c.CibleType == "Decision" && c.CibleId == x.Id).ToListAsync(a));
         o.Db.Decisions.Remove(x);
         o.Noter(projetId, u, "Décision", x.Id, "suppression", $"{x.Reference} {x.Libelle}", null);
         return await o.TerminerAsync(projetId, new List<MessageDto>(), a);
@@ -215,6 +217,7 @@ public sealed class RegistresService(SaisieOutils o)
     {
         var u = await o.ExigerChefAsync(projetId, a);
         var x = await o.Db.Risques.FirstOrDefaultAsync(y => y.ProjetId == projetId && y.Id == id, a) ?? throw new IntrouvableException("Risque introuvable.");
+        o.Db.Commentaires.RemoveRange(await o.Db.Commentaires.Where(c => c.ProjetId == projetId && c.CibleType == "Risque" && c.CibleId == x.Id).ToListAsync(a));
         o.Db.Risques.Remove(x);
         o.Noter(projetId, u, "Risque", x.Id, "suppression", $"{x.Reference} {x.Libelle}", null);
         return await o.TerminerAsync(projetId, new List<MessageDto>(), a);

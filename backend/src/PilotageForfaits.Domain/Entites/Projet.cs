@@ -63,6 +63,7 @@ public sealed class Projet : Entite
     public List<Metrique> Metriques { get; set; } = new();
     public List<Echeance> Echeances { get; set; } = new();
     public List<Axe> Axes { get; set; } = new();
+    public List<Lot> Lots { get; set; } = new();
     public List<Phase> Phases { get; set; } = new();
     public List<Etape> Etapes { get; set; } = new();
     public List<TypeTache> TypesTache { get; set; } = new();

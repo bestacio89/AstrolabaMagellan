@@ -37,6 +37,7 @@ public sealed class DroitsDto
     public bool PeutExporter { get; init; }
     /// <summary>Nom de l'utilisateur connecté (proposé comme responsable, décideur…).</summary>
     public string Utilisateur { get; init; } = "";
+    public Guid UtilisateurId { get; init; }
     /// <summary>Projet archivé : tout est en lecture seule.</summary>
     public bool Archive { get; init; }
     /// <summary>Chef de projet (même si le projet est archivé) : peut le restaurer, ou le supprimer s'il a été créé par erreur.</summary>
@@ -80,6 +81,11 @@ public sealed class ProjetVueDto
     public required ReferentielCalcul Ref { get; init; }
     /// <summary>Nom choisi pour chaque code d'axe.</summary>
     public Dictionary<string, string> Axes { get; init; } = new();
+    /// <summary>Date limite facultative par code d'axe.</summary>
+    public Dictionary<string, DateOnly?> DatesLimitesAxes { get; init; } = new();
+    public List<DateLimiteAxeCalculee> EtatsDatesLimitesAxes { get; init; } = new();
+    /// <summary>Noms personnalisés de lots ; les codes restent ceux des tâches.</summary>
+    public Dictionary<string, string> Lots { get; init; } = new();
     public List<TypeTacheCalcul> Types { get; init; } = new();
     public List<FraisBudgetCalcul> Frais { get; init; } = new();
     public List<AchatBudgetCalcul> Achats { get; init; } = new();
@@ -113,6 +119,8 @@ public sealed class ProjetVueDto
     public List<string> Causes { get; init; } = new();
     /// <summary>Fil de mises à jour de chaque tâche (clé : repère de la tâche), du plus récent au plus ancien.</summary>
     public Dictionary<string, List<MiseAJourVueDto>> MisesAJour { get; init; } = new();
+    /// <summary>Commentaires par cible : UID de tâche, act:GUID, dec:GUID ou rk:GUID.</summary>
+    public Dictionary<string, List<CommentaireVueDto>> Commentaires { get; init; } = new();
 }
 
 /// <summary>Planning figé à une date : dates prévues et charge de chaque tâche (clé : repère de la tâche).</summary>
@@ -140,7 +148,8 @@ public sealed class LigneReferenceVueDto
 public sealed record MiseAJourVueDto(DateTimeOffset At, string By, string Texte);
 
 /// <summary>Ce que la vue du suivi ajoute aux données du moteur, chargé à part (références, fil des tâches).</summary>
-public sealed record ComplementsVue(List<ReferenceVueDto> References, Dictionary<string, List<MiseAJourVueDto>> MisesAJour);
+public sealed record CommentaireVueDto(Guid Id, DateTimeOffset At, string By, Guid? AuteurId, string Texte, DateTimeOffset? ModifieLe);
+public sealed record ComplementsVue(List<ReferenceVueDto> References, Dictionary<string, List<MiseAJourVueDto>> MisesAJour, Dictionary<string, DateOnly?> DatesLimitesAxes, Dictionary<string, string> Lots, Dictionary<string, List<CommentaireVueDto>> Commentaires);
 
 public sealed class FicheVueDto
 {
@@ -176,6 +185,7 @@ public sealed class TacheVueDto
 {
     /// <summary>Repère de la tâche (r12 = ligne 12 du TSP, a1 = première tâche ajoutée).</summary>
     public string Uid { get; init; } = "";
+    public Guid CibleId { get; init; }
     public int Version { get; init; }
     public int? Ligne { get; init; }
     /// <summary>Code de l'axe (colonne A du TSP).</summary>

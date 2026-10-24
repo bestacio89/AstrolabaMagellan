@@ -23,6 +23,8 @@ public sealed class ProjetCalcul
     public ReferentielCalcul Ref { get; set; } = new();
     /// <summary>Nom choisi pour chaque code d'axe (colonne A du TSP).</summary>
     public Dictionary<string, string> Axes { get; set; } = new();
+    public Dictionary<string, DateOnly?> DatesLimitesAxes { get; set; } = new();
+    public Dictionary<string, string> Lots { get; set; } = new();
     /// <summary>Types de tâche (Atelier, Livrable et types ajoutés). Null : types socle uniquement.</summary>
     public List<TypeTacheCalcul>? Types { get; set; }
     public List<FraisBudgetCalcul> Frais { get; set; } = new();
@@ -277,6 +279,8 @@ public sealed class EcheanceCalcul
     public decimal Pct { get; set; }
     /// <summary>Mois de facturation prévu au TSP (AAAA-MM).</summary>
     public string? Mois { get; set; }
+    /// <summary>Code d'axe lié à cette échéance de facturation.</summary>
+    public string? AxeCode { get; set; }
 }
 
 /// <summary>Suivi d'une échéance de facturation.</summary>
@@ -289,6 +293,7 @@ public sealed class SuiviEcheanceCalcul
     /// <summary>Montant figé au moment de la facturation.</summary>
     public decimal? MontantFacture { get; set; }
     public string? Commentaire { get; set; }
+    public string? AxeCode { get; set; }
     /// <summary>Phases entières dont l'échéance dépend.</summary>
     public List<string>? Phases { get; set; }
 }

@@ -5,7 +5,15 @@ public sealed class Axe : EntiteDeProjet
 {
     public string Code { get; set; } = "";
     public string Nom { get; set; } = "";
+    public DateOnly? DateLimite { get; set; }
     public int Ordre { get; set; }
+}
+
+/// <summary>Nom facultatif d'un lot du TSP : le code reste celui des tâches.</summary>
+public sealed class Lot : EntiteDeProjet
+{
+    public string Code { get; set; } = "";
+    public string Nom { get; set; } = "";
 }
 
 /// <summary>Phase du projet (onglet REF : PILOTAGE, CONSTRUCTION…).</summary>

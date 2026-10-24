@@ -233,7 +233,7 @@ export function filteredTasks(v: Vue, f: FiltresTaches): TacheVue[] {
   return v.tasks.filter(
     (t) =>
       (!f.axe || (f.axe === '__none' ? !t.grp : t.grp === f.axe)) &&
-      (!q || t.label.toLowerCase().includes(q) || (t.lot || '').toLowerCase().includes(q)) &&
+      (!q || t.label.toLowerCase().includes(q) || (t.lot || '').toLowerCase().includes(q) || (t.commentaire || '').toLowerCase().includes(q) || (v.projet.commentaires?.[t.uid] ?? []).some((c) => c.texte.toLowerCase().includes(q))) &&
       (!aj || t.estAjout || t.chargeAjout > 0 || t.annulee),
   );
 }

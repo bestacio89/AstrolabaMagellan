@@ -30,6 +30,7 @@ public sealed class PilotageDbContext(DbContextOptions<PilotageDbContext> option
     public DbSet<Echeance> Echeances => Set<Echeance>();
     public DbSet<LienEcheancePhase> LiensEcheancePhase => Set<LienEcheancePhase>();
     public DbSet<Axe> Axes => Set<Axe>();
+    public DbSet<Lot> Lots => Set<Lot>();
     public DbSet<Phase> Phases => Set<Phase>();
     public DbSet<Etape> Etapes => Set<Etape>();
     public DbSet<TypeTache> TypesTache => Set<TypeTache>();
@@ -41,7 +42,7 @@ public sealed class PilotageDbContext(DbContextOptions<PilotageDbContext> option
     public DbSet<Atelier> Ateliers => Set<Atelier>();
     public DbSet<Destinataire> Destinataires => Set<Destinataire>();
     public DbSet<Livrable> Livrables => Set<Livrable>();
-    public DbSet<MiseAJourTache> MisesAJour => Set<MiseAJourTache>();
+    public DbSet<Commentaire> Commentaires => Set<Commentaire>();
     public DbSet<PointHebdo> PointsHebdo => Set<PointHebdo>();
     public DbSet<ActionProjet> Actions => Set<ActionProjet>();
     public DbSet<Decision> Decisions => Set<Decision>();

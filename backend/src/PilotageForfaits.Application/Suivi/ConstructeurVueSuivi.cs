@@ -120,7 +120,7 @@ public static class ConstructeurVueSuivi
             Grille = d.Grille.Select(g => new GrilleVueDto(g.Profil, g.TjmParis, g.CjmParis, g.TjmRegion, g.CjmRegion)).ToList(),
             Tasks = c.Tasks.Select((t, k) => new TacheVueDto
             {
-                Uid = t.Uid, Version = d.Taches[k].Version, Ligne = t.Ligne, Id = t.Id, Lot = t.Lot, Phase = t.Phase, Etape = t.Etape, Label = t.Label,
+                Uid = t.Uid, CibleId = d.Taches[k].Id, Version = d.Taches[k].Version, Ligne = t.Ligne, Id = t.Id, Lot = t.Lot, Phase = t.Phase, Etape = t.Etape, Label = t.Label,
                 Charges = t.Charges, Section = t.Section, Livrable = t.Livrable, Hypothese = t.Hypothese, Ajout = t.Ajout, LivCol = t.LivCol,
             }).ToList(),
             Track = track,
@@ -186,8 +186,11 @@ public static class ConstructeurVueSuivi
             Journal = journal.Select(j => new JournalVueDto(new DateTimeOffset(DateTime.SpecifyKind(j.Le, DateTimeKind.Utc)), j.UtilisateurId is { } u && nomsJournal.TryGetValue(u, out var nom) ? nom : "",
                 j.Objet, j.Champ, j.AncienneValeur, j.NouvelleValeur)).ToList(),
             References = complements?.References ?? new List<ReferenceVueDto>(),
+            DatesLimitesAxes = complements?.DatesLimitesAxes ?? new Dictionary<string, DateOnly?>(),
+            Lots = complements?.Lots ?? new Dictionary<string, string>(),
             Causes = CausesDerive.Liste.ToList(),
             MisesAJour = complements?.MisesAJour ?? new Dictionary<string, List<MiseAJourVueDto>>(),
+            Commentaires = complements?.Commentaires ?? new Dictionary<string, List<CommentaireVueDto>>(),
         };
     }
 

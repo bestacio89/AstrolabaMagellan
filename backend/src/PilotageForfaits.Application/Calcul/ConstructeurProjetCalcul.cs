@@ -28,6 +28,7 @@ public sealed class ConstructeurProjetCalcul(IContexteDonnees db)
         var consommes = await db.Consommes.AsNoTracking().Where(x => x.ProjetId == projetId).ToListAsync(annulation);
         var evolutions = await db.Evolutions.AsNoTracking().Where(x => x.ProjetId == projetId).ToListAsync(annulation);
         var axes = await db.Axes.AsNoTracking().Where(x => x.ProjetId == projetId).OrderBy(x => x.Ordre).ToListAsync(annulation);
+        var lots = await db.Lots.AsNoTracking().Where(x => x.ProjetId == projetId).ToListAsync(annulation);
         var phases = await db.Phases.AsNoTracking().Where(x => x.ProjetId == projetId).OrderBy(x => x.Ordre).ToListAsync(annulation);
         var etapes = await db.Etapes.AsNoTracking().Where(x => x.ProjetId == projetId).OrderBy(x => x.Ordre).ToListAsync(annulation);
         var types = await db.TypesTache.AsNoTracking().Where(x => x.ProjetId == projetId).OrderBy(x => x.Ordre).ToListAsync(annulation);
@@ -70,7 +71,7 @@ public sealed class ConstructeurProjetCalcul(IContexteDonnees db)
             ateliers, destinataires, livrables, photos.OrderBy(x => x.Date).ThenBy(x => x.Nature).ToList(),
             imports.OrderBy(x => x.ImporteLe).ToList(), champs, grille)
         {
-            Previsionnel = previsionnel, DatesPlanning = datesPlanning, Jalons = jalons, ElementsPlanning = elementsPlanning,
+            Previsionnel = previsionnel, DatesPlanning = datesPlanning, Jalons = jalons, ElementsPlanning = elementsPlanning, Lots = lots,
         };
     }
 
@@ -87,7 +88,7 @@ public sealed class ConstructeurProjetCalcul(IContexteDonnees db)
         p.BudgetAchats.OrderBy(x => x.Ordre).ToList(), p.BudgetFrais.OrderBy(x => x.Ordre).ToList(), p.Prestataires.OrderBy(x => x.Ordre).ToList(),
         p.Metriques.OrderBy(x => x.Ordre).ToList(), new List<AchatReel>(), new List<FraisReel>(), new List<ActionProjet>(), new List<Decision>(),
         new List<Risque>(), new Dictionary<Guid, Utilisateur>(), new List<Atelier>(), new List<Destinataire>(), new List<Livrable>(),
-        new List<PhotoIndicateurs>(), p.Imports.ToList(), p.ChampsFiche.OrderBy(x => x.Ordre).ToList(), p.Grille.OrderBy(x => x.Ordre).ToList());
+        new List<PhotoIndicateurs>(), p.Imports.ToList(), p.ChampsFiche.OrderBy(x => x.Ordre).ToList(), p.Grille.OrderBy(x => x.Ordre).ToList()) { Lots = p.Lots.ToList() };
 
     /// <summary>Toutes les saisies d'un projet, déjà chargées.</summary>
     public sealed record DonneesProjet(
@@ -102,6 +103,7 @@ public sealed class ConstructeurProjetCalcul(IContexteDonnees db)
         List<ImportTsp> Imports, List<ChampFiche> ChampsFiche, List<GrilleAgence> Grille)
     {
         /// <summary>Prévisionnel de charge replanifié (vide : le prévisionnel est le planning vendu).</summary>
+        public List<Lot> Lots { get; init; } = new();
         public List<PrevisionnelProfil> Previsionnel { get; init; } = new();
         /// <summary>Planning : dates saisies par ligne (et noms des sous-parties), jalons, éléments mis en avant ou masqués.</summary>
         public List<DatesPlanning> DatesPlanning { get; init; } = new();
@@ -156,12 +158,14 @@ public sealed class ConstructeurProjetCalcul(IContexteDonnees db)
                 Etapes = d.Etapes.Select(x => x.Libelle).ToList(),
             },
             Axes = d.Axes.GroupBy(x => x.Code).ToDictionary(g => g.Key, g => g.First().Nom),
+            DatesLimitesAxes = d.Axes.GroupBy(x => x.Code).ToDictionary(g => g.Key, g => g.First().DateLimite),
+            Lots = d.Lots.GroupBy(x => x.Code).ToDictionary(g => g.Key, g => g.First().Nom),
             Types = d.Types.Select(x => new TypeTacheCalcul { Id = x.Code, Nom = x.Nom, Socle = x.Socle }).ToList(),
             Frais = d.BudgetFrais.Select(x => new FraisBudgetCalcul { Libelle = x.Libelle, Cu = x.CoutUnitaire, Qte = x.Quantite, Refacture = x.Refacture, Commentaire = x.Commentaire }).ToList(),
             Achats = d.BudgetAchats.Select(x => new AchatBudgetCalcul { Designation = x.Designation, Type = x.Type, Cu = x.CoutUnitaire, Qte = x.Quantite, Revente = x.Revente, Commentaire = x.Commentaire }).ToList(),
             Prestas = d.Prestataires.Select(x => new PrestataireCalcul { Designation = x.Designation, Societe = x.Societe, CoutJour = x.CoutJour, Nbj = x.NombreJours, Tjm = x.Tjm, Commentaire = x.Commentaire }).ToList(),
             Metrique = d.Metriques.Select(x => new MetriqueCalcul { Etape = x.Etape, Pct = x.Pourcentage }).ToList(),
-            Echeancier = d.Echeances.Select(x => new EcheanceCalcul { N = x.Numero, Nom = x.Nom, Pct = x.Pourcentage, Mois = x.MoisTsp }).ToList(),
+            Echeancier = d.Echeances.Select(x => new EcheanceCalcul { N = x.Numero, Nom = x.Nom, Pct = x.Pourcentage, Mois = x.MoisTsp, AxeCode = x.AxeCode }).ToList(),
             AchatsReel = d.AchatsOrdonnes().Select(x => new AchatReelCalcul
             {
                 Id = x.Id.ToString(), Ligne = x.LigneBudgetAchatId is { } l && indexAchat.TryGetValue(l, out var i) ? i : null,
@@ -189,7 +193,7 @@ public sealed class ConstructeurProjetCalcul(IContexteDonnees db)
             resultat.EchTrack[e.Numero] = new SuiviEcheanceCalcul
             {
                 DatePrevue = e.DatePrevue, RealiseLe = e.FactureeLe, PayeeLe = e.PayeeLe, MontantFacture = e.MontantFacture,
-                Commentaire = e.Commentaire, Phases = phasesLiees,
+                Commentaire = e.Commentaire, Phases = phasesLiees, AxeCode = e.AxeCode,
             };
         }
 

@@ -51,7 +51,6 @@ export interface ReglagesPointHebdo {
   avv?: string;
   pilote?: string;
   modeFacturation?: string;
-  logoClient?: string;
   logoEntreprise?: string;
 }
 export interface PointsHebdo {
@@ -277,7 +276,7 @@ export function donneesDiapo(e: EntreePointHebdo, o: {
     actualites: s.actualites.filter((x) => x.trim()), attention: s.attention.filter((x) => x.trim()),
     phases, echeances, indicateurs, risques, actions,
     satisfaction: s.satisfaction ?? { meteo: 'soleil', tendance: 'vert' }, esprit: s.esprit ?? { meteo: 'soleil', tendance: 'vert' },
-    genereLe: o.aujourdhui, logoClient: r.logoClient || null, logoEntreprise: r.logoEntreprise || o.logoEntrepriseParDefaut,
+    genereLe: o.aujourdhui, logoEntreprise: o.logoEntrepriseParDefaut,
   };
 }
 

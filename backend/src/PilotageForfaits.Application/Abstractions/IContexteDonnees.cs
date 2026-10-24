@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using PilotageForfaits.Domain.Entites;
 
 namespace PilotageForfaits.Application.Abstractions;
@@ -9,6 +10,8 @@ namespace PilotageForfaits.Application.Abstractions;
 /// </summary>
 public interface IContexteDonnees
 {
+    /// <summary>Transaction et opérations de persistance atomiques pour les cas d'usage qui déplacent une contrainte unique.</summary>
+    DatabaseFacade Database { get; }
     DbSet<Utilisateur> Utilisateurs { get; }
     DbSet<Habilitation> Habilitations { get; }
     DbSet<EntreeJournal> Journal { get; }
@@ -27,6 +30,7 @@ public interface IContexteDonnees
     DbSet<Echeance> Echeances { get; }
     DbSet<LienEcheancePhase> LiensEcheancePhase { get; }
     DbSet<Axe> Axes { get; }
+    DbSet<Lot> Lots { get; }
     DbSet<Phase> Phases { get; }
     DbSet<Etape> Etapes { get; }
     DbSet<TypeTache> TypesTache { get; }
@@ -38,7 +42,7 @@ public interface IContexteDonnees
     DbSet<Atelier> Ateliers { get; }
     DbSet<Destinataire> Destinataires { get; }
     DbSet<Livrable> Livrables { get; }
-    DbSet<MiseAJourTache> MisesAJour { get; }
+    DbSet<Commentaire> Commentaires { get; }
     DbSet<PointHebdo> PointsHebdo { get; }
     DbSet<ActionProjet> Actions { get; }
     DbSet<Decision> Decisions { get; }

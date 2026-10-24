@@ -171,7 +171,7 @@ interface RisqueL {
 
 /** Listes filtrées et triées des trois registres ; l'ordre sert aussi à « précédente / suivante » dans le panneau. */
 export function listesRegistres<A extends ActionL, D extends DecisionL, R extends RisqueL>(
-  donnees: { actions: readonly A[]; decisions: readonly D[]; risques: readonly R[]; risquesOuverts: ReadonlySet<string> },
+  donnees: { actions: readonly A[]; decisions: readonly D[]; risques: readonly R[]; risquesOuverts: ReadonlySet<string>; commentaires?: Readonly<Record<string, readonly { texte: string }[]>> },
   f: FiltresRegistres,
   aujourdhui: string,
 ) {
@@ -184,7 +184,7 @@ export function listesRegistres<A extends ActionL, D extends DecisionL, R extend
         avecPersonne(a.porteur, f.adp) &&
         echeanceOk(a, f.adEch, aujourdhui, f.adDu, f.adAu) &&
         (!f.adInst || a.origine === f.adInst) &&
-        cherche(q, a.ref, a.libelle, a.commentaire, a.porteur, a.origine),
+        cherche(q, a.ref, a.libelle, a.commentaire, a.porteur, a.origine, ...(donnees.commentaires?.['act:' + a.id] ?? []).map((c) => c.texte)),
     ),
   );
   const fd = f.adfd || 'toutes';
@@ -195,7 +195,7 @@ export function listesRegistres<A extends ActionL, D extends DecisionL, R extend
         dateOk(x, f.adDPer, aujourdhui, f.adDu, f.adAu) &&
         (!f.adInst || x.instance === f.adInst) &&
         avecPersonne(x.decideur, f.adpd) &&
-        cherche(q, x.ref, x.libelle, x.commentaire, x.decideur, x.instance),
+        cherche(q, x.ref, x.libelle, x.commentaire, x.decideur, x.instance, ...(donnees.commentaires?.['dec:' + x.id] ?? []).map((c) => c.texte)),
     )
     .sort((x, y) => String(y.date || '').localeCompare(String(x.date || '')) || String(y.ref).localeCompare(String(x.ref)));
   const fr = f.rkf || 'ouverts';
@@ -205,7 +205,7 @@ export function listesRegistres<A extends ActionL, D extends DecisionL, R extend
         (fr === 'tous' || (fr === 'ouverts' ? donnees.risquesOuverts.has(r.id) : !donnees.risquesOuverts.has(r.id))) &&
         (!f.rkty || (f.rkty === '__aucun' ? !r.type : r.type === f.rkty)) &&
         avecPersonne(r.responsable, f.adpr) &&
-        cherche(q, r.ref, r.libelle, r.cause, r.parade, r.plan, r.commentaire, r.responsable, r.type),
+        cherche(q, r.ref, r.libelle, r.cause, r.parade, r.plan, r.commentaire, r.responsable, r.type, ...(donnees.commentaires?.['rk:' + r.id] ?? []).map((c) => c.texte)),
     )
     .sort((x, y) => y.crit - x.crit || String(x.ref).localeCompare(String(y.ref)));
   return {

@@ -2,12 +2,14 @@ import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { SuiviApi } from '../api/suivi.api';
 import { AVANCEMENTS, STATUTS } from '../etat/constantes';
-import { fD, fDi, fJ, fP, fSigned, sgn, stSlug } from '../etat/formats';
+import { fD, fDi, fE, fJ, fP, fSigned, sgn, stSlug } from '../etat/formats';
 import { sum } from '../etat/outils';
 import { SuiviEtat } from '../etat/suivi.etat';
 import { UiEtat } from '../etat/ui.etat';
 import { axeName, couleurGroupe, defaultAxeName, echEtat, filteredTasks, groupByAxe, idName, isOver, TacheVue, typeName, Vue } from '../etat/vue';
 import { colonnesListe, VUES_LISTE, vueListe } from '../etat/workload.logique';
+import { calculerJaugeGroupe, infoBulleDateLimite } from '../etat/entete-groupe.logique';
+import { EnteteGroupe } from '../ui/entete-groupe';
 import { BarreFiltres } from '../ui/barre-filtres';
 import { LienTache } from '../ui/tache';
 import { Triable } from '../ui/triable';
@@ -20,7 +22,7 @@ import { Fx } from '../ui/fx';
  */
 @Component({
   selector: 'app-workload-liste',
-  imports: [NgTemplateOutlet, BarreFiltres, LienTache, Fx, Triable],
+  imports: [NgTemplateOutlet, BarreFiltres, LienTache, Fx, Triable, EnteteGroupe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (vm(); as m) {
@@ -116,38 +118,63 @@ import { Fx } from '../ui/fx';
             @for (g of m.groupes; track g.cle) {
               <tr class="grp axg" [style.--axc]="g.couleur">
                 <td [attr.colspan]="m.nCols">
-                  <div class="grp-h">
+                  <app-entete-groupe
+                    [nom]="g.nom"
+                    [nombreTaches]="g.taches.length"
+                    [charge]="g.charge"
+                    [jauge]="g.jauge"
+                    [replie]="!!ui.ui().groupesReplis[g.cleRepli]"
+                    (basculer)="basculerGroupe(g.cleRepli)"
+                  >
                     @if (g.phase) {
-                      <button type="button" class="grp-name" [attr.data-openph]="g.cle" [title]="'Ouvrir la phase ' + g.cle">{{ g.nom }}</button>
+                      <button type="button" class="grp-name" groupe-nom [attr.data-openph]="g.cle" [title]="'Ouvrir la phase ' + g.cle">{{ g.nom }}</button>
+                    } @else if (v.m.dim.key === 'id') {
+                      <button type="button" class="grp-name" groupe-nom [title]="'Détails de l’axe ' + g.cle" (click)="etat.ouvrirAxe(g.cle, 'nom')">{{ g.nom }} <span aria-hidden="true">↗</span></button>
+                    } @else if (v.m.dim.key === 'lot' && v.droits.peutModifier) {
+                      <button type="button" class="grp-name" groupe-nom [title]="'Renommer le lot ' + g.cle" (click)="etat.fenetre.set({ type: 'lot', code: g.cle })">{{ g.nom }} <span aria-hidden="true">✎</span></button>
                     } @else {
-                      {{ g.nom }}
+                      <span groupe-nom>{{ g.nom }}</span>
                     }
-                    <span class="grp-meta">{{ g.taches.length }} tâche{{ g.taches.length > 1 ? 's' : '' }} · {{ fJ(g.charge) }} JH</span>
-                    @if (g.phase) {
-                      @if (g.echeance; as e) {
-                        <button type="button" class="ech-badge" [class]="'ech-badge ech-' + e.etat" [attr.data-openph]="g.cle" title="Échéance de la phase — cliquer pour la modifier">
-                          € Échéance n° {{ e.n }} · {{ fD(e.date) }} · {{ e.libelle }}
-                        </button>
-                      } @else if (g.lienEcheance) {
-                        <button type="button" class="grp-add grp-ech" [attr.data-openph]="g.cle" title="Lier toute la phase à une échéance de facturation">€ Échéance</button>
+                    <ng-container groupe-actions>
+                      @if (v.m.dim.key === 'id') {
+                        @let dl = v.m.datesLimitesAxes?.find((x) => x.code === g.cle);
+                        @let axeEch = v.m.echeancier.find((x) => x.axeCode === g.cle);
+                        @if (dl) {
+                          <button type="button" class="dl-badge" [class]="'dl-badge dl-' + dl.etat" [title]="infoBulleDateLimite(dl)" (click)="etat.ouvrirAxe(g.cle, 'nom')">⚑ {{ dl.libelle }}</button>
+                        } @else if (v.droits.peutModifier) {
+                          <button type="button" class="dl-badge dl-empty" title="Fixer une date limite pour cet axe" (click)="etat.ouvrirAxe(g.cle, 'nom')">+ Date limite</button>
+                        }
                       }
-                    }
-                    @if (v.droits.peutModifier) {
-                      <button
-                        type="button"
-                        class="grp-add"
-                        [title]="'Créer une tâche dans « ' + g.nom + ' »'"
-                        (click)="etat.fenetre.set({ type: 'nouvelle-tache', groupe: g.cle })"
-                      >
-                        + Tâche
-                      </button>
-                    }
-                  </div>
+                      @if (g.phase) {
+                        @if (g.echeance; as e) {
+                          <button type="button" class="ech-badge" [class]="'ech-badge ech-' + e.etat" [attr.data-openph]="g.cle" title="Échéance de la phase — cliquer pour la modifier">
+                            € Échéance n° {{ e.n }} · {{ fD(e.date) }} · {{ e.libelle }}
+                          </button>
+                        } @else if (g.lienEcheance) {
+                          <button type="button" class="grp-add grp-ech" [attr.data-openph]="g.cle" title="Lier toute la phase à une échéance de facturation">€ Échéance</button>
+                        }
+                      }
+                      @if (v.droits.peutModifier) {
+                        <button type="button" class="grp-add" [title]="'Créer une tâche dans « ' + g.nom + ' »'" (click)="etat.fenetre.set({ type: 'nouvelle-tache', groupe: g.cle })">+ Tâche</button>
+                      }
+                      @if (v.m.dim.key === 'id' && v.m.echeancier.length) {
+                        @let axeEch = v.m.echeancier.find((x) => x.axeCode === g.cle);
+                        @if (axeEch) {
+                          <button type="button" class="eur-badge" [class]="'eur-badge eur-' + (axeEch.realiseLe ? 'facturee' : axeEch.pret ? 'prete' : 'cours')" [title]="'Facturation de l’axe ' + g.cle" (click)="etat.ouvrirAxe(g.cle, 'fact')">
+                            € Échéance n° {{ axeEch.n }}{{ axeEch.realiseLe ? ' · facturée le ' + fD(axeEch.realiseLe) + (axeEch.payeeLe ? ' · payée' : '') : axeEch.pret ? ' prête à facturer · ' + fE(axeEch.montant ?? 0) : ' · ' + fE(axeEch.montant ?? 0) + ' · ' + fP(axeEch.avLie ?? 0) }}
+                          </button>
+                        } @else if (v.droits.peutModifier) {
+                          <button type="button" class="eur-badge eur-empty" title="Lier cet axe à une échéance de facturation" (click)="etat.ouvrirAxe(g.cle, 'fact')">€ Lier à une facture</button>
+                        }
+                      }
+                    </ng-container>
+                  </app-entete-groupe>
                 </td>
               </tr>
               @for (t of g.taches; track t.uid) {
                 @let finDepassee = !!t.tr.fin && t.statut !== 'Validé' && !t.annulee && t.tr.fin < v.aujourdhui;
-                <tr class="axr" [class.is-annul]="t.annulee" [class.is-sel]="etat.panneau() === t.uid" [style.--axc]="g.couleur">
+                @let dernierCommentaire = v.projet.commentaires?.[t.uid]?.[0];
+                <tr class="axr" [hidden]="ui.ui().groupesReplis[g.cleRepli]" [class.is-annul]="t.annulee" [class.is-sel]="etat.panneau() === t.uid" [style.--axc]="g.couleur">
                   @if (m.meta) {
                     <td><ng-container *ngTemplateOutlet="col1; context: { $implicit: t }" /></td>
                     <td>
@@ -252,8 +279,8 @@ import { Fx } from '../ui/fx';
                     <span data-ecart [class]="sgn(t.ecart)">{{ fSigned(t.ecart) }}</span>
                   </td>
                   <td>
-                    @if (t.commentaire) {
-                      <button type="button" class="cmt" [attr.data-open]="t.uid" [title]="t.commentaire">💬</button>
+                    @if (dernierCommentaire || t.commentaire) {
+                      <button type="button" class="cmt" [attr.data-open-comments]="t.uid" [title]="dernierCommentaire?.texte || t.commentaire" [attr.aria-label]="'Ouvrir les commentaires de ' + t.label">💬</button>
                     }
                   </td>
                 </tr>
@@ -294,7 +321,7 @@ import { Fx } from '../ui/fx';
           @if (v.m.dim.key === 'lot') {
             <ng-container *ngTemplateOutlet="pastille; context: { $implicit: t }" />
           } @else {
-            @let lot = t.lot || defaultAxeName(t.id || t.tr.axe || '');
+            @let lot = t.lot ? (v.projet.lots?.[t.lot] ? 'Lot ' + t.lot + ' – ' + v.projet.lots?.[t.lot] : 'Lot ' + t.lot) : defaultAxeName(t.id || t.tr.axe || '');
             <span class="muted ell" [title]="t.lot || ''">{{ lot }}</span>
           }
         } @else {
@@ -352,12 +379,18 @@ import { Fx } from '../ui/fx';
     }
   `,
   styles: `
-    :host {
-      display: contents;
-    }
+    :host { display: contents; }
+    .grp-fold { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; margin-right: 4px; border: 0; background: transparent; color: inherit; cursor: pointer; }
+    .grp-fold svg { width: 14px; height: 14px; transition: transform 120ms ease; }
+    .grp-fold[aria-expanded="false"] svg { transform: rotate(-90deg); }
+    .grp-jauge { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; font-size: 11px; color: var(--c-texte-2, #667085); white-space: nowrap; }
+    .grp-jauge-bar { display: inline-block; width: 42px; height: 5px; border-radius: 5px; overflow: hidden; background: var(--c-neutre-fond, #e4e8f0); }
+    .grp-jauge-bar i { display: block; height: 100%; background: var(--c-ok, #3fb97c); }
+    .grp-jauge-ok { display: inline-grid; place-items: center; width: 15px; height: 15px; border-radius: 50%; color: #147d4b; background: #d9f5e5; font-weight: 700; }
   `,
 })
 export class WorkloadListe {
+  protected readonly infoBulleDateLimite = infoBulleDateLimite;
   protected readonly etat = inject(SuiviEtat);
   protected readonly ui = inject(UiEtat);
   private readonly api = inject(SuiviApi);
@@ -408,6 +441,13 @@ export class WorkloadListe {
     return `var(--ax${Math.max(0, (v.m.axeIdsActifs ?? []).indexOf(axe)) % 8})`;
   }
 
+  protected basculerGroupe(cle: string): void {
+    const groupesReplis = { ...this.ui.ui().groupesReplis };
+    if (groupesReplis[cle]) delete groupesReplis[cle];
+    else groupesReplis[cle] = true;
+    this.ui.maj({ groupesReplis });
+  }
+
   protected egal(a: number, b: number): boolean {
     return Math.abs(a - b) < 1e-9;
   }
@@ -439,9 +479,11 @@ function groupe(v: Vue, cle: string, taches: TacheVue[]) {
   const montants = v.droits.voitMontants && v.m.echeancier.length > 0;
   return {
     cle,
+    cleRepli: `${v.m.dim.key}|${cle}`,
     nom: axeName(v, cle),
     couleur: couleurGroupe(v, cle),
     taches,
+    jauge: calculerJaugeGroupe(taches),
     charge: sum(taches.map((t) => t.charge)),
     phase,
     lienEcheance: phase && montants,

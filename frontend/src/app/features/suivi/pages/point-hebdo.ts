@@ -3,7 +3,7 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import { SuiviApi } from '../api/suivi.api';
 import { fD } from '../etat/formats';
-import { chargerPptxGen, logoEntrepriseParDefaut, reduireLogo } from '../etat/point-hebdo.chargement';
+import { chargerPptxGen, logoEntrepriseParDefaut } from '../etat/point-hebdo.chargement';
 import { apercu, presentation } from '../etat/point-hebdo.diapo';
 import { telechargerFichier } from '../etat/fichiers';
 import {
@@ -122,27 +122,6 @@ import { SuiviEtat } from '../etat/suivi.etat';
                 }
               </div>
               <p class="auto">Consultants : repris des collaborateurs des profils (<a routerLink="../parametres">Paramètres du projet</a>).</p>
-              <div class="ph-logos">
-                @for (l of logos; track l.cle) {
-                  @let img = reglages()[l.cle] || (l.cle === 'logoEntreprise' ? logoDefaut() : null);
-                  <div class="ph-logo">
-                    <span>{{ l.libelle }}@if (!reglages()[l.cle] && img) { <span class="auto">(par défaut)</span>}</span>
-                    @if (img) {
-                      <img [src]="img" [alt]="l.libelle" />
-                    } @else {
-                      <span class="ph-logo-vide">Aucun</span>
-                    }
-                    @if (!lecture()) {
-                      <span class="toolbar">
-                        <label class="btn sm">{{ img ? 'Changer' : 'Choisir une image' }}<input type="file" accept="image/png,image/jpeg,image/svg+xml" hidden #f (change)="choisirLogo(l.cle, f)" /></label>
-                        @if (reglages()[l.cle]) {
-                          <button type="button" class="btn sm ghost" (click)="regler(l.cle, '')">{{ l.cle === 'logoEntreprise' ? 'Revenir au logo par défaut' : 'Retirer' }}</button>
-                        }
-                      </span>
-                    }
-                  </div>
-                }
-              </div>
             </details>
           </aside>
           <section class="ph-apercu" aria-label="Aperçu de la diapositive">
@@ -183,7 +162,6 @@ export class PointHebdo {
     { cle: 'commercial', libelle: 'Commercial', aide: 'Prénom NOM' }, { cle: 'avv', libelle: 'AVV', aide: 'Prénom NOM' },
     { cle: 'pilote', libelle: 'Pilote delivery', aide: 'Prénom NOM' }, { cle: 'modeFacturation', libelle: 'Mode de facturation', aide: 'J.H, UO…' },
   ];
-  protected readonly logos = [{ cle: 'logoClient', libelle: 'Logo du client' }, { cle: 'logoEntreprise', libelle: 'Logo de l’entreprise' }] as const;
 
   // ---- période affichée ----
   private readonly aujourdhui = computed(() => this.vue()?.aujourdhui ?? new Date().toISOString().slice(0, 10));
@@ -309,18 +287,6 @@ export class PointHebdo {
 
   protected regler(cle: keyof ReglagesPointHebdo, valeur: string): void {
     void this.etat.saisir((id) => this.api.reglagePointHebdo(id, cle, valeur.trim()));
-  }
-
-  protected async choisirLogo(cle: 'logoClient' | 'logoEntreprise', champ: HTMLInputElement): Promise<void> {
-    const f = champ.files?.[0];
-    champ.value = '';
-    if (!f) return;
-    if (f.size > 5 * 1024 * 1024) return this.etat.afficher('Image trop lourde (5 Mo au plus).', 'erreur');
-    try {
-      this.regler(cle, await reduireLogo(f));
-    } catch {
-      this.etat.afficher('Cette image n’a pas pu être lue.', 'erreur');
-    }
   }
 
   /** Fabrique le PowerPoint dans le navigateur, le propose au téléchargement et note la date de génération. */
