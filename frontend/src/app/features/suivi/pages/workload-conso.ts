@@ -366,6 +366,7 @@ interface LigneProfil {
   `,
 })
 export class WorkloadConso {
+  protected readonly infoBulleDateLimite = infoBulleDateLimite;
   protected readonly etat = inject(SuiviEtat);
   protected readonly ui = inject(UiEtat);
   private readonly api = inject(SuiviApi);

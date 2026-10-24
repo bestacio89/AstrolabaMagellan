@@ -365,6 +365,7 @@ import { Fx } from '../ui/fx';
   `,
 })
 export class Ateliers {
+  protected readonly infoBulleDateLimite = infoBulleDateLimite;
   protected readonly etat = inject(SuiviEtat);
   protected readonly ui = inject(UiEtat);
   private readonly api = inject(SuiviApi);
