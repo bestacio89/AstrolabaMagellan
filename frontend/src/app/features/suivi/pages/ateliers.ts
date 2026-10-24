@@ -7,6 +7,7 @@ import { SuiviEtat } from '../etat/suivi.etat';
 import { UiEtat } from '../etat/ui.etat';
 import { atHoraire, atRealise, axeName, couleurGroupe, defaultAxeName, groupByAxe, idName, isOver, lvLivre, lvPrevue, lvValide, TacheVue, Vue } from '../etat/vue';
 import { calculerJaugeGroupe } from '../etat/entete-groupe.logique';
+import { EnteteGroupe } from '../ui/entete-groupe';
 import { BarreFiltres } from '../ui/barre-filtres';
 import { LienTache } from '../ui/tache';
 import { Triable } from '../ui/triable';
@@ -36,7 +37,7 @@ const CHIFFRES = ['charge', 'conso', 'raf'];
 import { Fx } from '../ui/fx';
 @Component({
   selector: 'app-ateliers',
-  imports: [BarreFiltres, LienTache, Fx, Triable],
+  imports: [BarreFiltres, LienTache, Fx, Triable, EnteteGroupe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (vm(); as m) {
@@ -120,18 +121,17 @@ import { Fx } from '../ui/fx';
             @for (g of m.groupes; track g.cle) {
               <tr class="grp axg" [style.--axc]="g.couleur">
                 <td [attr.colspan]="m.colonnes.length">
-                  <span class="grp-stk">
-                    <button type="button" class="fold grp-fold" [attr.aria-expanded]="!ui.ui().groupesReplis[g.cleRepli]" [attr.aria-label]="(ui.ui().groupesReplis[g.cleRepli] ? 'Déplier' : 'Replier') + ' le groupe ' + g.nom" [title]="(ui.ui().groupesReplis[g.cleRepli] ? 'Déplier' : 'Replier') + ' le groupe'" (click)="basculerGroupe(g.cleRepli)">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-                    </button>
-                    {{ g.nom }} <span class="muted">· {{ g.taches.length }}</span>
-                    <span class="grp-jauge" [title]="g.jauge.infoBulle">
-                      @if (g.jauge.terminee) { <span class="grp-jauge-ok" aria-label="Tout est validé">✓</span> }
-                      @else { <span class="grp-jauge-bar"><i [style.width.%]="g.jauge.pourcentage"></i></span> }
-                      <span>{{ g.jauge.valides }} / {{ g.jauge.total }} {{ g.jauge.mot }}</span>
-                    </span>
-                  </span
+                  <app-entete-groupe
+                    classe="grp-stk"
+                    [nom]="g.nom"
+                    [nombreTaches]="g.taches.length"
+                    [charge]="g.charge"
+                    [jauge]="g.jauge"
+                    [replie]="!!ui.ui().groupesReplis[g.cleRepli]"
+                    (basculer)="basculerGroupe(g.cleRepli)"
                   >
+                    <span groupe-nom>{{ g.nom }}</span>
+                  </app-entete-groupe>
                 </td>
               </tr>
               @for (t of g.taches; track t.uid) {
@@ -441,6 +441,7 @@ export class Ateliers {
         couleur: couleurGroupe(v, cle),
         taches,
         jauge: calculerJaugeGroupe(taches, cur === 'Atelier' ? 'réalisés' : cur === 'Livrable' ? 'livrés' : 'validées'),
+        charge: sum(taches.map((t) => t.charge)),
       })),
     };
   });
