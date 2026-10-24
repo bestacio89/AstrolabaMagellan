@@ -580,6 +580,7 @@ export interface TacheCalculee {
   finPrevue: string | null;
   echN: number | null;
   echViaPhase: boolean;
+  echViaAxe?: boolean;
   grp: string;
 }
 
@@ -894,6 +895,7 @@ export interface EcheanceCalculee {
   payeeLe: string | null;
   commentaire: string;
   phases: string[];
+  axeCode?: string | null;
   lies: string[];
   nLies: number;
   nLiesValides: number;

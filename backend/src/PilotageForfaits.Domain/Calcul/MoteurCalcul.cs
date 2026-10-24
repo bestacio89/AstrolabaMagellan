@@ -764,7 +764,7 @@ public static class MoteurCalcul
                 N = e.N, Nom = e.Nom, Pct = e.Pct, Montant = montant, MontantInit = montantInit, AjustAvenant = montant - montantInit,
                 Mois = datePrevue is not null ? Calendrier.Mois(datePrevue.Value) : e.Mois, MoisTSP = e.Mois,
                 DatePrevue = datePrevue, DatePrevueAuto = et.DatePrevue is null, RealiseLe = et.RealiseLe, PayeeLe = et.PayeeLe,
-                Commentaire = et.Commentaire ?? "", Phases = et.Phases ?? new(), Lies = lies.Select(t => t.Uid).ToList(),
+                Commentaire = et.Commentaire ?? "", AxeCode = e.AxeCode, Phases = et.Phases ?? new(), Lies = lies.Select(t => t.Uid).ToList(),
                 NLies = lies.Count, NLiesValides = lies.Count(t => t.Statut == StatutValide),
                 AvLie = chL != 0 ? AvancementValide(lies) : null,
                 Pret = lies.Count > 0 && lies.All(t => t.Statut == StatutValide), Jours = jours, Statut = statut,
