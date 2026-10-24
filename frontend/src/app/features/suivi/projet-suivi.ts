@@ -101,6 +101,9 @@ const REGROUPEMENTS: { cle: 'id' | 'lot' | 'phase'; libelle: string; colonne: st
         <div class="s-titre">
           <div class="s-titre-g">
             <div class="s-titre-ligne">
+              @if (v.projet.pointsHebdo?.reglages.logoClient; as logoClient) {
+                <img class="s-logo-client" [src]="logoClient" alt="Logo du client" />
+              }
               <h1>{{ nomProjet() }}</h1>
               @if (lectureProjet(); as l) {
                 <span class="pastille" [class]="'pastille ' + l.ton" title="Atterrissage comparé à la charge prévue">{{ l.libelle }}</span>

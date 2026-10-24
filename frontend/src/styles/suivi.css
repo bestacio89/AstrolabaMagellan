@@ -1470,3 +1470,8 @@
 .suivi .eur-cours { border-color:#84adff; background:#eff4ff; color:#1849a9; }
 .suivi .eur-prete { border-color:#6ce9a6; background:#ecfdf3; color:#067647; }
 .suivi .eur-facturee { background:var(--surface-2); color:var(--ink-2); }
+
+/* Identité du client : petite marque dans l'en-tête et aperçu dans les paramètres. */
+.suivi .s-logo-client { width: 32px; height: 32px; object-fit: contain; flex: 0 0 32px; border-radius: 4px; background: var(--surface); }
+.suivi .client-logo-setting { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.suivi .client-logo-preview { max-width:180px; max-height:64px; object-fit:contain; border:1px solid var(--line); border-radius:6px; padding:4px; background:var(--surface); }
