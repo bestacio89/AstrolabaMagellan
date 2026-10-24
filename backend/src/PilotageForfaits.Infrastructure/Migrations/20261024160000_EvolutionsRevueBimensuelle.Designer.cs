@@ -1485,12 +1485,6 @@ namespace PilotageForfaits.Infrastructure.Migrations
                     b.Property<Guid?>("AuteurId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("Le")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("ProjetId")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("CibleId")
                         .HasColumnType("uuid");
 
@@ -1499,8 +1493,14 @@ namespace PilotageForfaits.Infrastructure.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
+                    b.Property<DateTime>("Le")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("ModifieLe")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ProjetId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Texte")
                         .IsRequired()
