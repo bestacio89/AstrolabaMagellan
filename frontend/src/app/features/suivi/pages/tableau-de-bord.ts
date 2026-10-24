@@ -210,7 +210,7 @@ const RANG: Record<ElementATraiter['niveau'], number> = { crit: 0, warn: 1, ia: 
               </header>
               <div class="tdb-dl-list">
                 @for (x of datesLimites(); track x.code) {
-                  <button type="button" class="tdb-dl-line" (click)="etat.ouvrirLignePlanning(x.code)" [attr.aria-label]="'Ouvrir l’axe ' + x.code">
+                  <button type="button" class="tdb-dl-line" (click)="etat.ouvrirAxe(x.code, 'nom')" [attr.aria-label]="'Ouvrir l’axe ' + x.code">
                     <span class="tdb-dl-dot" [class]="'tdb-dl-dot lv-' + (x.niveau || 'neutre')" aria-hidden="true"></span>
                     <span class="tdb-dl-main">
                       <span class="tdb-dl-name">{{ x.nom }}</span>

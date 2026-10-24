@@ -1475,3 +1475,6 @@
 .suivi .s-logo-client { width: 32px; height: 32px; object-fit: contain; flex: 0 0 32px; border-radius: 4px; background: var(--surface); }
 .suivi .client-logo-setting { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .suivi .client-logo-preview { max-width:180px; max-height:64px; object-fit:contain; border:1px solid var(--line); border-radius:6px; padding:4px; background:var(--surface); }
+
+.suivi .tdb-dl-foot { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding-top:10px; border-top:1px solid var(--line); color:var(--muted); font-size:12px; }
+.suivi .tdb-dl-fix { border:1px dashed var(--line); border-radius:5px; padding:3px 6px; color:var(--muted); font-size:11px; }

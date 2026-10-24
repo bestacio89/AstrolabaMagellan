@@ -10,6 +10,7 @@ import { axeName, couleurGroupe, defaultAxeName, filteredTasks, groupByAxe, idNa
 import { BarreFiltres } from '../ui/barre-filtres';
 import { absenceProfil, indexAbsences, Moment } from '../etat/absences.logique';
 import { calculerJaugeGroupe, infoBulleDateLimite } from '../etat/entete-groupe.logique';
+import { libelleLot } from '../etat/lot.logique';
 import { EnteteGroupe } from '../ui/entete-groupe';
 import { Fx } from '../ui/fx';
 import { EtiquetteAjout } from '../ui/tache';
@@ -182,7 +183,7 @@ interface LigneProfil {
                         <td class="smc sm-id" [title]="nomAxe(v, t.axe)">{{ t.axe === '0' ? 'Pilotage' : t.axe ? defaultAxeName(t.axe) : '—' }}</td>
                       }
                       @case ('lot') {
-                        <td class="smc sm-lot">{{ t.lot ? (v.projet.lots?.[t.lot] ? 'Lot ' + t.lot + ' – ' + v.projet.lots?.[t.lot] : 'Lot ' + t.lot) : '—' }}</td>
+                        <td class="smc sm-lot" [title]="t.lot ? libelleLot(t.lot, v.projet.lots?.[t.lot]) : 'Sans lot'">{{ t.lot || '—' }}</td>
                       }
                       @case ('phase') {
                         <td class="smc sm-phase">
@@ -366,6 +367,7 @@ interface LigneProfil {
   `,
 })
 export class WorkloadConso {
+  protected readonly libelleLot = libelleLot;
   protected readonly infoBulleDateLimite = infoBulleDateLimite;
   protected readonly etat = inject(SuiviEtat);
   protected readonly ui = inject(UiEtat);

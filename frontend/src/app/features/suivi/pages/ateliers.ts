@@ -7,6 +7,7 @@ import { SuiviEtat } from '../etat/suivi.etat';
 import { UiEtat } from '../etat/ui.etat';
 import { atHoraire, atRealise, axeName, couleurGroupe, defaultAxeName, groupByAxe, idName, isOver, lvLivre, lvPrevue, lvValide, TacheVue, Vue } from '../etat/vue';
 import { calculerJaugeGroupe, infoBulleDateLimite } from '../etat/entete-groupe.logique';
+import { libelleLot } from '../etat/lot.logique';
 import { EnteteGroupe } from '../ui/entete-groupe';
 import { initialesParticipant } from '../etat/participants.logique';
 import { BarreFiltres } from '../ui/barre-filtres';
@@ -180,7 +181,7 @@ import { Fx } from '../ui/fx';
                       @switch (c.k) {
                         @case ('lot') {
                           @if (v.m.dim.key === 'id') {
-                            <span class="ell" [title]="t.lot">{{ t.lot ? (v.projet.lots?.[t.lot] ? 'Lot ' + t.lot + ' – ' + v.projet.lots[t.lot] : 'Lot ' + t.lot) : '—' }}</span>
+                            <span class="ell" [title]="t.lot ? libelleLot(t.lot, v.projet.lots?.[t.lot]) : 'Sans lot'">{{ t.lot || '—' }}</span>
                           } @else if (t.axe) {
                             <span class="axp" [style.--axc]="couleurGroupe(v, t.axe)" [title]="idName(v, t.axe)">{{ t.axe === '0' ? 'Pilotage' : defaultAxeName(t.axe) }}</span>
                           } @else {
@@ -365,6 +366,7 @@ import { Fx } from '../ui/fx';
   `,
 })
 export class Ateliers {
+  protected readonly libelleLot = libelleLot;
   protected readonly infoBulleDateLimite = infoBulleDateLimite;
   protected readonly etat = inject(SuiviEtat);
   protected readonly ui = inject(UiEtat);
