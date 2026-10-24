@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, output, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, output, signal, viewChild } from '@angular/core';
 import { SuiviApi } from '../api/suivi.api';
 import { SuiviEtat } from '../etat/suivi.etat';
 import { Modale } from '../ui/modale';
@@ -17,14 +17,14 @@ import { Modale } from '../ui/modale';
         </label>
         <p class="note">
           Code du TSP (colonne B) : <strong>{{ code() }}</strong> ·
-          {{ v.projet.tasks.filter(t => t.lot === code()).length }} tâche(s).
+          {{ nombreTaches() }} tâche(s).
           Le code ne change pas : seul le nom affiché change.
         </p>
       </app-modale>
     }
   `,
 })
-export class FenetreLot {
+export class FenetreLot implements OnInit {
   readonly code = input.required<string>();
   readonly fermer = output<void>();
   protected readonly etat = inject(SuiviEtat);
@@ -33,12 +33,13 @@ export class FenetreLot {
   protected readonly nom = signal('');
   protected readonly erreur = signal<string | null>(null);
   protected readonly occupe = signal(false);
-
-  constructor() {
-    // La valeur initiale est synchronisée lorsque la fenêtre est montée pour le code demandé.
-    const v = this.etat.vue();
+  protected readonly nombreTaches = computed(() => {
     const code = this.code();
-    this.nom.set(v?.projet.lots?.[code] ?? '');
+    return this.etat.vue()?.projet.tasks.filter((t) => t.lot === code).length ?? 0;
+  });
+
+  ngOnInit(): void {
+    this.nom.set(this.etat.vue()?.projet.lots?.[this.code()] ?? '');
   }
 
   protected async valider(): Promise<void> {
