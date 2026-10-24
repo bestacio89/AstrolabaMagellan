@@ -37,6 +37,7 @@ public sealed class DroitsDto
     public bool PeutExporter { get; init; }
     /// <summary>Nom de l'utilisateur connecté (proposé comme responsable, décideur…).</summary>
     public string Utilisateur { get; init; } = "";
+    public Guid UtilisateurId { get; init; }
     /// <summary>Projet archivé : tout est en lecture seule.</summary>
     public bool Archive { get; init; }
     /// <summary>Chef de projet (même si le projet est archivé) : peut le restaurer, ou le supprimer s'il a été créé par erreur.</summary>
