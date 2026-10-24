@@ -21,7 +21,7 @@ internal sealed class ConfigurationLot : IEntityTypeConfiguration<Lot>
     public void Configure(EntityTypeBuilder<Lot> b)
     {
         b.ToTable("Lots");
-        b.AppartientAuProjet();
+        b.AppartientAuProjet(p => p.Lots);
         b.Property(x => x.Code).HasMaxLength(50).IsRequired();
         b.Property(x => x.Nom).HasMaxLength(400).IsRequired();
         b.HasIndex(x => new { x.ProjetId, x.Code }).IsUnique();

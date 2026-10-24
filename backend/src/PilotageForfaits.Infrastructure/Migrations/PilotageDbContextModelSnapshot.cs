@@ -3038,7 +3038,7 @@ namespace PilotageForfaits.Infrastructure.Migrations
                         modelBuilder.Entity("PilotageForfaits.Domain.Entites.Lot", b =>
                 {
                     b.HasOne("PilotageForfaits.Domain.Entites.Projet", null)
-                        .WithMany()
+                        .WithMany("Lots")
                         .HasForeignKey("ProjetId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
