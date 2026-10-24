@@ -401,9 +401,11 @@ public static class MoteurCalcul
         }
         else ordre = tasks.Select(t => t.Grp).Where(g => !string.IsNullOrEmpty(g)).ToList();
         ordre = Distinct(ordre);
+        string NomLot(string k) => p.Lots.TryGetValue(k, out var nomLot) && !string.IsNullOrWhiteSpace(nomLot)
+            ? $"Lot {k} – {nomLot}" : k == "0" ? "Lot 0 – Pilotage" : $"Lot {k}";
         string NomGroupe(string k) => dimKey == "id" ? NomAxe(k)
             : dimKey == "phase" ? (string.IsNullOrEmpty(k) ? k : k[..1] + k[1..].ToLowerInvariant())
-            : p.Lots.TryGetValue(k, out var nomLot) && !string.IsNullOrWhiteSpace(nomLot) ? $"Lot {k} – {nomLot}" : k == "0" ? "Lot 0 – Pilotage" : $"Lot {k}";
+            : NomLot(k);
         var axes = ordre
             .Select(id => new GroupeCalcule(Statistiques(tasks.Where(t => t.Grp == id).ToList())) { Id = id, Nom = NomGroupe(id) })
             .Where(a => a.N > 0).ToList();
