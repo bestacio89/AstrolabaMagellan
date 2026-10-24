@@ -374,7 +374,9 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
     {
         var chef = _api.ClientPour("chef");
         var id = await ImporterAsync(chef);
-        var url = $"/api/projets/{id}/taches/r7/mises-a-jour";
+        var suiviInitial = await chef.GetFromJsonAsync<JsonObject>($"/api/projets/{id}/suivi");
+        var tacheId = suiviInitial!["projet"]!["track"]!["r7"]!["id"]!.GetValue<Guid>();
+        var url = $"/api/projets/{id}/commentaires/Tache/{tacheId}";
         await Refuser(chef, HttpMethod.Post, url, new { texte = "   " }, HttpStatusCode.UnprocessableEntity);
         await Saisir(chef, HttpMethod.Post, url, new { texte = "Atelier décalé, budget déplacement 1 200 €" });
         var consultant = _api.ClientPour("consultant");
@@ -408,8 +410,8 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
     {
         var chef = _api.ClientPour("chef");
         var id = await ImporterAsync(chef);
-        var suivi = await chef.GetFromJsonAsync<JsonObject>($"/api/projets/{id}/suivi");
-        var actionId = suivi!["projet"]!["actions"]!.AsArray()[0]!["id"]!.GetValue<Guid>();
+        var actionCreation = await Saisir(chef, HttpMethod.Post, $"/api/projets/{id}/actions", new { });
+        var actionId = Guid.Parse(actionCreation["ouvrir"]!.GetValue<string>());
         var url = $"/api/projets/{id}/commentaires/Action/{actionId}";
         var creation = await Saisir(chef, HttpMethod.Post, url, new { texte = "Relance client prévue jeudi." });
         var cle = $"act:{actionId}";
@@ -441,7 +443,7 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
         var tacheOuverte = modele["tasks"]!.AsArray().First(x => x!["statut"]!.GetValue<string>() != "Validé" && x["axe"] is not null)!;
         var codeAxe = tacheOuverte["axe"]!.GetValue<string>();
         var nomAxe = suivi["projet"]!["axes"]![codeAxe]?.GetValue<string>() ?? codeAxe;
-        var dateLimite = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(-1).ToString("yyyy-MM-dd");
+        var dateLimite = new DateOnly(2026, 10, 19).ToString("yyyy-MM-dd");
         var resultatAxe = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/axes/{Uri.EscapeDataString(codeAxe)}", new { nom = nomAxe, dateLimite });
         var modeleAvecDate = resultatAxe["suivi"]!["modele"]!;
         var etatAxe = modeleAvecDate["datesLimitesAxes"]!.AsArray().Single(x => x!["code"]!.GetValue<string>() == codeAxe)!;
