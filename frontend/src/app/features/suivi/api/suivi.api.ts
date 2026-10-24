@@ -198,6 +198,9 @@ export class SuiviApi {
   perimetreEcheance(id: string, n: number, phases: string[], taches: string[], axeCode: string | null = null) {
     return this.put(id, `echeances/${n}/perimetre`, { phases, taches, axeCode });
   }
+  facturationAxe(id: string, axe: string, numero: number | null, phasesADelier: string[] = []) {
+    return this.put(id, `axes/${encodeURIComponent(axe)}/facturation`, { axe, numero, phasesADelier });
+  }
   echeancePhase(id: string, phase: string, numero: number | null) {
     return this.put(id, `phases/${encodeURIComponent(phase)}/echeance`, { numero });
   }

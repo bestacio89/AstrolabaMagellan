@@ -205,6 +205,10 @@ public sealed class SuiviController(
     public Task<ResultatSaisieDto> PerimetreEcheance(Guid id, int numero, PerimetreEcheanceCommande c, CancellationToken a) =>
         facturation.LierPerimetreAsync(id, numero, c, a);
 
+    [HttpPut("axes/{code}/facturation")]
+    public Task<ResultatSaisieDto> FacturationAxe(Guid id, string code, LienAxeEcheanceCommande c, CancellationToken a) =>
+        facturation.LierAxeAsync(id, code, c, a);
+
     [HttpPut("phases/{code}/echeance")]
     public Task<ResultatSaisieDto> EcheancePhase(Guid id, string code, EcheancePhaseCommande c, CancellationToken a) =>
         facturation.DefinirEcheancePhaseAsync(id, code, c, a);

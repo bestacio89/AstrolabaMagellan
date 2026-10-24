@@ -166,6 +166,7 @@ export class PanneauAxe {
       types: v.projet.types.map((ty) => { const l = taches.filter((t) => t.type === ty.id); return { nom: ty.nom, n: l.length, ok: l.filter((t) => t.statut === 'Validé').length }; }).filter((x) => x.n > 0),
       echeance, echeancier: v.m.echeancier,
       viaPhase: taches.filter((t) => !!v.phaseEch[t.phase]).length,
+      phasesAutres: [...new Set(taches.map((t) => t.phase).filter((p) => !!v.phaseEch[p]))].map((code) => ({ code, numero: v.phaseEch[code], n: taches.filter((t) => t.phase === code).length })),
       directes: taches.filter((t) => t.tr.ech != null).length,
     };
   });
@@ -175,16 +176,50 @@ export class PanneauAxe {
   protected dateLimite(date: string): void { void this.etat.saisir((id) => this.api.axe(id, this.code(), this.d()?.nomSaisi ?? '', date || null)); }
   protected ouvrirTache(uid: string): void { this.etat.ouvrirTache(uid); }
   protected async changerEcheance(el: HTMLSelectElement): Promise<void> {
-    const d = this.d(); if (!d) return;
+    const d = this.d();
+    if (!d) return;
     const ancienne = d.echeance ? String(d.echeance.n) : '';
     const numero = el.value ? Number(el.value) : null;
     if (numero === null) {
-      if (d.echeance) void this.etat.saisir((id) => this.api.perimetreEcheance(id, d.echeance!.n, d.echeance!.phases ?? [], d.echeance!.lies ?? [], null), { siErreur: () => (el.value = ancienne) });
+      const ok = await this.etat.confirmer(`Délier l’axe ${this.code()} de la facturation ?`, ['Les tâches ne suivront plus une échéance déclenchée par cet axe.'], 'Délier l’axe');
+      if (!ok) { el.value = ancienne; return; }
+      void this.etat.saisir((id) => this.api.facturationAxe(id, this.code(), null), { siErreur: () => (el.value = ancienne) });
       return;
     }
     const cible = d.echeancier.find((e) => e.n === numero);
-    if (!cible || (cible.realiseLe && cible.n !== d.echeance?.n) || (cible.axeCode && cible.axeCode !== this.code())) { el.value = ancienne; return; }
-    void this.etat.saisir((id) => this.api.perimetreEcheance(id, cible.n, cible.phases ?? [], cible.lies ?? [], this.code()), { siErreur: () => (el.value = ancienne) });
+    if (!cible || (cible.realiseLe && cible.n !== d.echeance?.n) || (cible.axeCode && cible.axeCode !== this.code())) {
+      this.etat.afficher('Cette échéance est déjà facturée ou liée à un autre axe.', 'attention');
+      el.value = ancienne;
+      return;
+    }
+    const phases = d.phasesAutres.filter((p) => p.numero !== numero);
+    const directes = d.taches.filter((t) => t.tr.ech != null);
+    let phasesADelier: string[] = [];
+    if (phases.length) {
+      const choix = await this.etat.demander(
+        `Lier Axe ${this.code()} à l’échéance n° ${numero} ?`,
+        [
+          'Une tâche ne déclenche qu’une seule facture.',
+          `${directes.length} tâche(s) de l’axe ont aujourd’hui une échéance individuelle : elle sera reprise par l’axe.`,
+          ...phases.map((p) => `${p.n} tâche(s) de l’axe appartiennent à la phase ${p.code}, liée en entier à l’échéance n° ${p.numero}.`),
+        ],
+        [
+          { libelle: 'Annuler', valeur: null },
+          { libelle: 'Délier les phases', valeur: 'delier' },
+          { libelle: 'Garder sur la phase', valeur: 'garder', principal: true },
+        ],
+      );
+      if (choix === null) { el.value = ancienne; return; }
+      if (choix === 'delier') phasesADelier = phases.map((p) => p.code);
+    } else if (directes.length) {
+      const ok = await this.etat.confirmer(
+        `Lier Axe ${this.code()} à l’échéance n° ${numero} ?`,
+        ['Une tâche ne déclenche qu’une seule facture.', `${directes.length} tâche(s) de l’axe ont aujourd’hui une échéance individuelle : elle sera reprise par l’axe.`],
+        'Lier l’axe',
+      );
+      if (!ok) { el.value = ancienne; return; }
+    }
+    void this.etat.saisir((id) => this.api.facturationAxe(id, this.code(), numero, phasesADelier), { siErreur: () => (el.value = ancienne) });
   }
   protected facturer(numero: number): void { void this.etat.saisir((id) => this.api.realiserEcheance(id, numero, this.vue()?.aujourdhui ?? new Date().toISOString().slice(0, 10))); }
 }
