@@ -191,6 +191,7 @@ public static class ConstructeurVueSuivi
             Lots = complements?.Lots ?? new Dictionary<string, string>(),
             Causes = CausesDerive.Liste.ToList(),
             MisesAJour = complements?.MisesAJour ?? new Dictionary<string, List<MiseAJourVueDto>>(),
+            Commentaires = complements?.Commentaires ?? new Dictionary<string, List<CommentaireVueDto>>(),
         };
     }
 

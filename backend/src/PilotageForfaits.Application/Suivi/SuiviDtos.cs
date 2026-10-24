@@ -118,6 +118,8 @@ public sealed class ProjetVueDto
     public List<string> Causes { get; init; } = new();
     /// <summary>Fil de mises à jour de chaque tâche (clé : repère de la tâche), du plus récent au plus ancien.</summary>
     public Dictionary<string, List<MiseAJourVueDto>> MisesAJour { get; init; } = new();
+    /// <summary>Commentaires par cible : UID de tâche, act:GUID, dec:GUID ou rk:GUID.</summary>
+    public Dictionary<string, List<CommentaireVueDto>> Commentaires { get; init; } = new();
 }
 
 /// <summary>Planning figé à une date : dates prévues et charge de chaque tâche (clé : repère de la tâche).</summary>
@@ -145,7 +147,8 @@ public sealed class LigneReferenceVueDto
 public sealed record MiseAJourVueDto(DateTimeOffset At, string By, string Texte);
 
 /// <summary>Ce que la vue du suivi ajoute aux données du moteur, chargé à part (références, fil des tâches).</summary>
-public sealed record ComplementsVue(List<ReferenceVueDto> References, Dictionary<string, List<MiseAJourVueDto>> MisesAJour, Dictionary<string, DateOnly?> DatesLimitesAxes, Dictionary<string, string> Lots);
+public sealed record CommentaireVueDto(Guid Id, DateTimeOffset At, string By, Guid? AuteurId, string Texte, DateTimeOffset? ModifieLe);
+public sealed record ComplementsVue(List<ReferenceVueDto> References, Dictionary<string, List<MiseAJourVueDto>> MisesAJour, Dictionary<string, DateOnly?> DatesLimitesAxes, Dictionary<string, string> Lots, Dictionary<string, List<CommentaireVueDto>> Commentaires);
 
 public sealed class FicheVueDto
 {

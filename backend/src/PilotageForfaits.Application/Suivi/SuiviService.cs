@@ -87,7 +87,7 @@ public sealed class SuiviService(IContexteDonnees db, ServiceAcces acces, Constr
         var lots = await db.Lots.AsNoTracking().Where(x => x.ProjetId == projetId).ToListAsync(annulation);
         var plans = await db.PlansReference.AsNoTracking().Where(x => x.ProjetId == projetId).ToListAsync(annulation);
         var lignes = await db.LignesPlanReference.AsNoTracking().Where(x => x.ProjetId == projetId).ToListAsync(annulation);
-        var messages = await db.MisesAJour.AsNoTracking().Where(x => x.ProjetId == projetId).ToListAsync(annulation);
+        var messages = await db.Commentaires.AsNoTracking().Where(x => x.ProjetId == projetId).ToListAsync(annulation);
         var ids = plans.Select(p => p.FigeParId).Concat(messages.Select(m => m.AuteurId)).Where(x => x is not null).Select(x => x!.Value).Distinct().ToList();
         var noms = await db.Utilisateurs.AsNoTracking().Where(u => ids.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.NomComplet, annulation);
         string? Nom(Guid? id) => id is { } v && noms.TryGetValue(v, out var n) ? n : null;
@@ -101,11 +101,26 @@ public sealed class SuiviService(IContexteDonnees db, ServiceAcces acces, Constr
                 Version = l.Version, Debut = l.DebutPrevu, Fin = l.FinPrevue, Charge = l.ChargePrevue, Cause = l.Cause, Motif = l.Motif,
             }),
         }).ToList();
-        // tri en mémoire (même raison que le journal : certaines bases trient mal les dates)
-        var fil = messages.Where(m => repere.ContainsKey(m.TacheId)).GroupBy(m => repere[m.TacheId]).ToDictionary(
+        // Les listes sont triées en mémoire : les dates UTC sont comparées de façon identique sur tous les fournisseurs.
+        string? Cle(Commentaire m) => m.CibleType switch
+        {
+            "Tache" when repere.TryGetValue(m.CibleId, out var uid) => uid,
+            "Action" => "act:" + m.CibleId,
+            "Decision" => "dec:" + m.CibleId,
+            "Risque" => "rk:" + m.CibleId,
+            _ => null,
+        };
+        var commentaires = messages.Select(m => (Cle: Cle(m), Message: m)).Where(x => x.Cle is not null)
+            .GroupBy(x => x.Cle!).ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.Message.Le).Select(x =>
+                new CommentaireVueDto(x.Message.Id, new DateTimeOffset(DateTime.SpecifyKind(x.Message.Le, DateTimeKind.Utc)),
+                    Nom(x.Message.AuteurId) ?? "", x.Message.AuteurId, x.Message.Texte,
+                    x.Message.ModifieLe is { } modifie ? new DateTimeOffset(DateTime.SpecifyKind(modifie, DateTimeKind.Utc)) : null)).ToList());
+        var fil = messages.Where(m => m.CibleType == "Tache" && repere.ContainsKey(m.CibleId)).GroupBy(m => repere[m.CibleId]).ToDictionary(
             g => g.Key,
             g => g.OrderByDescending(m => m.Le).Take(TailleFil)
                 .Select(m => new MiseAJourVueDto(new DateTimeOffset(DateTime.SpecifyKind(m.Le, DateTimeKind.Utc)), Nom(m.AuteurId) ?? "", m.Texte)).ToList());
-        return new ComplementsVue(references, fil, axes.GroupBy(x => x.Code).ToDictionary(g => g.Key, g => g.First().DateLimite), lots.GroupBy(x => x.Code).ToDictionary(g => g.Key, g => g.First().Nom));
+        return new ComplementsVue(references, fil,
+            axes.GroupBy(x => x.Code).ToDictionary(g => g.Key, g => g.First().DateLimite),
+            lots.GroupBy(x => x.Code).ToDictionary(g => g.Key, g => g.First().Nom), commentaires);
     }
 }

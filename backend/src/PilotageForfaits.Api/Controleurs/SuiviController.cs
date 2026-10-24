@@ -132,6 +132,15 @@ public sealed class SuiviController(
     [HttpPost("taches/{uid}/mises-a-jour")]
     public Task<ResultatSaisieDto> MiseAJour(Guid id, string uid, MiseAJourCommande c, CancellationToken a) => misesAJour.AjouterAsync(id, uid, c, a);
 
+    [HttpPost("commentaires/{cibleType}/{cibleId:guid}")]
+    public Task<ResultatSaisieDto> AjouterCommentaire(Guid id, string cibleType, Guid cibleId, CommentaireCommande c, CancellationToken a) => misesAJour.AjouterCibleAsync(id, cibleType, cibleId, c, a);
+
+    [HttpPut("commentaires/{commentaireId:guid}")]
+    public Task<ResultatSaisieDto> ModifierCommentaire(Guid id, Guid commentaireId, ModifierCommentaireCommande c, CancellationToken a) => misesAJour.ModifierAsync(id, commentaireId, c, a);
+
+    [HttpDelete("commentaires/{commentaireId:guid}")]
+    public Task<ResultatSaisieDto> SupprimerCommentaire(Guid id, Guid commentaireId, CancellationToken a) => misesAJour.SupprimerAsync(id, commentaireId, a);
+
     // ---------------------------------------------------------------- planning de référence
 
     /// <summary>Fige le planning actuel comme référence.</summary>

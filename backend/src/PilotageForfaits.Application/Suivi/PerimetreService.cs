@@ -221,7 +221,7 @@ public sealed class PerimetreService(SaisieOutils o)
         }
         o.Db.Livrables.RemoveRange(await o.Db.Livrables.Where(x => x.TacheId == t.Id).ToListAsync(a));
         o.Db.LignesPlanReference.RemoveRange(await o.Db.LignesPlanReference.Where(x => x.TacheId == t.Id).ToListAsync(a));
-        o.Db.MisesAJour.RemoveRange(await o.Db.MisesAJour.Where(x => x.TacheId == t.Id).ToListAsync(a));
+        o.Db.Commentaires.RemoveRange(await o.Db.Commentaires.Where(x => x.ProjetId == projetId && x.CibleType == "Tache" && x.CibleId == t.Id).ToListAsync(a));
         foreach (var action in await o.Db.Actions.Where(x => x.TacheId == t.Id).ToListAsync(a)) action.TacheId = null;
         o.Db.Taches.Remove(t);
         o.Noter(projetId, u, "Tâche", t.Id, "suppression d’une tâche ajoutée", SaisiesTachesService.Libelle(t), null);
