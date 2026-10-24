@@ -39,15 +39,15 @@ internal sealed class ConfigurationLivrable : IEntityTypeConfiguration<Livrable>
     }
 }
 
-internal sealed class ConfigurationMiseAJourTache : IEntityTypeConfiguration<MiseAJourTache>
+internal sealed class ConfigurationCommentaire : IEntityTypeConfiguration<Commentaire>
 {
-    public void Configure(EntityTypeBuilder<MiseAJourTache> b)
+    public void Configure(EntityTypeBuilder<Commentaire> b)
     {
-        b.ToTable("MisesAJourTache");
+        b.ToTable("Commentaires");
         b.AppartientAuProjet();
-        b.HasOne<Tache>().WithMany().HasForeignKey(x => x.TacheId).IsRequired();
-        b.HasIndex(x => x.TacheId);
+        b.Property(x => x.CibleType).HasMaxLength(30).IsRequired();
         b.Property(x => x.Texte).HasMaxLength(Outils.TexteLong).IsRequired();
+        b.HasIndex(x => new { x.ProjetId, x.CibleType, x.CibleId, x.Le });
         b.ReferenceUtilisateur(x => x.AuteurId);
     }
 }

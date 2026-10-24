@@ -39,7 +39,7 @@ public interface IContexteDonnees
     DbSet<Atelier> Ateliers { get; }
     DbSet<Destinataire> Destinataires { get; }
     DbSet<Livrable> Livrables { get; }
-    DbSet<MiseAJourTache> MisesAJour { get; }
+    DbSet<Commentaire> Commentaires { get; }
     DbSet<PointHebdo> PointsHebdo { get; }
     DbSet<ActionProjet> Actions { get; }
     DbSet<Decision> Decisions { get; }

@@ -49,6 +49,8 @@ public sealed record ValidationClientCommande(DateOnly? ValideLe);
 public sealed record LienLivrableCommande(string? Lien);
 /// <summary>Message ajouté au fil de mises à jour d'une tâche.</summary>
 public sealed record MiseAJourCommande(string? Texte);
+public sealed record CommentaireCommande(string? Texte);
+public sealed record ModifierCommentaireCommande(string? Texte);
 /// <summary>Point hebdo : niveau d'un indicateur pour la période (S ou M) et la suivante (S+1 ou M+1).</summary>
 public sealed record IndicateurPointHebdo(string? S, string? S1);
 public sealed record MeteoPointHebdo(string? Meteo, string? Tendance);

@@ -78,17 +78,17 @@ public sealed class Livrable : EntiteDeProjet
     public string? LienStockage { get; set; }
 }
 
-/// <summary>
-/// Mise à jour écrite sur une tâche (fil daté et signé, visible par toute l'équipe du projet).
-/// On ajoute, on ne modifie ni ne supprime : le fil garde la trace de ce qui a été dit.
-/// </summary>
-public sealed class MiseAJourTache : EntiteDeProjet
+/// <summary>Commentaire daté sur une tâche, une action, une décision ou un risque.</summary>
+public sealed class Commentaire : EntiteDeProjet
 {
-    public Guid TacheId { get; set; }
-    /// <summary>Date et heure UTC.</summary>
+    public string CibleType { get; set; } = "";
+    public Guid CibleId { get; set; }
+    /// <summary>Date et heure UTC de création.</summary>
     public DateTime Le { get; set; }
     public Guid? AuteurId { get; set; }
     public string Texte { get; set; } = "";
+    /// <summary>Date et heure UTC de la dernière modification ; null si le commentaire est d'origine.</summary>
+    public DateTime? ModifieLe { get; set; }
 }
 
 /// <summary>

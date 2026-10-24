@@ -42,7 +42,7 @@ public sealed class PilotageDbContext(DbContextOptions<PilotageDbContext> option
     public DbSet<Atelier> Ateliers => Set<Atelier>();
     public DbSet<Destinataire> Destinataires => Set<Destinataire>();
     public DbSet<Livrable> Livrables => Set<Livrable>();
-    public DbSet<MiseAJourTache> MisesAJour => Set<MiseAJourTache>();
+    public DbSet<Commentaire> Commentaires => Set<Commentaire>();
     public DbSet<PointHebdo> PointsHebdo => Set<PointHebdo>();
     public DbSet<ActionProjet> Actions => Set<ActionProjet>();
     public DbSet<Decision> Decisions => Set<Decision>();
