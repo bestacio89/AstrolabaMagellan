@@ -720,14 +720,18 @@ public static class MoteurCalcul
 
         // ---- ÉCHÉANCIER ----
         // Une phase est liée à une seule échéance ; ce lien prime sur celui des tâches de la phase.
+        var axeEch = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var e in p.Echeancier)
+            if (!string.IsNullOrWhiteSpace(e.AxeCode)) axeEch.TryAdd(e.AxeCode, e.N);
         var phaseEch = new Dictionary<string, int>();
         foreach (var e in p.Echeancier)
             foreach (var ph in p.EchTrack.GetValueOrDefault(e.N)?.Phases ?? new())
                 phaseEch.TryAdd(ph, e.N);
         foreach (var t in tasks)
         {
-            t.EchViaPhase = phaseEch.ContainsKey(t.Phase);
-            t.EchN = t.EchViaPhase ? phaseEch[t.Phase] : suivis[t.Uid].Ech is > 0 ? suivis[t.Uid].Ech : null;
+            t.EchViaAxe = axeEch.ContainsKey(t.Axe);
+            t.EchViaPhase = !t.EchViaAxe && phaseEch.ContainsKey(t.Phase);
+            t.EchN = t.EchViaAxe ? axeEch[t.Axe] : t.EchViaPhase ? phaseEch[t.Phase] : suivis[t.Uid].Ech is > 0 ? suivis[t.Uid].Ech : null;
         }
         // Montants : une échéance facturée garde son montant ; un avenant de réduction est réparti sur les échéances
         // non encore facturées, au prorata de leur pourcentage (le total facturé reste égal au CA du forfait).

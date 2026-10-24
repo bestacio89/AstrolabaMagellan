@@ -293,6 +293,7 @@ public sealed class SuiviEcheanceCalcul
     /// <summary>Montant figé au moment de la facturation.</summary>
     public decimal? MontantFacture { get; set; }
     public string? Commentaire { get; set; }
+    public string? AxeCode { get; set; }
     /// <summary>Phases entières dont l'échéance dépend.</summary>
     public List<string>? Phases { get; set; }
 }

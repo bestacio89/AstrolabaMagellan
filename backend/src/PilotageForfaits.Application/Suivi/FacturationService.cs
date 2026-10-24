@@ -57,8 +57,13 @@ public sealed class FacturationService(SaisieOutils o)
     {
         var u = await o.ExigerChefAsync(projetId, a);
         var e = await EcheanceAsync(projetId, numero, a);
-        var selection = (c.Phases ?? new List<string>()).Select(SaisieOutils.Nettoyer).Where(x => x.Length > 0).Distinct().ToList();
-        var tachesCochees = (c.Taches ?? new List<string>()).ToHashSet();
+        var axeCode = SaisieOutils.Nettoyer(c.AxeCode);
+        if (axeCode.Length > 50) throw new RegleMetierException("Code d’axe invalide.");
+        var axe = axeCode.Length == 0 ? null : await o.Db.Axes.FirstOrDefaultAsync(x => x.ProjetId == projetId && x.Code == axeCode, a)
+            ?? throw new IntrouvableException("Axe introuvable.");
+        var selection = axe is null ? (c.Phases ?? new List<string>()).Select(SaisieOutils.Nettoyer).Where(x => x.Length > 0).Distinct().ToList() : new List<string>();
+        var tachesCochees = axe is null ? (c.Taches ?? new List<string>()).ToHashSet() : new HashSet<string>();
+        e.AxeCode = axe?.Code;
 
         var phases = await o.Db.Phases.Where(x => x.ProjetId == projetId).ToListAsync(a);
         var liens = await o.Db.LiensEcheancePhase.Where(x => x.ProjetId == projetId).ToListAsync(a);
@@ -83,6 +88,14 @@ public sealed class FacturationService(SaisieOutils o)
         }
 
         var taches = await o.Db.Taches.Where(t => t.ProjetId == projetId && !t.EstSection).ToListAsync(a);
+        if (axe is not null)
+        {
+            foreach (var autre in await o.Db.Echeances.Where(x => x.ProjetId == projetId && x.Id != e.Id && x.AxeCode == axe.Code).ToListAsync(a)) autre.AxeCode = null;
+            var phasesDeAxe = taches.Where(t => t.AxeId == axe.Id).Select(t => PhaseDe(t, phases)).Where(x => x.Length > 0).ToHashSet(StringComparer.Ordinal);
+            var idsPhasesDeAxe = phases.Where(p => phasesDeAxe.Contains(p.Code)).Select(p => p.Id).ToHashSet();
+            o.Db.LiensEcheancePhase.RemoveRange(liens.Where(l => idsPhasesDeAxe.Contains(l.PhaseId)).ToList());
+            foreach (var t in taches.Where(t => t.AxeId == axe.Id)) t.EcheanceId = null;
+        }
         foreach (var t in taches)
         {
             if (selection.Contains(PhaseDe(t, phases))) { t.EcheanceId = null; continue; } // suit la phase
@@ -90,7 +103,7 @@ public sealed class FacturationService(SaisieOutils o)
             else if (t.EcheanceId == e.Id) t.EcheanceId = null;
         }
         o.Noter(projetId, u, "Échéance", e.Id, $"n° {numero} · périmètre lié", null,
-            string.Join(", ", selection.Select(p => "phase " + p).Concat(tachesCochees)));
+            string.Join(", ", (axe is null ? selection.Select(p => "phase " + p).Concat(tachesCochees) : new[] { "axe " + axe.Code })));
         return await o.TerminerAsync(projetId, new List<MessageDto>(), a, apres: m =>
         {
             var ech = m.Echeancier.First(x => x.N == numero);

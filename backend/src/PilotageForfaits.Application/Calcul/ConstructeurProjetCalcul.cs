@@ -193,7 +193,7 @@ public sealed class ConstructeurProjetCalcul(IContexteDonnees db)
             resultat.EchTrack[e.Numero] = new SuiviEcheanceCalcul
             {
                 DatePrevue = e.DatePrevue, RealiseLe = e.FactureeLe, PayeeLe = e.PayeeLe, MontantFacture = e.MontantFacture,
-                Commentaire = e.Commentaire, Phases = phasesLiees,
+                Commentaire = e.Commentaire, Phases = phasesLiees, AxeCode = e.AxeCode,
             };
         }
 

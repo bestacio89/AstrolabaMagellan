@@ -70,7 +70,7 @@ public sealed record DeriveCommande(string? Cause, string? Motif, int? Version);
 // ---- facturation ----
 /// <summary>Champ : datePrevue, realiseLe (facturée le) ou payeeLe.</summary>
 public sealed record EcheanceDateCommande(string Champ, DateOnly? Valeur, int? Version);
-public sealed record PerimetreEcheanceCommande(List<string>? Phases, List<string>? Taches);
+public sealed record PerimetreEcheanceCommande(List<string>? Phases, List<string>? Taches, string? AxeCode = null);
 public sealed record EcheancePhaseCommande(int? Numero);
 
 // ---- registres (actions, décisions, risques) et dépenses ----

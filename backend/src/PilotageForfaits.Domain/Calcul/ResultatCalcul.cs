@@ -152,6 +152,7 @@ public sealed class TacheCalculee
     /// <summary>Numéro de l'échéance de facturation liée (directement ou par sa phase).</summary>
     public int? EchN { get; set; }
     public bool EchViaPhase { get; set; }
+    public bool EchViaAxe { get; set; }
     /// <summary>Code du groupe d'affichage (axe, lot ou phase selon le regroupement choisi).</summary>
     public string Grp { get; set; } = "";
 }
@@ -630,6 +631,7 @@ public sealed class EcheanceCalculee
     public DateOnly? RealiseLe { get; init; }
     public DateOnly? PayeeLe { get; init; }
     public string Commentaire { get; init; } = "";
+    public string? AxeCode { get; init; }
     public List<string> Phases { get; init; } = new();
     public List<string> Lies { get; init; } = new();
     public int NLies { get; init; }
