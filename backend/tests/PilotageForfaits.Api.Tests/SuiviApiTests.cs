@@ -572,7 +572,7 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
         Assert.Equal("a1", creation["ouvrir"]!.GetValue<string>());
         var tache = creation["suivi"]!["modele"]!["tasks"]!.AsArray()
             .Single(x => x!["uid"]!.GetValue<string>() == "a1")!;
-        var atelier = tache["tr"]!["atelier"]!;
+        var atelier = creation["suivi"]!["modele"]!["track"]!["a1"]!["atelier"]!;
         Assert.Equal("2026-10-26", atelier["date"]!.GetValue<string>());
         Assert.Equal("09:00", atelier["heureDebut"]!.GetValue<string>());
         Assert.Equal("10:30", atelier["heureFin"]!.GetValue<string>());
