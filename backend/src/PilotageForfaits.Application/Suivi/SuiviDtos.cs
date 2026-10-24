@@ -82,6 +82,7 @@ public sealed class ProjetVueDto
     public Dictionary<string, string> Axes { get; init; } = new();
     /// <summary>Date limite facultative par code d'axe.</summary>
     public Dictionary<string, DateOnly?> DatesLimitesAxes { get; init; } = new();
+    public List<DateLimiteAxeCalculee> EtatsDatesLimitesAxes { get; init; } = new();
     /// <summary>Noms personnalisés de lots ; les codes restent ceux des tâches.</summary>
     public Dictionary<string, string> Lots { get; init; } = new();
     public List<TypeTacheCalcul> Types { get; init; } = new();

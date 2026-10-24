@@ -187,6 +187,7 @@ public static class ConstructeurVueSuivi
                 j.Objet, j.Champ, j.AncienneValeur, j.NouvelleValeur)).ToList(),
             References = complements?.References ?? new List<ReferenceVueDto>(),
             DatesLimitesAxes = complements?.DatesLimitesAxes ?? new Dictionary<string, DateOnly?>(),
+            EtatsDatesLimitesAxes = c.DatesLimitesAxes,
             Lots = complements?.Lots ?? new Dictionary<string, string>(),
             Causes = CausesDerive.Liste.ToList(),
             MisesAJour = complements?.MisesAJour ?? new Dictionary<string, List<MiseAJourVueDto>>(),
