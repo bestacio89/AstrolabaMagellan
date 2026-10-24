@@ -11,6 +11,7 @@ import { enRetard, extrait, FiltresRegistres, initiales, instancesDuProjet, list
 import { PANNEAU_REGISTRE, SuiviEtat } from '../etat/suivi.etat';
 import { UiEtat } from '../etat/ui.etat';
 import { niveauRisque } from '../pages/actions';
+import { CarteCommentaires } from '../ui/carte-commentaires';
 
 type Genre = 'act' | 'dec' | 'rk';
 const NOM: Record<Genre, string> = { act: 'Action', dec: 'Décision', rk: 'Risque' };
@@ -23,7 +24,7 @@ const REGISTRE: Record<Genre, Registre> = { act: 'actions', dec: 'decisions', rk
  */
 @Component({
   selector: 'app-panneau-registre',
-  imports: [NgTemplateOutlet],
+  imports: [NgTemplateOutlet, CarteCommentaires],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(document:keydown)': 'raccourcis($event)' },
   template: `
@@ -143,7 +144,7 @@ const REGISTRE: Record<Genre, Registre> = { act: 'actions', dec: 'decisions', rk
                   }
                 </div>
               </section>
-              <section><ng-container *ngTemplateOutlet="zone; context: { champ: 'commentaire', lib: 'Commentaire', aide: 'Où en est-on ? Précisions, relances, points de blocage…', rows: 5, val: a.commentaire }" /></section>
+              <app-carte-commentaires [cibleType]="'Action'" [cibleId]="a.id" [cle]="'act:' + a.id" [ancienCommentaire]="a.commentaire" />
             }
             @case ('dec') {
               @let d = m.decision!;
@@ -185,7 +186,7 @@ const REGISTRE: Record<Genre, Registre> = { act: 'actions', dec: 'decisions', rk
                   </select>
                 </label>
               </section>
-              <section><ng-container *ngTemplateOutlet="zone; context: { champ: 'commentaire', lib: 'Commentaire', aide: 'Contexte, conditions, conséquences…', rows: 5, val: d.commentaire }" /></section>
+              <app-carte-commentaires [cibleType]="'Decision'" [cibleId]="d.id" [cle]="'dec:' + d.id" [ancienCommentaire]="d.commentaire" />
             }
             @case ('rk') {
               @let r = m.risque!;
@@ -240,7 +241,7 @@ const REGISTRE: Record<Genre, Registre> = { act: 'actions', dec: 'decisions', rk
                   }
                 </label>
               </section>
-              <section><ng-container *ngTemplateOutlet="zone; context: { champ: 'commentaire', lib: 'Commentaire', aide: 'Suivi, survenance, conséquences…', rows: 3, val: r.commentaire }" /></section>
+              <app-carte-commentaires [cibleType]="'Risque'" [cibleId]="r.id" [cle]="'rk:' + r.id" [ancienCommentaire]="r.commentaire" />
             }
           }
           <datalist id="dl-ad-pers">
