@@ -42,7 +42,7 @@ import { EtiquetteAjout } from '../ui/tache';
               @if (d.dateEtat.auDela.length) {
                 <div class="ax-alert" role="status">{{ d.dateEtat.auDela.length }} tâche(s) finissent après le {{ fD(d.dateEtat.date) }} :
                   @for (t of d.dateEtat.auDela.slice(0, 4); track t.uid) {
-                    <button type="button" class="linklike" (click)="ouvrirTache(t.uid)">{{ t.libelle }}</button>
+                    <button type="button" class="linklike" (click)="ouvrirTache(t.uid)">{{ t.label }}</button>
                   }
                 </div>
               }

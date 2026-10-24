@@ -2,7 +2,7 @@
  * Règle commune de jauge pour les en-têtes de groupe du suivi.
  * Les tâches annulées sont hors décompte ; seule la valeur exacte « Validé » compte comme réalisée.
  */
-import { DateLimiteAxe } from '../api/modeles';
+import type { DateLimiteAxe } from '../api/modeles';
 
 export type MotJaugeGroupe = 'validées' | 'réalisés' | 'livrés';
 
