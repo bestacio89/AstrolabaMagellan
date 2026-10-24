@@ -875,8 +875,8 @@ public static class MoteurCalcul
                 var ouvertes = axeTasks.Count - valides;
                 var finMax = axeTasks.Where(t => t.Fin is not null).Select(t => t.Fin).Max();
                 var jours = date.DayNumber - aujourdhui.DayNumber;
-                var etat = valides == axeTasks.Count && auDela.Count == 0 ? "tenue"
-                    : valides == axeTasks.Count && auDela.Count > 0 ? "tard"
+                var etat = axeTasks.Count > 0 && valides == axeTasks.Count && auDela.Count == 0 ? "tenue"
+                    : axeTasks.Count > 0 && valides == axeTasks.Count && auDela.Count > 0 ? "tard"
                     : date < aujourdhui && ouvertes > 0 ? "depassee"
                     : date >= aujourdhui && auDela.Count > 0 ? "risque" : "ok";
                 var libelle = etat switch
