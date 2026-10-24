@@ -47,7 +47,7 @@ import { EtiquetteAjout } from '../ui/tache';
             }
           </div>
         </fieldset>
-        <fieldset class="m-sec">
+        <fieldset class="m-sec" [disabled]="!!axeCode()">
           <legend><span class="m-step">3</span>Tâches liées</legend>
           <input class="in" type="search" placeholder="Filtrer les tâches…" autocomplete="off" #q (input)="filtre.set(q.value)" />
           <div class="tw m-prof ech-tasks">

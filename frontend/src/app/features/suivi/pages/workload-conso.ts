@@ -318,7 +318,7 @@ interface LigneProfil {
         >
           @if (g.phase) {
             <button type="button" class="grp-name" groupe-nom [attr.data-openph]="g.cle" [title]="'Ouvrir la phase ' + g.cle">{{ g.nom }}</button>
-          } @else if (v.m.dim.key === 'id' && v.droits.peutModifier) {
+          } @else if (v.m.dim.key === 'id') {
             <button type="button" class="grp-name" groupe-nom [title]="'Détails de l’axe ' + g.cle" (click)="etat.ouvrirLignePlanning(g.cle)">{{ g.nom }} <span aria-hidden="true">↗</span></button>
           } @else if (v.m.dim.key === 'lot' && v.droits.peutModifier) {
             <button type="button" class="grp-name" groupe-nom [title]="'Renommer le lot ' + g.cle" (click)="etat.fenetre.set({ type: 'lot', code: g.cle })">{{ g.nom }} <span aria-hidden="true">✎</span></button>
