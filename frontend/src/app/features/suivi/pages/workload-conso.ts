@@ -9,6 +9,7 @@ import { UiEtat } from '../etat/ui.etat';
 import { axeName, couleurGroupe, defaultAxeName, filteredTasks, groupByAxe, idName, isOver, ProfilVue, TacheVue, taskProfiles, Vue } from '../etat/vue';
 import { BarreFiltres } from '../ui/barre-filtres';
 import { absenceProfil, indexAbsences, Moment } from '../etat/absences.logique';
+import { calculerJaugeGroupe } from '../etat/entete-groupe.logique';
 import { Fx } from '../ui/fx';
 import { EtiquetteAjout } from '../ui/tache';
 
@@ -173,7 +174,7 @@ interface LigneProfil {
               @for (t of g.taches; track t.uid) {
                 @let replie = !!ui.ui().folded[t.uid];
                 @let fini = t.statut === 'Validé';
-                <tr class="tsum axr" [class.is-valide]="fini" [class.is-annul]="t.annulee" [class.is-sel]="etat.panneau() === t.uid" [style.--axc]="g.couleur">
+                <tr class="tsum axr" [hidden]="ui.ui().groupesReplis[g.cleRepli]" [class.is-valide]="fini" [class.is-annul]="t.annulee" [class.is-sel]="etat.panneau() === t.uid" [style.--axc]="g.couleur">
                   @for (c of m.visibles; track c.k) {
                     @switch (c.k) {
                       @case ('id') {
@@ -234,7 +235,7 @@ interface LigneProfil {
                   <td class="n">{{ fJz(moisTache(t, m.jours)) }}</td>
                 </tr>
                 @for (p of lignesProfils(v, t, m.jours); track p.i) {
-                  <tr class="tsub axr" [class.valide-sub]="fini" [class.is-prof]="p.i === m.profil" [style.--axc]="g.couleur" [hidden]="replie">
+                  <tr class="tsub axr" [class.valide-sub]="fini" [class.is-prof]="p.i === m.profil" [style.--axc]="g.couleur" [hidden]="replie || ui.ui().groupesReplis[g.cleRepli]">
                     @for (c of m.visibles; track c.k) {
                       <td class="smc" [class]="'smc sm-' + c.k"></td>
                     }
@@ -306,6 +307,9 @@ interface LigneProfil {
       </div>
       </div>
       <ng-template #nomGroupe let-g>
+        <button type="button" class="fold grp-fold" [attr.aria-expanded]="!ui.ui().groupesReplis[g.cleRepli]" [attr.aria-label]="(ui.ui().groupesReplis[g.cleRepli] ? 'Déplier' : 'Replier') + ' le groupe ' + g.nom" [title]="(ui.ui().groupesReplis[g.cleRepli] ? 'Déplier' : 'Replier') + ' le groupe'" (click)="basculerGroupe(g.cleRepli)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+        </button>
         @if (g.phase) {
           <button type="button" class="grp-name" [attr.data-openph]="g.cle" [title]="'Ouvrir la phase ' + g.cle">{{ g.nom }}</button>
           @if (g.echeance) {
@@ -314,14 +318,24 @@ interface LigneProfil {
         } @else {
           {{ g.nom }}
         }
+        <span class="grp-jauge" [title]="g.jauge.infoBulle">
+          @if (g.jauge.terminee) { <span class="grp-jauge-ok" aria-label="Tout est validé">✓</span> }
+          @else { <span class="grp-jauge-bar"><i [style.width.%]="g.jauge.pourcentage"></i></span> }
+          <span>{{ g.jauge.valides }} / {{ g.jauge.total }} validées</span>
+        </span>
       </ng-template>
     }
   `,
   host: { '(document:keydown.escape)': 'quitterPlein($event)' },
   styles: `
-    :host {
-      display: contents;
-    }
+    :host { display: contents; }
+    .grp-fold { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; margin-right: 4px; border: 0; background: transparent; color: inherit; cursor: pointer; }
+    .grp-fold svg { width: 14px; height: 14px; transition: transform 120ms ease; }
+    .grp-fold[aria-expanded="false"] svg { transform: rotate(-90deg); }
+    .grp-jauge { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; font-size: 11px; color: var(--c-texte-2, #667085); white-space: nowrap; }
+    .grp-jauge-bar { display: inline-block; width: 42px; height: 5px; border-radius: 5px; overflow: hidden; background: var(--c-neutre-fond, #e4e8f0); }
+    .grp-jauge-bar i { display: block; height: 100%; background: var(--c-ok, #3fb97c); }
+    .grp-jauge-ok { display: inline-grid; place-items: center; width: 15px; height: 15px; border-radius: 50%; color: #147d4b; background: #d9f5e5; font-weight: 700; }
   `,
 })
 export class WorkloadConso {
@@ -403,9 +417,11 @@ export class WorkloadConso {
       styleGrille: [`--lt:${gauche}px`, `--wt:${lt}px`, `--lp:${gauche + lt}px`, ...positions].join(';'),
       groupes: groupByAxe(v, liste).map(([cle, taches]) => ({
         cle,
+        cleRepli: `${v.m.dim.key}|${cle}`,
         nom: axeName(v, cle),
         couleur: couleurGroupe(v, cle),
         taches,
+        jauge: calculerJaugeGroupe(taches),
         phase: v.m.dim.key === 'phase' && !!cle,
         echeance: v.phaseEch[cle] != null,
       })),
@@ -418,6 +434,13 @@ export class WorkloadConso {
   });
 
   /** Colonne masquée ? Celle du critère de regroupement l'est d'office (le bandeau de groupe l'affiche déjà). */
+  protected basculerGroupe(cle: string): void {
+    const groupesReplis = { ...this.ui.ui().groupesReplis };
+    if (groupesReplis[cle]) delete groupesReplis[cle];
+    else groupesReplis[cle] = true;
+    this.ui.maj({ groupesReplis });
+  }
+
   protected masquee(v: Vue, k: 'id' | 'lot' | 'phase'): boolean {
     const u = this.ui.ui();
     return v.m.dim.key === k ? !u.colForce[k] : !!u.hideCols[k];

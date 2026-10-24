@@ -8,6 +8,7 @@ import { SuiviEtat } from '../etat/suivi.etat';
 import { UiEtat } from '../etat/ui.etat';
 import { axeName, couleurGroupe, defaultAxeName, echEtat, filteredTasks, groupByAxe, idName, isOver, TacheVue, typeName, Vue } from '../etat/vue';
 import { colonnesListe, VUES_LISTE, vueListe } from '../etat/workload.logique';
+import { calculerJaugeGroupe } from '../etat/entete-groupe.logique';
 import { BarreFiltres } from '../ui/barre-filtres';
 import { LienTache } from '../ui/tache';
 import { Triable } from '../ui/triable';
@@ -117,12 +118,20 @@ import { Fx } from '../ui/fx';
               <tr class="grp axg" [style.--axc]="g.couleur">
                 <td [attr.colspan]="m.nCols">
                   <div class="grp-h">
+                    <button type="button" class="fold grp-fold" [attr.aria-expanded]="!ui.ui().groupesReplis[g.cleRepli]" [attr.aria-label]="(ui.ui().groupesReplis[g.cleRepli] ? 'Déplier' : 'Replier') + ' le groupe ' + g.nom" [title]="(ui.ui().groupesReplis[g.cleRepli] ? 'Déplier' : 'Replier') + ' le groupe'" (click)="basculerGroupe(g.cleRepli)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                    </button>
                     @if (g.phase) {
                       <button type="button" class="grp-name" [attr.data-openph]="g.cle" [title]="'Ouvrir la phase ' + g.cle">{{ g.nom }}</button>
                     } @else {
                       {{ g.nom }}
                     }
                     <span class="grp-meta">{{ g.taches.length }} tâche{{ g.taches.length > 1 ? 's' : '' }} · {{ fJ(g.charge) }} JH</span>
+                    <span class="grp-jauge" [title]="g.jauge.infoBulle">
+                      @if (g.jauge.terminee) { <span class="grp-jauge-ok" aria-label="Tout est validé">✓</span> }
+                      @else { <span class="grp-jauge-bar"><i [style.width.%]="g.jauge.pourcentage"></i></span> }
+                      <span>{{ g.jauge.valides }} / {{ g.jauge.total }} validées</span>
+                    </span>
                     @if (g.phase) {
                       @if (g.echeance; as e) {
                         <button type="button" class="ech-badge" [class]="'ech-badge ech-' + e.etat" [attr.data-openph]="g.cle" title="Échéance de la phase — cliquer pour la modifier">
@@ -147,7 +156,7 @@ import { Fx } from '../ui/fx';
               </tr>
               @for (t of g.taches; track t.uid) {
                 @let finDepassee = !!t.tr.fin && t.statut !== 'Validé' && !t.annulee && t.tr.fin < v.aujourdhui;
-                <tr class="axr" [class.is-annul]="t.annulee" [class.is-sel]="etat.panneau() === t.uid" [style.--axc]="g.couleur">
+                <tr class="axr" [hidden]="ui.ui().groupesReplis[g.cleRepli]" [class.is-annul]="t.annulee" [class.is-sel]="etat.panneau() === t.uid" [style.--axc]="g.couleur">
                   @if (m.meta) {
                     <td><ng-container *ngTemplateOutlet="col1; context: { $implicit: t }" /></td>
                     <td>
@@ -352,9 +361,14 @@ import { Fx } from '../ui/fx';
     }
   `,
   styles: `
-    :host {
-      display: contents;
-    }
+    :host { display: contents; }
+    .grp-fold { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; margin-right: 4px; border: 0; background: transparent; color: inherit; cursor: pointer; }
+    .grp-fold svg { width: 14px; height: 14px; transition: transform 120ms ease; }
+    .grp-fold[aria-expanded="false"] svg { transform: rotate(-90deg); }
+    .grp-jauge { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; font-size: 11px; color: var(--c-texte-2, #667085); white-space: nowrap; }
+    .grp-jauge-bar { display: inline-block; width: 42px; height: 5px; border-radius: 5px; overflow: hidden; background: var(--c-neutre-fond, #e4e8f0); }
+    .grp-jauge-bar i { display: block; height: 100%; background: var(--c-ok, #3fb97c); }
+    .grp-jauge-ok { display: inline-grid; place-items: center; width: 15px; height: 15px; border-radius: 50%; color: #147d4b; background: #d9f5e5; font-weight: 700; }
   `,
 })
 export class WorkloadListe {
@@ -408,6 +422,13 @@ export class WorkloadListe {
     return `var(--ax${Math.max(0, (v.m.axeIdsActifs ?? []).indexOf(axe)) % 8})`;
   }
 
+  protected basculerGroupe(cle: string): void {
+    const groupesReplis = { ...this.ui.ui().groupesReplis };
+    if (groupesReplis[cle]) delete groupesReplis[cle];
+    else groupesReplis[cle] = true;
+    this.ui.maj({ groupesReplis });
+  }
+
   protected egal(a: number, b: number): boolean {
     return Math.abs(a - b) < 1e-9;
   }
@@ -439,9 +460,11 @@ function groupe(v: Vue, cle: string, taches: TacheVue[]) {
   const montants = v.droits.voitMontants && v.m.echeancier.length > 0;
   return {
     cle,
+    cleRepli: `${v.m.dim.key}|${cle}`,
     nom: axeName(v, cle),
     couleur: couleurGroupe(v, cle),
     taches,
+    jauge: calculerJaugeGroupe(taches),
     charge: sum(taches.map((t) => t.charge)),
     phase,
     lienEcheance: phase && montants,
