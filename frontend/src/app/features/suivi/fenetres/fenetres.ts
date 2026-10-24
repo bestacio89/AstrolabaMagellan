@@ -33,7 +33,7 @@ import { FenetreReaffectation } from './reaffectation';
   template: `
     @if (etat.fenetre(); as f) {
       @if (f.type === 'nouvelle-tache') {
-        <app-fenetre-nouvelle-tache [groupe]="f.groupe" (fermer)="fermer()" />
+        <app-fenetre-nouvelle-tache [groupe]="f.groupe" [typeImpose]="f.typeImpose ?? null" (fermer)="fermer()" />
       } @else if (f.type === 'ajout-profil') {
         <app-fenetre-ajout-profil [uid]="f.uid" (fermer)="fermer()" />
       } @else if (f.type === 'reaffectation') {

@@ -81,6 +81,9 @@ import { Fx } from '../ui/fx';
           </label>
         }
         <span class="spacer"></span>
+        @if (v.droits.peutModifier) {
+          <button type="button" class="btn primary" (click)="nouvelleTache(m.cur)">{{ m.cur === 'Atelier' ? '+ Nouvel atelier' : m.cur === 'Livrable' ? '+ Nouveau livrable' : '+ Nouveau « ' + m.nomType + ' »' }}</button>
+        }
         <details class="dd push">
           <summary class="btn sm burger" [title]="'Colonnes' + (m.nbMasquees ? ' (' + m.nbMasquees + ' masquée' + (m.nbMasquees > 1 ? 's' : '') + ')' : '')" aria-label="Colonnes">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
@@ -492,6 +495,12 @@ export class Ateliers {
     if (k === 'lot') return 0;
     if (k === 'lib') return m.lotVisible ? this.largeurLot() : 0;
     return null;
+  }
+
+  protected nouvelleTache(typeImpose: string): void {
+    const filtre = this.ui.ui().axe;
+    const groupe = filtre && filtre !== '__none' ? filtre : null;
+    this.etat.fenetre.set({ type: 'nouvelle-tache', groupe, typeImpose });
   }
 
   protected basculerGroupe(cle: string): void {

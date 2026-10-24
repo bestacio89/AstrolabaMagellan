@@ -60,18 +60,32 @@ import { ChampsNouveauProfil, lireNouveauProfil, profilVide, SaisieProfil } from
                 }
               </select>
             </label>
-            <label class="field"
-              >Type
-              <select class="in" name="type" #ty (change)="type.set(ty.value)">
-                <option value="">Détection automatique</option>
-                @for (x of v.projet.types; track x.id) {
-                  <option [value]="x.id">{{ x.nom }}</option>
-                }
-              </select>
-            </label>
-            <span></span>
-            <label class="field">Début prévu<input class="in" type="date" name="debut" #db (change)="debut.set(db.value)" /></label>
-            <label class="field">Fin prévue<input class="in" type="date" name="fin" #fn (change)="fin.set(fn.value)" /></label>
+            @if (typeImpose()) {
+              <div class="field"><span>Type</span><strong>Type : {{ typeNom() }}</strong></div>
+            } @else {
+              <label class="field"
+                >Type
+                <select class="in" name="type" #ty (change)="type.set(ty.value)">
+                  <option value="">Détection automatique</option>
+                  @for (x of v.projet.types; track x.id) {
+                    <option [value]="x.id">{{ x.nom }}</option>
+                  }
+                </select>
+              </label>
+            }
+            @if (typeImpose() === "Atelier") {
+              <label class="field">Date planifiée<input class="in" type="date" name="dateAtelier" [value]="dateAtelier()" #da (change)="dateAtelier.set(da.value); debut.set(da.value); fin.set(da.value)" /></label>
+              <label class="field">Horaire · de<input class="in" type="time" name="heureDebut" [value]="heureDebut()" #hd (change)="heureDebut.set(hd.value)" /></label>
+              <label class="field">Horaire · à<input class="in" type="time" name="heureFin" [value]="heureFin()" #hf (change)="heureFin.set(hf.value)" /></label>
+              <label class="field">Participants<input class="in" name="participants" list="dl-nparticipants" placeholder="camille.martin@example.test ; ..." [value]="participantsAtelier()" #pa (input)="participantsAtelier.set(pa.value)" /></label>
+              <datalist id="dl-nparticipants">
+                @for (p of v.personnes; track p) { <option [value]="p"></option> }
+              </datalist>
+              <p class="sub span2">0 JH possible : un atelier déjà compté dans d’autres tâches.</p>
+            } @else {
+              <label class="field">Début prévu<input class="in" type="date" name="debut" [value]="debut()" #db (change)="debut.set(db.value)" /></label>
+              <label class="field">{{ typeImpose() === "Livrable" ? "Livraison prévue" : "Fin prévue" }}<input class="in" type="date" name="fin" [value]="fin()" #fn (change)="fin.set(fn.value)" /></label>
+            }
           </div>
         </fieldset>
         <fieldset class="m-sec">
@@ -153,6 +167,7 @@ import { ChampsNouveauProfil, lireNouveauProfil, profilVide, SaisieProfil } from
 export class FenetreNouvelleTache implements OnInit {
   /** Groupe d'où l'on crée la tâche (selon le regroupement : code d'axe, lot ou phase). */
   readonly groupe = input<string | null>(null);
+  readonly typeImpose = input<string | null>(null);
   readonly fermer = output<void>();
   protected readonly etat = inject(SuiviEtat);
   private readonly api = inject(SuiviApi);
@@ -168,6 +183,10 @@ export class FenetreNouvelleTache implements OnInit {
   protected readonly type = signal('');
   protected readonly debut = signal('');
   protected readonly fin = signal('');
+  protected readonly dateAtelier = signal('');
+  protected readonly heureDebut = signal('');
+  protected readonly heureFin = signal('');
+  protected readonly participantsAtelier = signal('');
   protected readonly charges = signal<Record<number, string>>({});
   protected readonly avecNouveau = signal(false);
   protected readonly nouveau = signal<SaisieProfil>(profilVide());
@@ -178,6 +197,11 @@ export class FenetreNouvelleTache implements OnInit {
   protected readonly occupe = signal(false);
 
   protected readonly profils = computed(() => this.etat.vue()?.P.filter((p) => p.nom) ?? []);
+  protected readonly typeNom = computed(() => {
+    const v = this.etat.vue();
+    const id = this.typeImpose();
+    return id ? v?.projet.types.find((x) => x.id === id)?.nom ?? id : '';
+  });
 
   protected readonly totaux = computed(() => {
     let jh = 0,
@@ -201,6 +225,7 @@ export class FenetreNouvelleTache implements OnInit {
   });
 
   ngOnInit(): void {
+    if (this.typeImpose()) this.type.set(this.typeImpose()!);
     const g = this.groupe();
     const dim = this.etat.vue()?.m.dim.key;
     if (g) {
@@ -244,8 +269,13 @@ export class FenetreNouvelleTache implements OnInit {
       nouveauProfilJh = lireNombre(this.nouveauJh());
       if (!(nouveauProfilJh != null && nouveauProfilJh > 0)) return this.echec('Saisissez la charge du nouveau profil.', 'np_jh');
     }
-    if (!(this.totaux().jh > 0)) return this.echec('Indiquez la charge prévue d’au moins un profil.', this.profils()[0] ? 'c' + this.profils()[0].i : null);
+    if (!(this.totaux().jh > 0) && this.typeImpose() !== 'Atelier') return this.echec('Indiquez la charge prévue d’au moins un profil.', this.profils()[0] ? 'c' + this.profils()[0].i : null);
     if (this.debut() && this.fin() && this.fin() < this.debut()) return this.echec('La fin prévue doit être postérieure au début.', 'fin');
+    if (this.typeImpose() === 'Atelier') {
+      if (!!this.heureDebut() !== !!this.heureFin()) return this.echec('Renseignez les deux heures de l’atelier.', 'heureDebut');
+      if (this.heureDebut() && this.heureFin() <= this.heureDebut()) return this.echec('L’heure de fin doit être après l’heure de début.', 'heureFin');
+    }
+    const atelierParticipants = this.participantsAtelier().split(';').map((x) => x.trim()).filter(Boolean).filter((x, i, l) => l.findIndex((y) => y.toLocaleLowerCase() === x.toLocaleLowerCase()) === i);
     const motif = this.motif().trim();
     if (!motif) return this.echec('Indiquez le motif : il apparaît dans le tableau de bord et l’export COPIL.', 'motif');
     this.occupe.set(true);
@@ -265,6 +295,10 @@ export class FenetreNouvelleTache implements OnInit {
         motif,
         hypothese: this.hypothese().trim(),
         apres: null,
+        atelierDate: this.typeImpose() === 'Atelier' ? this.dateAtelier() || null : null,
+        atelierHeureDebut: this.typeImpose() === 'Atelier' ? this.heureDebut() || null : null,
+        atelierHeureFin: this.typeImpose() === 'Atelier' ? this.heureFin() || null : null,
+        atelierParticipants: this.typeImpose() === 'Atelier' ? atelierParticipants : [],
       }),
     );
     this.occupe.set(false);

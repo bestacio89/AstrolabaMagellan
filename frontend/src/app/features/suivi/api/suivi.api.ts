@@ -295,6 +295,10 @@ export interface NouvelleTache {
   motif: string;
   hypothese: string;
   apres: string | null;
+  atelierDate?: string | null;
+  atelierHeureDebut?: string | null;
+  atelierHeureFin?: string | null;
+  atelierParticipants?: string[];
 }
 
 export interface AjoutProfil {

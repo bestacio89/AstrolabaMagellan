@@ -16,7 +16,7 @@ export interface Toast {
 
 /** Fenêtre à ouvrir (une seule à la fois), demandée par un écran, le panneau de détail ou un message. */
 export type FenetreDemandee =
-  | { type: 'nouvelle-tache'; groupe: string | null }
+  | { type: 'nouvelle-tache'; groupe: string | null; typeImpose?: string | null }
   | { type: 'ajout-profil'; uid: string }
   | { type: 'reaffectation'; uid: string; de: number | null }
   | { type: 'annulation'; uid: string }
