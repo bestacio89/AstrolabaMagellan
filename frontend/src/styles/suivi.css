@@ -1443,3 +1443,18 @@
 .suivi .tdb-dl-bar { display:block; height:100%; border-radius:inherit; background:var(--accent); }
 .suivi .tdb-dl-neutre { background:var(--surface-2); color:var(--ink-2); }
 .suivi .tdb-dl-foot { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding-top:12px; color:var(--ink-2); font-size:11px; }
+
+/* Date limite d’axe sur la frise du Planning. */
+.suivi .pl-dl-line { position:absolute; z-index:5; top:0; bottom:0; border-left:1px dashed #98a2b3; pointer-events:none; }
+.suivi .pl-dl-line.lv-risque,.suivi .pl-dl-line.lv-depassee { border-left-color:#d92d20; }
+.suivi .pl-dl-line.lv-tard { border-left-color:#dc8b14; }
+.suivi .pl-dl-line.lv-tenue { border-left-color:#12b76a; }
+.suivi .pl-dl-fanion { position:absolute; z-index:6; top:0; transform:translateX(-50%); font-size:11px; line-height:12px; color:#667085; pointer-events:auto; }
+.suivi .pl-dl-fanion.lv-risque,.suivi .pl-dl-fanion.lv-depassee { color:#d92d20; }
+.suivi .pl-dl-fanion.lv-tard { color:#dc8b14; }
+.suivi .pl-dl-fanion.lv-tenue { color:#12b76a; }
+.suivi .pl-dl-date { position:absolute; z-index:6; bottom:0; transform:translateX(-50%); padding:1px 3px; border-radius:3px; background:var(--surface); color:#667085; font-size:9px; pointer-events:none; }
+.suivi .pl-dl-date.lv-risque,.suivi .pl-dl-date.lv-depassee { color:#d92d20; }
+.suivi .pl-dl-date.lv-tard { color:#dc8b14; }
+.suivi .pl-dl-date.lv-tenue { color:#12b76a; }
+.suivi .pl-fin-apres-limite { outline:2px solid #d92d20; outline-offset:-2px; border-radius:7px; }

@@ -38,6 +38,8 @@ interface LigneDessin {
   nonDate: string | null;
   selection: boolean;
   aria: string;
+  dateLimite?: { left: number; date: string; etat: string; libelle: string; auDela: { libelle: string }[] } | null;
+  finHorsDateLimite?: boolean;
 }
 
 const ICONE_PUNAISE = 'M9 3h6l-1 6 3 3v2H7v-2l3-3z';
@@ -155,7 +157,7 @@ const ICONE_PUNAISE = 'M9 3h6l-1 6 3 3v2H7v-2l3-3z';
           }
           @for (d of m.lignes; track d.cle) {
             @if (d.l.avant) {
-              <div class="pl-ligne sous avant" [class.is-sel]="d.selection" [style.--c]="d.couleur">
+              <div class="pl-ligne sous avant" [class.is-sel]="d.selection" [class.pl-fin-apres-limite]="d.finHorsDateLimite" [style.--c]="d.couleur">
                 <span class="pl-lib"
                   >@if (m.modif) {
                     <button type="button" class="pl-pin on" [attr.aria-label]="'Retirer « ' + d.nom + ' » du planning'" title="Retirer du planning" (click)="mettreEnAvant(d.l.avant, false)">
@@ -250,6 +252,11 @@ const ICONE_PUNAISE = 'M9 3h6l-1 6 3 3v2H7v-2l3-3z';
             }
           }
         }
+        @if (d.dateLimite; as dl) {
+          <span class="pl-dl-line" [class]="'pl-dl-line lv-' + dl.etat" [style.left.%]="dl.left" aria-hidden="true"></span>
+          <span class="pl-dl-fanion" [class]="'pl-dl-fanion lv-' + dl.etat" [style.left.%]="dl.left" [title]="dl.libelle + (dl.auDela.length ? ' · ' + dl.auDela.map(x => x.libelle).join(', ') : '')" aria-hidden="true">⚑</span>
+          <span class="pl-dl-date" [class]="'pl-dl-date lv-' + dl.etat" [style.left.%]="dl.left">{{ fD(dl.date).slice(0, 5) }}</span>
+        }
         @if (d.losange; as lo) {
           <span class="pl-los" [class.fait]="lo.fait" [style.left.%]="lo.left"></span>
           <span class="pl-los-l" [style.left]="'calc(' + lo.left.toFixed(3) + '% + 12px)'">{{ lo.texte }}</span>
@@ -292,7 +299,7 @@ export class PlanningEnsemble {
     const mois = moisAffiches(
       v.m.cal,
       td,
-      lignes.map((l) => ({ g: l.g, dates: l.t ? datesTache(l.t) : undefined })),
+      lignes.map((l) => ({ g: l.g, dates: l.t ? datesTache(l.t) : !l.sous && v.m.dim.key === 'id' && l.g?.cle ? [v.projet.datesLimitesAxes?.[l.g.cle]] : undefined })),
       jalonsM,
       v.m.months,
     );
@@ -485,6 +492,8 @@ function dessiner(v: Vue, l: LigneAffichee<TacheVue>, pc: (iso: string, finJour?
       piste,
       losange,
       nonDate,
+      dateLimite: null,
+      finHorsDateLimite: !!l.avant && !!t.axe && !!v.projet.datesLimitesAxes?.[t.axe] && !!t.tr.fin && t.tr.fin > v.projet.datesLimitesAxes[t.axe]!,
       selection: panneau === t.uid,
       aria: t.label,
     };
@@ -494,6 +503,10 @@ function dessiner(v: Vue, l: LigneAffichee<TacheVue>, pc: (iso: string, finJour?
   const saisi = !!g.planSaisi || (!!(g as { planCalcule?: boolean }).planCalcule && !!(g as { planDeSaisies?: boolean }).planDeSaisies);
   const piste = barres(pc, { pd: g.planDebut, pf: g.planFin, saisi, rd: g.reelDebut, rf: g.reelFin, fin, valide: g.statut === 'Validé', av: g.avancement });
   const cle = g.cle ?? '';
+  const codeAxe = v.m.dim.key === 'id' && !l.sous ? cle : '';
+  const dateLimiteIso = codeAxe ? v.projet.datesLimitesAxes?.[codeAxe] ?? null : null;
+  const etatDateLimite = codeAxe ? v.m.datesLimitesAxes?.find((x) => x.code === codeAxe) ?? null : null;
+  const dateLimite = dateLimiteIso ? { left: pc(dateLimiteIso), date: dateLimiteIso, etat: etatDateLimite?.etat ?? 'ok', libelle: etatDateLimite?.libelle ?? `Date limite ${fD(dateLimiteIso)}`, auDela: etatDateLimite?.auDela ?? [] } : null;
   const aria = `${g.nom} : ${g.planDebut && g.planFin ? `prévu du ${fD(g.planDebut)} au ${fD(g.planFin)}${saisi ? '' : ' (calculé)'}` : 'non planifié'}${
     g.reelDebut ? `, réel du ${fD(g.reelDebut)} au ${fD(g.reelFin)}` : ''
   }, avancement ${Math.round(g.avancement * 100)} %${fin ? ', fin prévue dépassée' : ''}. Ouvrir le détail`;
@@ -505,6 +518,7 @@ function dessiner(v: Vue, l: LigneAffichee<TacheVue>, pc: (iso: string, finJour?
     couleur,
     piste,
     losange: null,
+    dateLimite,
     nonDate: piste.length ? null : 'Non planifié',
     selection: panneau === PANNEAU_PLANNING + cle,
     aria,
