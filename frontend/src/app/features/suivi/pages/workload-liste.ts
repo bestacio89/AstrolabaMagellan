@@ -146,6 +146,7 @@ import { Fx } from '../ui/fx';
                       }
                     </ng-container>
                   </app-entete-groupe>
+                </td>
               </tr>
               @for (t of g.taches; track t.uid) {
                 @let finDepassee = !!t.tr.fin && t.statut !== 'Validé' && !t.annulee && t.tr.fin < v.aujourdhui;
