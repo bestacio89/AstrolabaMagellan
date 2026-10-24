@@ -510,6 +510,7 @@ export interface Reaffectation {
 
 export interface TacheCalculee {
   uid: string;
+  cibleId?: string;
   ligne: number | null;
   id: string;
   label: string;

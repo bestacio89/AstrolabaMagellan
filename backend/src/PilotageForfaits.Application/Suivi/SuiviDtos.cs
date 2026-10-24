@@ -185,6 +185,7 @@ public sealed class TacheVueDto
 {
     /// <summary>Repère de la tâche (r12 = ligne 12 du TSP, a1 = première tâche ajoutée).</summary>
     public string Uid { get; init; } = "";
+    public Guid CibleId { get; init; }
     public int Version { get; init; }
     public int? Ligne { get; init; }
     /// <summary>Code de l'axe (colonne A du TSP).</summary>

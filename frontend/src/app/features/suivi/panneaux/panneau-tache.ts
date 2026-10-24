@@ -3,8 +3,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Action } from '../api/modeles';
 import { SuiviApi } from '../api/suivi.api';
 import { AVANCEMENTS, IA_CONFORME, IA_ST, STATUTS } from '../etat/constantes';
-import { initialesDe, lienOuvrable, morceaux, nomDocument } from '../etat/fil.logique';
-import { fD, fDh, fDi, fE, fJ, fJz, fP, fSigned, sgn, stSlug } from '../etat/formats';
+import { lienOuvrable, nomDocument } from '../etat/fil.logique';
+import { fD, fDi, fE, fJ, fJz, fP, fSigned, sgn, stSlug } from '../etat/formats';
 import { joursEntre, lireNombre, round } from '../etat/outils';
 import { SuiviEtat } from '../etat/suivi.etat';
 import { UiEtat } from '../etat/ui.etat';
@@ -29,6 +29,7 @@ import {
 } from '../etat/vue';
 import { Fx } from '../ui/fx';
 import { MiniBarre, Etapes } from '../ui/petits';
+import { CarteCommentaires } from '../ui/carte-commentaires';
 
 type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
@@ -40,7 +41,7 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
  */
 @Component({
   selector: 'app-panneau-tache',
-  imports: [Fx, MiniBarre, Etapes],
+  imports: [Fx, MiniBarre, Etapes, CarteCommentaires],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(document:keydown)': 'clavier($event)' },
   template: `
@@ -758,64 +759,7 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
               </section>
             }
 
-            <section>
-              <h3>Commentaire</h3>
-              <textarea
-                #cm
-                class="in dr-cmt"
-                rows="4"
-                placeholder="Points d’attention, décisions, blocages…"
-                [value]="t.commentaire"
-                [disabled]="lecture()"
-                (change)="commentaire(t, cm)"
-              ></textarea>
-            </section>
-
-            <section class="fil">
-              <h3>
-                Mises à jour
-                @if (fil().length) {
-                  <span class="fil-n">{{ fil().length }}</span>
-                }
-              </h3>
-              @if (v.droits.peutSaisirConsomme) {
-                <div class="fil-saisie">
-                  <textarea
-                    #mj
-                    class="in"
-                    rows="2"
-                    maxlength="4000"
-                    placeholder="Où en est la tâche ? @Prénom pour prévenir quelqu’un"
-                    aria-label="Nouvelle mise à jour"
-                    (keydown.control.enter)="publier(t, mj)"
-                    (keydown.meta.enter)="publier(t, mj)"
-                  ></textarea>
-                  <div class="fil-pied">
-                    <span class="auto">Visible par toute l’équipe du projet · les montants en euros sont masqués pour les consultants.</span>
-                    <button type="button" class="btn sm primary" (click)="publier(t, mj)">Publier</button>
-                  </div>
-                </div>
-              }
-              @for (m of fil(); track $index) {
-                <div class="fil-msg">
-                  <span class="fil-av" aria-hidden="true">{{ initialesDe(m.by || '?') }}</span>
-                  <div class="fil-corps">
-                    <span class="fil-tete"><b>{{ m.by || 'Utilisateur' }}</b> · {{ fDh(m.at) }}</span>
-                    <p>
-                      @for (x of morceaux(m.texte); track $index) {
-                        @if (x.mention) {
-                          <span class="fil-mention">{{ x.texte }}</span>
-                        } @else {
-                          {{ x.texte }}
-                        }
-                      }
-                    </p>
-                  </div>
-                </div>
-              } @empty {
-                <p class="auto">Aucune mise à jour pour l’instant.</p>
-              }
-            </section>
+            <app-carte-commentaires [cibleType]="'Tache'" [cibleId]="t.cibleId ?? ''" [cle]="t.uid" [ancienCommentaire]="t.commentaire" />
 
             @if (t.hypothese) {
               <section>
@@ -897,14 +841,9 @@ export class PanneauTache {
   protected readonly aideRaf =
     'Vide = calcul automatique, profil par profil : Σ max(prévu − consommé ; 0) ; Agent IA : reste de l’enveloppe. Toujours 0 quand la tâche est validée.';
   protected readonly fD = fD;
-  protected readonly fDh = fDh;
   protected readonly fDi = fDi;
-  protected readonly morceaux = morceaux;
   protected readonly lienOuvrable = lienOuvrable;
   protected readonly nomDocument = nomDocument;
-  protected readonly initialesDe = initialesDe;
-  /** Fil de mises à jour de la tâche, du plus récent au plus ancien. */
-  protected readonly fil = computed(() => this.vue()?.projet.misesAJour?.[this.uid()] ?? []);
   protected readonly fE = fE;
   protected readonly fJ = fJ;
   protected readonly fJz = fJz;
@@ -1127,18 +1066,6 @@ export class PanneauTache {
       () => this.etat.afficher('Chemin copié : collez-le dans l’explorateur de fichiers.', 'succes'),
       () => this.etat.afficher('Copie impossible : sélectionnez le chemin à la main.', 'attention'),
     );
-  }
-
-  /** Publie une mise à jour ; le champ est vidé une fois enregistrée. */
-  protected async publier(t: TacheVue, el: HTMLTextAreaElement): Promise<void> {
-    const texte = el.value.trim();
-    if (!texte) return;
-    const r = await this.etat.saisir((id) => this.api.miseAJour(id, t.uid, texte));
-    if (r) el.value = '';
-  }
-
-  protected commentaire(t: TacheVue, el: HTMLTextAreaElement): void {
-    void this.etat.saisir((id) => this.api.commentaire(id, t.uid, el.value, this.etat.versionTache(t.uid)), { siErreur: this.remettre(el, t.commentaire) });
   }
 
   protected resteAFaire(t: TacheVue, el: HTMLInputElement): void {
