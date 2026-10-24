@@ -404,6 +404,34 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
     }
 
     [Fact]
+    public async Task Les_commentaires_de_registre_sont_modifiables_uniquement_par_leur_auteur()
+    {
+        var chef = _api.ClientPour("chef");
+        var id = await ImporterAsync(chef);
+        var suivi = await chef.GetFromJsonAsync<JsonObject>($"/api/projets/{id}/suivi");
+        var actionId = suivi!["projet"]!["actions"]!.AsArray()[0]!["id"]!.GetValue<Guid>();
+        var url = $"/api/projets/{id}/commentaires/Action/{actionId}";
+        var creation = await Saisir(chef, HttpMethod.Post, url, new { texte = "Relance client prévue jeudi." });
+        var cle = $"act:{actionId}";
+        var commentaire = creation["suivi"]!["projet"]!["commentaires"]![cle]!.AsArray()[0]!;
+        var commentaireId = commentaire["id"]!.GetValue<Guid>();
+        Assert.Equal("Relance client prévue jeudi.", commentaire["texte"]!.GetValue<string>());
+
+        var modifie = await Saisir(chef, HttpMethod.Put, $"/api/projets/{id}/commentaires/{commentaireId}", new { texte = "Relance envoyée jeudi matin." });
+        Assert.Equal("Relance envoyée jeudi matin.", modifie["suivi"]!["projet"]!["commentaires"]![cle]!.AsArray()[0]!["texte"]!.GetValue<string>());
+        Assert.NotNull(modifie["suivi"]!["projet"]!["commentaires"]![cle]!.AsArray()[0]!["modifieLe"]);
+
+        var consultant = _api.ClientPour("consultant");
+        await consultant.GetAsync("/api/moi");
+        await ModifierBaseAsync(async db =>
+        {
+            var u = await db.Utilisateurs.FirstAsync(x => x.IdentifiantExterne == "tenant-tests:oid-consultant");
+            db.Habilitations.Add(new Habilitation { ProjetId = id, UtilisateurId = u.Id, Role = RoleProjet.Consultant, Depuis = DateTimeOffset.UtcNow });
+        });
+        await Refuser(consultant, HttpMethod.Put, $"/api/projets/{id}/commentaires/{commentaireId}", new { texte = "Modification non autorisée." }, HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task Une_reaffectation_deplace_la_charge_sans_changer_le_total_et_peut_etre_annulee()
     {
         var client = _api.ClientPour("chef");
