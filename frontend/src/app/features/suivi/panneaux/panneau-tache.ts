@@ -304,13 +304,13 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
                   }
                 </div>
                 <div class="field">
-                  Destinataires <span class="muted">({{ dest(t).length }})</span>
+                  Participants <span class="muted">({{ dest(t).length }})</span>
                   <div class="chips-in">
                     @for (d of dest(t); track d; let i = $index) {
                       <span class="chip"
                         >{{ d }}
                         @if (!lecture()) {
-                          <button type="button" class="s-chip-del" [attr.aria-label]="'Retirer ' + d" (mousedown)="$event.preventDefault()" (click)="retirerDestinataire(t, i)">×</button>
+                          <button type="button" class="s-chip-del" [attr.aria-label]="'Retirer ' + d" (mousedown)="$event.preventDefault()" (click)="retirerParticipant(t, i)">×</button>
                         }
                       </span>
                     }
@@ -319,10 +319,10 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
                         #nd
                         class="chip-input"
                         list="dl-dest"
-                        aria-label="Ajouter un destinataire"
+                        aria-label="Ajouter un participant"
                         [placeholder]="dest(t).length ? 'Ajouter…' : 'Nom ou e-mail, puis Entrée'"
-                        (keydown)="toucheDestinataire($event, t, nd)"
-                        (blur)="ajouterDestinataires(t, nd)"
+                        (keydown)="toucheParticipant($event, t, nd)"
+                        (blur)="ajouterParticipants(t, nd)"
                       />
                     }
                   </div>
@@ -1227,18 +1227,18 @@ export class PanneauTache {
     void this.etat.saisir((id) => this.api.dateInvitation(id, t.uid, el.value), { siErreur: this.remettre(el, ancien) });
   }
 
-  protected toucheDestinataire(e: KeyboardEvent, t: TacheVue, el: HTMLInputElement): void {
+  protected toucheParticipant(e: KeyboardEvent, t: TacheVue, el: HTMLInputElement): void {
     if (e.key === 'Enter' || e.key === ';' || e.key === ',') {
       e.preventDefault();
-      if (el.value.trim()) this.ajouterDestinataires(t, el);
+      if (el.value.trim()) this.ajouterParticipants(t, el);
     } else if (e.key === 'Backspace' && !el.value) {
       const d = this.dest(t);
       if (d.length) void this.etat.saisir((id) => this.api.destinataires(id, t.uid, d.slice(0, -1)));
     }
   }
 
-  /** Ajoute un ou plusieurs destinataires (séparés par ; , ou retour à la ligne), sans doublon. */
-  protected ajouterDestinataires(t: TacheVue, el: HTMLInputElement): void {
+  /** Ajoute un ou plusieurs participants (séparés par ; , ou retour à la ligne), sans doublon. */
+  protected ajouterParticipants(t: TacheVue, el: HTMLInputElement): void {
     const brut = el.value;
     if (!brut.trim()) return;
     el.value = ''; // vidé avant l'envoi : la perte de focus ne doit pas relancer l'ajout
@@ -1251,7 +1251,7 @@ export class PanneauTache {
       (x, i) => !actuels.some((y) => y.toLowerCase() === x.toLowerCase()) && tous.findIndex((z) => z.toLowerCase() === x.toLowerCase()) === i,
     );
     if (!nouveaux.length) {
-      this.etat.afficher(tous.length > 1 ? 'Ces destinataires sont déjà dans la liste.' : `« ${tous[0] ?? ''} » est déjà dans la liste.`, 'attention');
+      this.etat.afficher(tous.length > 1 ? 'Ces participants sont déjà dans la liste.' : `« ${tous[0] ?? ''} » est déjà dans la liste.`, 'attention');
       return;
     }
     const pasMail = nouveaux.filter((x) => !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(x.replace(/^.*<(.+)>$/, '$1')));
@@ -1259,7 +1259,7 @@ export class PanneauTache {
     void this.etat.saisir((id) => this.api.destinataires(id, t.uid, [...actuels, ...nouveaux]), { siErreur: () => (el.value = brut) }).then(() => el.focus());
   }
 
-  protected retirerDestinataire(t: TacheVue, i: number): void {
+  protected retirerParticipant(t: TacheVue, i: number): void {
     const d = [...this.dest(t)];
     d.splice(i, 1);
     void this.etat.saisir((id) => this.api.destinataires(id, t.uid, d));
