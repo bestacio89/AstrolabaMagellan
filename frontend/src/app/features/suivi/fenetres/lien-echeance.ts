@@ -22,7 +22,17 @@ import { EtiquetteAjout } from '../ui/tache';
           Échéance <b>n° {{ d.e.n }} — {{ d.e.nom }}</b> · {{ fE(d.e.montant) }}
         </p>
         <fieldset class="m-sec">
-          <legend><span class="m-step">1</span>Phases liées</legend>
+          <legend><span class="m-step">1</span>Axe lié</legend>
+          <label class="field">Axe (toutes ses tâches, présentes et futures)
+            <select class="in" [value]="axeCode() ?? ''" #ax (change)="choisirAxe(ax.value)">
+              <option value="">— Aucun axe —</option>
+              @for (a of d.axes; track a.id) { <option [value]="a.id">{{ a.nom }} · {{ a.id }}</option> }
+            </select>
+          </label>
+          <p class="note">Un axe lié remplace les liens par phase ou tâche pour son périmètre.</p>
+        </fieldset>
+        <fieldset class="m-sec" [disabled]="!!axeCode()">
+          <legend><span class="m-step">2</span>Phases liées</legend>
           <p class="note" style="margin: 0">Toutes les tâches de la phase comptent, y compris celles ajoutées plus tard.</p>
           <div class="ph-grid">
             @for (p of d.phases; track p.nom) {
@@ -38,7 +48,7 @@ import { EtiquetteAjout } from '../ui/tache';
           </div>
         </fieldset>
         <fieldset class="m-sec">
-          <legend><span class="m-step">2</span>Tâches liées</legend>
+          <legend><span class="m-step">3</span>Tâches liées</legend>
           <input class="in" type="search" placeholder="Filtrer les tâches…" autocomplete="off" #q (input)="filtre.set(q.value)" />
           <div class="tw m-prof ech-tasks">
             <table>
@@ -84,6 +94,7 @@ export class FenetreLienEcheance implements OnInit {
   protected readonly fJ = fJ;
   protected readonly phasesCochees = signal(new Set<string>());
   protected readonly tachesCochees = signal(new Set<string>());
+  protected readonly axeCode = signal<string | null>(null);
   protected readonly filtre = signal('');
   protected readonly occupe = signal(false);
 
@@ -99,13 +110,15 @@ export class FenetreLienEcheance implements OnInit {
         return { nom: ph, n: ts.length, jh: sum(ts.map((t) => t.charge)), autre: o != null && o !== e.n ? o : null };
       });
     const taches = v.tasks.map((t) => ({ ...t, autre: !t.echViaPhase && t.tr.ech != null && t.tr.ech !== e.n ? t.tr.ech : null }));
-    return { e, phases, taches };
+    const axes = [...new Set(v.tasks.map((t) => t.axe).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr')).map((id) => ({ id, nom: v.projet.axes?.[id] || id }));
+    return { e, phases, taches, axes };
   });
 
   ngOnInit(): void {
     const v = this.etat.vue();
     const n = this.numero();
     if (!v) return;
+    this.axeCode.set(v.m.echeancier.find((e) => e.n === n)?.axeCode ?? null);
     this.phasesCochees.set(new Set(v.phases.filter((ph) => v.phaseEch[ph] === n)));
     this.tachesCochees.set(new Set(v.tasks.filter((t) => !t.echViaPhase && t.tr.ech === n).map((t) => t.uid)));
   }
@@ -115,7 +128,13 @@ export class FenetreLienEcheance implements OnInit {
     return !q || label.toLowerCase().includes(q);
   }
 
+  protected choisirAxe(code: string): void {
+    this.axeCode.set(code || null);
+    if (code) { this.phasesCochees.set(new Set()); this.tachesCochees.set(new Set()); }
+  }
+
   protected cocherPhase(ph: string, oui: boolean): void {
+    if (oui) this.axeCode.set(null);
     this.phasesCochees.update((s) => {
       const n = new Set(s);
       if (oui) n.add(ph);
@@ -131,6 +150,7 @@ export class FenetreLienEcheance implements OnInit {
   }
 
   protected cocherTache(uid: string, oui: boolean): void {
+    if (oui) this.axeCode.set(null);
     this.tachesCochees.update((s) => {
       const n = new Set(s);
       if (oui) n.add(uid);
@@ -146,7 +166,7 @@ export class FenetreLienEcheance implements OnInit {
     // les tâches des phases cochées suivent leur phase : seules les autres sont envoyées
     const taches = [...this.tachesCochees()].filter((u) => !phases.includes(v.parUid.get(u)?.phase ?? ''));
     this.occupe.set(true);
-    const r = await this.etat.saisir((id) => this.api.perimetreEcheance(id, this.numero(), phases, taches));
+    const r = await this.etat.saisir((id) => this.api.perimetreEcheance(id, this.numero(), phases, taches, this.axeCode()));
     this.occupe.set(false);
     if (r) this.fermer.emit();
   }
