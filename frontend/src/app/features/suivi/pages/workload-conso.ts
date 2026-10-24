@@ -10,6 +10,7 @@ import { axeName, couleurGroupe, defaultAxeName, filteredTasks, groupByAxe, idNa
 import { BarreFiltres } from '../ui/barre-filtres';
 import { absenceProfil, indexAbsences, Moment } from '../etat/absences.logique';
 import { calculerJaugeGroupe } from '../etat/entete-groupe.logique';
+import { EnteteGroupe } from '../ui/entete-groupe';
 import { Fx } from '../ui/fx';
 import { EtiquetteAjout } from '../ui/tache';
 
@@ -38,7 +39,7 @@ interface LigneProfil {
  */
 @Component({
   selector: 'app-workload-conso',
-  imports: [NgTemplateOutlet, BarreFiltres, EtiquetteAjout, Fx],
+  imports: [NgTemplateOutlet, BarreFiltres, EtiquetteAjout, Fx, EnteteGroupe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (vm(); as m) {
@@ -307,22 +308,25 @@ interface LigneProfil {
       </div>
       </div>
       <ng-template #nomGroupe let-g>
-        <button type="button" class="fold grp-fold" [attr.aria-expanded]="!ui.ui().groupesReplis[g.cleRepli]" [attr.aria-label]="(ui.ui().groupesReplis[g.cleRepli] ? 'Déplier' : 'Replier') + ' le groupe ' + g.nom" [title]="(ui.ui().groupesReplis[g.cleRepli] ? 'Déplier' : 'Replier') + ' le groupe'" (click)="basculerGroupe(g.cleRepli)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-        </button>
-        @if (g.phase) {
-          <button type="button" class="grp-name" [attr.data-openph]="g.cle" [title]="'Ouvrir la phase ' + g.cle">{{ g.nom }}</button>
-          @if (g.echeance) {
-            <span class="eur-dot" title="Phase liée à une échéance de facturation">€</span>
+        <app-entete-groupe
+          [nom]="g.nom"
+          [nombreTaches]="g.taches.length"
+          [charge]="g.charge"
+          [jauge]="g.jauge"
+          [replie]="!!ui.ui().groupesReplis[g.cleRepli]"
+          (basculer)="basculerGroupe(g.cleRepli)"
+        >
+          @if (g.phase) {
+            <button type="button" class="grp-name" groupe-nom [attr.data-openph]="g.cle" [title]="'Ouvrir la phase ' + g.cle">{{ g.nom }}</button>
+          } @else {
+            <span groupe-nom>{{ g.nom }}</span>
           }
-        } @else {
-          {{ g.nom }}
-        }
-        <span class="grp-jauge" [title]="g.jauge.infoBulle">
-          @if (g.jauge.terminee) { <span class="grp-jauge-ok" aria-label="Tout est validé">✓</span> }
-          @else { <span class="grp-jauge-bar"><i [style.width.%]="g.jauge.pourcentage"></i></span> }
-          <span>{{ g.jauge.valides }} / {{ g.jauge.total }} validées</span>
-        </span>
+          <ng-container groupe-actions>
+            @if (g.echeance) {
+              <span class="eur-dot" title="Phase liée à une échéance de facturation">€</span>
+            }
+          </ng-container>
+        </app-entete-groupe>
       </ng-template>
     }
   `,
@@ -422,6 +426,7 @@ export class WorkloadConso {
         couleur: couleurGroupe(v, cle),
         taches,
         jauge: calculerJaugeGroupe(taches),
+        charge: sum(taches.map((t) => t.charge)),
         phase: v.m.dim.key === 'phase' && !!cle,
         echeance: v.phaseEch[cle] != null,
       })),

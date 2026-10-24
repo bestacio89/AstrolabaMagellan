@@ -9,6 +9,7 @@ import { UiEtat } from '../etat/ui.etat';
 import { axeName, couleurGroupe, defaultAxeName, echEtat, filteredTasks, groupByAxe, idName, isOver, TacheVue, typeName, Vue } from '../etat/vue';
 import { colonnesListe, VUES_LISTE, vueListe } from '../etat/workload.logique';
 import { calculerJaugeGroupe } from '../etat/entete-groupe.logique';
+import { EnteteGroupe } from '../ui/entete-groupe';
 import { BarreFiltres } from '../ui/barre-filtres';
 import { LienTache } from '../ui/tache';
 import { Triable } from '../ui/triable';
@@ -21,7 +22,7 @@ import { Fx } from '../ui/fx';
  */
 @Component({
   selector: 'app-workload-liste',
-  imports: [NgTemplateOutlet, BarreFiltres, LienTache, Fx, Triable],
+  imports: [NgTemplateOutlet, BarreFiltres, LienTache, Fx, Triable, EnteteGroupe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (vm(); as m) {
@@ -117,42 +118,34 @@ import { Fx } from '../ui/fx';
             @for (g of m.groupes; track g.cle) {
               <tr class="grp axg" [style.--axc]="g.couleur">
                 <td [attr.colspan]="m.nCols">
-                  <div class="grp-h">
-                    <button type="button" class="fold grp-fold" [attr.aria-expanded]="!ui.ui().groupesReplis[g.cleRepli]" [attr.aria-label]="(ui.ui().groupesReplis[g.cleRepli] ? 'Déplier' : 'Replier') + ' le groupe ' + g.nom" [title]="(ui.ui().groupesReplis[g.cleRepli] ? 'Déplier' : 'Replier') + ' le groupe'" (click)="basculerGroupe(g.cleRepli)">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-                    </button>
+                  <app-entete-groupe
+                    [nom]="g.nom"
+                    [nombreTaches]="g.taches.length"
+                    [charge]="g.charge"
+                    [jauge]="g.jauge"
+                    [replie]="!!ui.ui().groupesReplis[g.cleRepli]"
+                    (basculer)="basculerGroupe(g.cleRepli)"
+                  >
                     @if (g.phase) {
-                      <button type="button" class="grp-name" [attr.data-openph]="g.cle" [title]="'Ouvrir la phase ' + g.cle">{{ g.nom }}</button>
+                      <button type="button" class="grp-name" groupe-nom [attr.data-openph]="g.cle" [title]="'Ouvrir la phase ' + g.cle">{{ g.nom }}</button>
                     } @else {
-                      {{ g.nom }}
+                      <span groupe-nom>{{ g.nom }}</span>
                     }
-                    <span class="grp-meta">{{ g.taches.length }} tâche{{ g.taches.length > 1 ? 's' : '' }} · {{ fJ(g.charge) }} JH</span>
-                    <span class="grp-jauge" [title]="g.jauge.infoBulle">
-                      @if (g.jauge.terminee) { <span class="grp-jauge-ok" aria-label="Tout est validé">✓</span> }
-                      @else { <span class="grp-jauge-bar"><i [style.width.%]="g.jauge.pourcentage"></i></span> }
-                      <span>{{ g.jauge.valides }} / {{ g.jauge.total }} validées</span>
-                    </span>
-                    @if (g.phase) {
-                      @if (g.echeance; as e) {
-                        <button type="button" class="ech-badge" [class]="'ech-badge ech-' + e.etat" [attr.data-openph]="g.cle" title="Échéance de la phase — cliquer pour la modifier">
-                          € Échéance n° {{ e.n }} · {{ fD(e.date) }} · {{ e.libelle }}
-                        </button>
-                      } @else if (g.lienEcheance) {
-                        <button type="button" class="grp-add grp-ech" [attr.data-openph]="g.cle" title="Lier toute la phase à une échéance de facturation">€ Échéance</button>
+                    <ng-container groupe-actions>
+                      @if (g.phase) {
+                        @if (g.echeance; as e) {
+                          <button type="button" class="ech-badge" [class]="'ech-badge ech-' + e.etat" [attr.data-openph]="g.cle" title="Échéance de la phase — cliquer pour la modifier">
+                            € Échéance n° {{ e.n }} · {{ fD(e.date) }} · {{ e.libelle }}
+                          </button>
+                        } @else if (g.lienEcheance) {
+                          <button type="button" class="grp-add grp-ech" [attr.data-openph]="g.cle" title="Lier toute la phase à une échéance de facturation">€ Échéance</button>
+                        }
                       }
-                    }
-                    @if (v.droits.peutModifier) {
-                      <button
-                        type="button"
-                        class="grp-add"
-                        [title]="'Créer une tâche dans « ' + g.nom + ' »'"
-                        (click)="etat.fenetre.set({ type: 'nouvelle-tache', groupe: g.cle })"
-                      >
-                        + Tâche
-                      </button>
-                    }
-                  </div>
-                </td>
+                      @if (v.droits.peutModifier) {
+                        <button type="button" class="grp-add" [title]="'Créer une tâche dans « ' + g.nom + ' »'" (click)="etat.fenetre.set({ type: 'nouvelle-tache', groupe: g.cle })">+ Tâche</button>
+                      }
+                    </ng-container>
+                  </app-entete-groupe>
               </tr>
               @for (t of g.taches; track t.uid) {
                 @let finDepassee = !!t.tr.fin && t.statut !== 'Validé' && !t.annulee && t.tr.fin < v.aujourdhui;
