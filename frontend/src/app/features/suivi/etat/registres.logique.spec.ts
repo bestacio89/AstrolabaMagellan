@@ -49,7 +49,7 @@ describe('Actions, décisions, risques', () => {
   it('recherche dans les commentaires des registres', () => {
     const action = { id: 'action-1', ref: 'A-1', libelle: 'Action', commentaire: '', porteur: '', origine: '', statut: 'À faire', echeance: null };
     const resultat = listesRegistres(
-      { actions: [action], decisions: [], risques: [], risquesOuverts: new Set<string>(), commentaires: { 'act:action-1': [{ texte: 'relance distincte' }] } },
+      { actions: [action], decisions: [], risques: [], risquesOuverts: new Set<string>(), commentaires: { 'act:action-1': [{ texte: 'relance distincte' }] } } as never,
       { adq: 'relance distincte', adf: 'toutes', adp: '', adEch: '', adDu: '', adAu: '', adInst: '', adfd: 'toutes', adDPer: '', adpd: '', rkf: 'tous', rkty: '' } as never,
       J,
     );
