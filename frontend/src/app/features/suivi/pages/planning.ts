@@ -38,7 +38,7 @@ interface LigneDessin {
   nonDate: string | null;
   selection: boolean;
   aria: string;
-  dateLimite?: { left: number; date: string; etat: string; libelle: string; auDela: { libelle: string }[] } | null;
+  dateLimite?: { left: number; date: string; etat: string; libelle: string; info: string; auDela: { libelle: string }[] } | null;
   finHorsDateLimite?: boolean;
 }
 
@@ -254,7 +254,7 @@ const ICONE_PUNAISE = 'M9 3h6l-1 6 3 3v2H7v-2l3-3z';
         }
         @if (d.dateLimite; as dl) {
           <span class="pl-dl-line" [class]="'pl-dl-line lv-' + dl.etat" [style.left.%]="dl.left" aria-hidden="true"></span>
-          <span class="pl-dl-fanion" [class]="'pl-dl-fanion lv-' + dl.etat" [style.left.%]="dl.left" [title]="dl.libelle + (dl.auDela.length ? ' · ' + dl.auDela.map(x => x.libelle).join(', ') : '')" aria-hidden="true">⚑</span>
+          <span class="pl-dl-fanion" [class]="'pl-dl-fanion lv-' + dl.etat" [style.left.%]="dl.left" [title]="dl.info" aria-hidden="true">⚑</span>
           <span class="pl-dl-date" [class]="'pl-dl-date lv-' + dl.etat" [style.left.%]="dl.left">{{ fD(dl.date).slice(0, 5) }}</span>
         }
         @if (d.losange; as lo) {
@@ -506,7 +506,9 @@ function dessiner(v: Vue, l: LigneAffichee<TacheVue>, pc: (iso: string, finJour?
   const codeAxe = v.m.dim.key === 'id' && !l.sous ? cle : '';
   const dateLimiteIso = codeAxe ? v.projet.datesLimitesAxes?.[codeAxe] ?? null : null;
   const etatDateLimite = codeAxe ? v.m.datesLimitesAxes?.find((x) => x.code === codeAxe) ?? null : null;
-  const dateLimite = dateLimiteIso ? { left: pc(dateLimiteIso), date: dateLimiteIso, etat: etatDateLimite?.etat ?? 'ok', libelle: etatDateLimite?.libelle ?? `Date limite ${fD(dateLimiteIso)}`, auDela: etatDateLimite?.auDela ?? [] } : null;
+  const dateLibelle = etatDateLimite?.libelle ?? `Date limite ${fD(dateLimiteIso!)}`;
+  const auDela = etatDateLimite?.auDela ?? [];
+  const dateLimite = dateLimiteIso ? { left: pc(dateLimiteIso), date: dateLimiteIso, etat: etatDateLimite?.etat ?? 'ok', libelle: dateLibelle, info: dateLibelle + (auDela.length ? ' · ' + auDela.map((x) => x.libelle).join(', ') : ''), auDela } : null;
   const aria = `${g.nom} : ${g.planDebut && g.planFin ? `prévu du ${fD(g.planDebut)} au ${fD(g.planFin)}${saisi ? '' : ' (calculé)'}` : 'non planifié'}${
     g.reelDebut ? `, réel du ${fD(g.reelDebut)} au ${fD(g.reelFin)}` : ''
   }, avancement ${Math.round(g.avancement * 100)} %${fin ? ', fin prévue dépassée' : ''}. Ouvrir le détail`;
