@@ -345,6 +345,9 @@ export class Ateliers {
   protected readonly fDi = fDi;
   protected readonly fJ = fJ;
   protected readonly stSlug = stSlug;
+  protected readonly couleurGroupe = couleurGroupe;
+  protected readonly idName = idName;
+  protected readonly defaultAxeName = defaultAxeName;
   protected readonly isOver = isOver;
   protected readonly atRealise = atRealise;
   protected readonly lvLivre = lvLivre;
