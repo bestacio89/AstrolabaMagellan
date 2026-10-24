@@ -26,12 +26,12 @@ import { EtiquetteAjout } from '../ui/tache';
           <label class="field">Axe (toutes ses tâches, présentes et futures)
             <select class="in" [value]="axeCode() ?? ''" #ax (change)="choisirAxe(ax.value)">
               <option value="">— Aucun axe —</option>
-              @for (a of d.axes; track a.id) { <option [value]="a.id">{{ a.nom }} · {{ a.id }}</option> }
+              @for (a of d.axes; track a.id) { <option [value]="a.id" [disabled]="!!a.prisPar || (!!d.e.realiseLe && d.e.axeCode !== a.id)">{{ a.nom }} · {{ a.id }}{{ a.prisPar ? " · prise par l’échéance n° " + a.prisPar : a.facturee ? " · facturée" : "" }}</option> }
             </select>
           </label>
-          <p class="note">Un axe lié remplace les liens par phase ou tâche pour son périmètre.</p>
+          <p class="note">Les tâches de l’axe suivent cette échéance sauf lorsqu’une phase est liée. Une tâche ne déclenche qu’une facture.</p>
         </fieldset>
-        <fieldset class="m-sec" [disabled]="!!axeCode()">
+        <fieldset class="m-sec">
           <legend><span class="m-step">2</span>Phases liées</legend>
           <p class="note" style="margin: 0">Toutes les tâches de la phase comptent, y compris celles ajoutées plus tard.</p>
           <div class="ph-grid">
@@ -47,7 +47,7 @@ import { EtiquetteAjout } from '../ui/tache';
             }
           </div>
         </fieldset>
-        <fieldset class="m-sec" [disabled]="!!axeCode()">
+        <fieldset class="m-sec">
           <legend><span class="m-step">3</span>Tâches liées</legend>
           <input class="in" type="search" placeholder="Filtrer les tâches…" autocomplete="off" #q (input)="filtre.set(q.value)" />
           <div class="tw m-prof ech-tasks">
@@ -55,13 +55,13 @@ import { EtiquetteAjout } from '../ui/tache';
               <tbody>
                 @for (t of d.taches; track t.uid) {
                   @if (visible(t.label)) {
-                    <tr [class.is-lock]="phasesCochees().has(t.phase)">
+                    <tr [class.is-lock]="phasesCochees().has(t.phase) || t.viaPhase || t.viaAxe">
                       <td style="width: 28px">
                         <input
                           type="checkbox"
                           [attr.aria-label]="t.label"
-                          [disabled]="phasesCochees().has(t.phase)"
-                          [checked]="phasesCochees().has(t.phase) || tachesCochees().has(t.uid)"
+                          [disabled]="phasesCochees().has(t.phase) || t.viaPhase || t.viaAxe"
+                          [checked]="phasesCochees().has(t.phase) || t.viaPhase && v.phaseEch[t.phase] === d.e.n || t.viaAxe || tachesCochees().has(t.uid)"
                           #ct
                           (change)="cocherTache(t.uid, ct.checked)"
                         />
@@ -69,7 +69,7 @@ import { EtiquetteAjout } from '../ui/tache';
                       <td>
                         {{ t.label }}<app-etiquette-ajout [t]="t" />
                         <small class="muted t-note" style="display: block">{{
-                          phasesCochees().has(t.phase) ? 'incluse via la phase ' + t.phase : t.autre != null ? 'liée à l’échéance n° ' + t.autre + ' — la cocher la déplace ici' : ''
+                          t.viaAxe ? 'incluse via l’axe ' + t.axe : t.viaPhase ? 'incluse via la phase ' + t.phase : phasesCochees().has(t.phase) ? 'incluse via la phase ' + t.phase : t.autre != null ? 'liée à l’échéance n° ' + t.autre + ' — la cocher la déplace ici' : ''
                         }}</small>
                       </td>
                       <td class="muted">{{ t.phase }}</td>
@@ -109,7 +109,7 @@ export class FenetreLienEcheance implements OnInit {
         const o = v.phaseEch[ph];
         return { nom: ph, n: ts.length, jh: sum(ts.map((t) => t.charge)), autre: o != null && o !== e.n ? o : null };
       });
-    const taches = v.tasks.map((t) => ({ ...t, autre: !t.echViaPhase && t.tr.ech != null && t.tr.ech !== e.n ? t.tr.ech : null }));
+    const taches = v.tasks.map((t) => ({ ...t, viaAxe: !!e.axeCode && t.axe === e.axeCode && !t.echViaPhase, viaPhase: !!t.echViaPhase, autre: !t.echViaPhase && !t.echViaAxe && t.tr.ech != null && t.tr.ech !== e.n ? t.tr.ech : null }));
     const axes = [...new Set(v.tasks.map((t) => t.axe).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr')).map((id) => ({ id, nom: v.projet.axes?.[id] || id }));
     return { e, phases, taches, axes };
   });
@@ -130,7 +130,6 @@ export class FenetreLienEcheance implements OnInit {
 
   protected choisirAxe(code: string): void {
     this.axeCode.set(code || null);
-    if (code) { this.phasesCochees.set(new Set()); this.tachesCochees.set(new Set()); }
   }
 
   protected cocherPhase(ph: string, oui: boolean): void {
@@ -164,7 +163,7 @@ export class FenetreLienEcheance implements OnInit {
     if (!v) return;
     const phases = [...this.phasesCochees()];
     // les tâches des phases cochées suivent leur phase : seules les autres sont envoyées
-    const taches = [...this.tachesCochees()].filter((u) => !phases.includes(v.parUid.get(u)?.phase ?? ''));
+    const taches = [...this.tachesCochees()].filter((u) => !phases.includes(v.parUid.get(u)?.phase ?? '') && !(this.axeCode() && v.parUid.get(u)?.axe === this.axeCode()));
     this.occupe.set(true);
     const r = await this.etat.saisir((id) => this.api.perimetreEcheance(id, this.numero(), phases, taches, this.axeCode()));
     this.occupe.set(false);

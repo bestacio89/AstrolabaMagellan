@@ -152,8 +152,9 @@ import { Triable } from '../ui/triable';
                     <td>
                       <div class="perim">
                         @if (perimetre(v, e); as p) {
-                          @if (p.phases.length || p.directes) {
+                          @if (p.axe || p.phases.length || p.directes) {
                             <div class="perim-chips">
+                              @if (p.axe) { <button type="button" class="chip-ph" [title]="'Facturation de l’axe ' + p.axe" (click)="etat.ouvrirAxe(p.axe, 'fact')">Axe · {{ v.projet.axes?.[p.axe] || p.axe }}</button> }
                               @for (ph of p.phases; track ph) {
                                 <button type="button" class="chip-ph" [attr.data-openph]="ph" [title]="'Ouvrir la phase ' + ph">{{ ph }}</button>
                               }
@@ -172,7 +173,7 @@ import { Triable } from '../ui/triable';
                           }
                           @if (!lecture()) {
                             <button type="button" class="btn sm" [class.hov]="!p.phases.length && !p.directes" (click)="etat.fenetre.set({ type: 'lien-echeance', numero: e.n })">
-                              {{ p.phases.length || p.directes ? 'Modifier' : 'Lier…' }}
+                              {{ p.axe || p.phases.length || p.directes ? 'Modifier' : 'Lier…' }}
                             </button>
                           }
                         }
@@ -366,10 +367,11 @@ export class Facturation {
   });
 
   /** Phases liées à l'échéance et nombre de tâches liées directement. */
-  protected perimetre(v: Vue, e: EcheanceCalculee): { phases: string[]; directes: number } {
+  protected perimetre(v: Vue, e: EcheanceCalculee): { axe: string | null; phases: string[]; directes: number } {
     return {
+      axe: e.axeCode ?? null,
       phases: e.phases.filter((ph) => v.phaseEch[ph] === e.n),
-      directes: e.lies.filter((uid) => !v.parUid.get(uid)?.echViaPhase).length,
+      directes: e.lies.filter((uid) => !v.parUid.get(uid)?.echViaPhase && !v.parUid.get(uid)?.echViaAxe).length,
     };
   }
 
