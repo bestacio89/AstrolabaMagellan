@@ -350,7 +350,7 @@ export class TableauDeBord {
     }
     for (const x of al.ateliers) {
       const t = x.tache;
-      const nDest = t.tr.atelier?.dest?.length ?? 0;
+      const nParticipants = t.tr.atelier?.dest?.length ?? 0;
       const h = atHoraire(t);
       liste.push({
         cle: 'at-' + t.uid,
@@ -359,7 +359,7 @@ export class TableauDeBord {
         genre: 'Atelier',
         titre: t.label,
         uid: t.uid,
-        sous: `${fD(t.tr.atelier?.date)}${h ? ' · ' + h : ''} · ${nDest ? nDest + ' destinataire(s)' : 'aucun destinataire'}`,
+        sous: `${fD(t.tr.atelier?.date)}${h ? ' · ' + h : ''} · ${nParticipants ? nParticipants + ' participant(s)' : 'aucun participant'}`,
         action: x.passe
           ? { libelle: 'Replanifier / valider', titre: 'Date passée : replanifiez l’atelier ou validez-le s’il a eu lieu', ouvrir: t.uid }
           : modif
