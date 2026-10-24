@@ -555,4 +555,28 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
         var apres = await pilotage.GetFromJsonAsync<JsonObject>($"/api/projets/{id}/suivi");
         Assert.Empty(apres!["projet"]!["historique"]!.AsArray());
     }
+    [Fact]
+    public async Task Un_atelier_peut_etre_cree_sans_charge_et_conserve_son_horaire_et_ses_participants()
+    {
+        var client = _api.ClientPour("chef");
+        var id = await ImporterAsync(client);
+        var creation = await Saisir(client, HttpMethod.Post, $"/api/projets/{id}/taches", new
+        {
+            label = "Atelier complémentaire sans charge propre", axe = "AXE1", lot = "1.2", phase = "CONSTRUCTION", etape = "",
+            type = "Atelier", debut = "2026-10-26", fin = "2026-10-26",
+            charges = Array.Empty<object>(), motif = "Atelier récurrent sans charge propre",
+            atelierDate = "2026-10-26", atelierHeureDebut = "09:00", atelierHeureFin = "10:30",
+            atelierParticipants = new[] { "camille.martin@example.test", "alex.durand@example.test", "CAMILLE.MARTIN@example.test" },
+        });
+
+        Assert.Equal("a1", creation["ouvrir"]!.GetValue<string>());
+        var tache = creation["suivi"]!["modele"]!["tasks"]!.AsArray()
+            .Single(x => x!["uid"]!.GetValue<string>() == "a1")!;
+        var atelier = tache["tr"]!["atelier"]!;
+        Assert.Equal("2026-10-26", atelier["date"]!.GetValue<string>());
+        Assert.Equal("09:00", atelier["heureDebut"]!.GetValue<string>());
+        Assert.Equal("10:30", atelier["heureFin"]!.GetValue<string>());
+        Assert.Equal(new[] { "camille.martin@example.test", "alex.durand@example.test" },
+            atelier["dest"]!.AsArray().Select(x => x!.GetValue<string>()).ToArray());
+    }
 }
