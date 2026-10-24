@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using PilotageForfaits.Domain.Entites;
 
 namespace PilotageForfaits.Application.Abstractions;
@@ -9,6 +10,8 @@ namespace PilotageForfaits.Application.Abstractions;
 /// </summary>
 public interface IContexteDonnees
 {
+    /// <summary>Transaction et opérations de persistance atomiques pour les cas d'usage qui déplacent une contrainte unique.</summary>
+    DatabaseFacade Database { get; }
     DbSet<Utilisateur> Utilisateurs { get; }
     DbSet<Habilitation> Habilitations { get; }
     DbSet<EntreeJournal> Journal { get; }
