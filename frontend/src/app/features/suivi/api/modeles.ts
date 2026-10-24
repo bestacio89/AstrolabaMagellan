@@ -68,6 +68,8 @@ export interface ProjetSuivi {
   dates: { debut: string | null; finContrat: string | null; finPrevue: string | null };
   ref: { phases: string[]; etapes: string[] };
   axes: Record<string, string>;
+  datesLimitesAxes?: Record<string, string | null>;
+  lots?: Record<string, string>;
   types: TypeTache[];
   frais?: FraisBudget[];
   achats?: AchatBudget[];
@@ -411,6 +413,12 @@ export interface EntreeJournal {
 
 // ------------------------------------------------------------------ modèle (indicateurs calculés)
 
+export interface DateLimiteAxe {
+  code: string; date: string; etat: 'tenue' | 'tard' | 'depassee' | 'risque' | 'ok'; libelle: string; niveau: string;
+  jours: number; ecart: number | null; finMax: string | null; n: number; valides: number; ouvertes: number;
+  auDela: { uid: string; libelle: string; fin: string | null; statut: string }[];
+}
+
 export interface Modele {
   p: Personne[];
   months: string[];
@@ -447,6 +455,7 @@ export interface Modele {
   ateliers: { ateliers: Compteur; livrables: Compteur; parType: CompteurType[] };
   ia: Ia;
   vigilance: PointVigilance[];
+  datesLimitesAxes?: DateLimiteAxe[];
   nonDatees: string[];
 }
 

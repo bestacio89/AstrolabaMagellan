@@ -28,7 +28,8 @@ export type FenetreDemandee =
   | { type: 'export-coproj' }
   | { type: 'reperes' }
   | { type: 'jalon'; id: string | null }
-  | { type: 'personne' };
+  | { type: 'personne' }
+  | { type: 'lot'; code: string };
 
 /** Bouton d'une fenêtre de confirmation. */
 export interface BoutonConfirmation<T> {

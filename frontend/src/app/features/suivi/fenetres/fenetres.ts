@@ -8,6 +8,7 @@ import { FenetreExportCoproj, FenetreReperes } from './export-reperes';
 import { FenetreJalon } from './jalon';
 import { FenetrePersonne } from './personne';
 import { FenetreLienEcheance } from './lien-echeance';
+import { FenetreLot } from './lot';
 import { FenetreNouvelleTache } from './nouvelle-tache';
 import { FenetreReaffectation } from './reaffectation';
 
@@ -24,6 +25,7 @@ import { FenetreReaffectation } from './reaffectation';
     FenetreExportCoproj,
     FenetreReperes,
     FenetreLienEcheance,
+    FenetreLot,
     FenetreJalon,
     FenetrePersonne,
     FenetreNouvelleTache,
@@ -58,6 +60,8 @@ import { FenetreReaffectation } from './reaffectation';
         <app-fenetre-jalon [id]="f.id" (fermer)="fermer()" />
       } @else if (f.type === 'personne') {
         <app-fenetre-personne (fermer)="fermer()" />
+      } @else if (f.type === 'lot') {
+        <app-fenetre-lot [code]="f.code" (fermer)="fermer()" />
       }
     }
   `,

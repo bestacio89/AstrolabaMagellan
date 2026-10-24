@@ -244,6 +244,12 @@ export class SuiviApi {
   nomAxe(id: string, code: string, nom: string) {
     return this.put(id, `axes/${encodeURIComponent(code)}/nom`, { nom });
   }
+  axe(id: string, code: string, nom: string, dateLimite: string | null) {
+    return this.put(id, `axes/${encodeURIComponent(code)}`, { nom, dateLimite });
+  }
+  nomLot(id: string, code: string, nom: string) {
+    return this.put(id, `lots/${encodeURIComponent(code)}`, { nom });
+  }
   fiche(id: string, champ: 'client' | 'projet' | 'reference', valeur: string, version?: number) {
     return this.put(id, 'fiche', { champ, valeur, version });
   }
