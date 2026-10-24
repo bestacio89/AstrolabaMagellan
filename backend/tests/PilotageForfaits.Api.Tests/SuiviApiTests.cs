@@ -432,6 +432,32 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
     }
 
     [Fact]
+    public async Task Une_date_limite_d_axe_est_calculee_et_l_echeance_liee_couvre_ses_taches()
+    {
+        var client = _api.ClientPour("chef");
+        var id = await ImporterAsync(client);
+        var suivi = await client.GetFromJsonAsync<JsonObject>($"/api/projets/{id}/suivi");
+        var modele = suivi!["modele"]!;
+        var tacheOuverte = modele["tasks"]!.AsArray().First(x => x!["statut"]!.GetValue<string>() != "Validé" && x["axe"] is not null)!;
+        var codeAxe = tacheOuverte["axe"]!.GetValue<string>();
+        var nomAxe = suivi["projet"]!["axes"]![codeAxe]?.GetValue<string>() ?? codeAxe;
+        var dateLimite = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(-1).ToString("yyyy-MM-dd");
+        var resultatAxe = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/axes/{Uri.EscapeDataString(codeAxe)}", new { nom = nomAxe, dateLimite });
+        var modeleAvecDate = resultatAxe["suivi"]!["modele"]!;
+        var etatAxe = modeleAvecDate["datesLimitesAxes"]!.AsArray().Single(x => x!["code"]!.GetValue<string>() == codeAxe)!;
+        Assert.Equal("depassee", etatAxe["etat"]!.GetValue<string>());
+        Assert.Contains(modeleAvecDate["vigilance"]!.AsArray(), x => x!["cle"]!.GetValue<string>() == "echaxes");
+
+        var numero = modeleAvecDate["echeancier"]!.AsArray()[0]!["n"]!.GetValue<int>();
+        var lie = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/echeances/{numero}/perimetre", new { phases = Array.Empty<string>(), taches = Array.Empty<string>(), axeCode = codeAxe });
+        var modeleLie = lie["suivi"]!["modele"]!;
+        var echeance = modeleLie["echeancier"]!.AsArray().Single(x => x!["n"]!.GetValue<int>() == numero)!;
+        Assert.Equal(codeAxe, echeance["axeCode"]!.GetValue<string>());
+        Assert.All(modeleLie["tasks"]!.AsArray().Where(x => x!["axe"]?.GetValue<string>() == codeAxe && x["statut"]!.GetValue<string>() != "Annulée"),
+            x => Assert.Equal(numero, x!["echN"]!.GetValue<int>()));
+    }
+
+    [Fact]
     public async Task Une_reaffectation_deplace_la_charge_sans_changer_le_total_et_peut_etre_annulee()
     {
         var client = _api.ClientPour("chef");
