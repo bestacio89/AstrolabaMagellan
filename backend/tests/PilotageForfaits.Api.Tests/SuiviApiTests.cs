@@ -432,7 +432,7 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
     }
 
     [Fact]
-    public async Task Une_date_limite_d_axe_est_calculee_et_l_echeance_liee_couvre_ses_taches()
+    public async Task Une_date_limite_d_axe_est_calculee_et_le_nouveau_lien_de_facturation_couvre_ses_taches()
     {
         var client = _api.ClientPour("chef");
         var id = await ImporterAsync(client);
@@ -449,7 +449,7 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
         Assert.Contains(modeleAvecDate["vigilance"]!.AsArray(), x => x!["cle"]!.GetValue<string>() == "echaxes");
 
         var numero = modeleAvecDate["echeancier"]!.AsArray()[0]!["n"]!.GetValue<int>();
-        var lie = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/echeances/{numero}/perimetre", new { phases = Array.Empty<string>(), taches = Array.Empty<string>(), axeCode = codeAxe });
+        var lie = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/axes/{Uri.EscapeDataString(codeAxe)}/facturation", new { axe = codeAxe, numero, phasesADelier = Array.Empty<string>() });
         var modeleLie = lie["suivi"]!["modele"]!;
         var echeance = modeleLie["echeancier"]!.AsArray().Single(x => x!["n"]!.GetValue<int>() == numero)!;
         Assert.Equal(codeAxe, echeance["axeCode"]!.GetValue<string>());
