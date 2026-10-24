@@ -1458,3 +1458,15 @@
 .suivi .pl-dl-date.lv-tard { color:#dc8b14; }
 .suivi .pl-dl-date.lv-tenue { color:#12b76a; }
 .suivi .pl-fin-apres-limite { outline:2px solid #d92d20; outline-offset:-2px; border-radius:7px; }
+
+/* Date limite et facturation déclenchée par un axe : pastilles de l'en-tête commun. */
+.suivi .dl-badge,.suivi .eur-badge { display:inline-flex; align-items:center; gap:4px; max-width:100%; padding:4px 7px; border:1px solid var(--line); border-radius:6px; background:var(--surface); color:var(--ink-2); font-size:11px; line-height:1.2; cursor:pointer; text-align:left; }
+.suivi .dl-empty,.suivi .eur-empty { border-style:dashed; opacity:.35; }
+.suivi .grp-h:hover .dl-empty,.suivi .grp-h:focus-within .dl-empty,.suivi .grp-h:hover .eur-empty,.suivi .grp-h:focus-within .eur-empty { opacity:1; }
+.suivi .dl-risque,.suivi .dl-depassee { border-color:#d92d20; background:#fff1f0; color:#b42318; }
+.suivi .dl-tard { border-color:#dc8b14; background:#fff7e6; color:#92400e; }
+.suivi .dl-tenue { border-color:#12b76a; background:#ecfdf3; color:#067647; }
+.suivi .dl-ok { background:var(--surface-2); color:var(--ink-2); }
+.suivi .eur-cours { border-color:#84adff; background:#eff4ff; color:#1849a9; }
+.suivi .eur-prete { border-color:#6ce9a6; background:#ecfdf3; color:#067647; }
+.suivi .eur-facturee { background:var(--surface-2); color:var(--ink-2); }

@@ -2,6 +2,8 @@
  * Règle commune de jauge pour les en-têtes de groupe du suivi.
  * Les tâches annulées sont hors décompte ; seule la valeur exacte « Validé » compte comme réalisée.
  */
+import { DateLimiteAxe } from '../api/modeles';
+
 export type MotJaugeGroupe = 'validées' | 'réalisés' | 'livrés';
 
 export interface TacheJaugeGroupe {
@@ -32,4 +34,9 @@ export function calculerJaugeGroupe(taches: readonly TacheJaugeGroupe[], mot: Mo
     mot,
     infoBulle: valides + ' / ' + total + ' ' + mot + '. Les tâches annulées sont exclues du décompte.',
   };
+}
+
+/** Info-bulle complète de la pastille de date limite, notamment les tâches qui dépassent. */
+export function infoBulleDateLimite(date: DateLimiteAxe): string {
+  return date.libelle + (date.auDela.length ? '\nTâches au-delà :\n' + date.auDela.map((t) => t.libelle + (t.fin ? ' · ' + t.fin : '')).join('\n') : '');
 }

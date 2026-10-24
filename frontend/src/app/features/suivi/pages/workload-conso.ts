@@ -2,14 +2,14 @@ import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, linkedSignal, signal } from '@angular/core';
 import { SuiviApi } from '../api/suivi.api';
 import { multiJours } from '../etat/constantes';
-import { fD, fJ, fJz, fML, fSigned, stSlug } from '../etat/formats';
+import { fD, fE, fJ, fJz, fML, fP, fSigned, stSlug } from '../etat/formats';
 import { dow, holidayName, isWorkday, lireNombre, monthDays, num, round, sum } from '../etat/outils';
 import { SuiviEtat } from '../etat/suivi.etat';
 import { UiEtat } from '../etat/ui.etat';
 import { axeName, couleurGroupe, defaultAxeName, filteredTasks, groupByAxe, idName, isOver, ProfilVue, TacheVue, taskProfiles, Vue } from '../etat/vue';
 import { BarreFiltres } from '../ui/barre-filtres';
 import { absenceProfil, indexAbsences, Moment } from '../etat/absences.logique';
-import { calculerJaugeGroupe } from '../etat/entete-groupe.logique';
+import { calculerJaugeGroupe, infoBulleDateLimite } from '../etat/entete-groupe.logique';
 import { EnteteGroupe } from '../ui/entete-groupe';
 import { Fx } from '../ui/fx';
 import { EtiquetteAjout } from '../ui/tache';
@@ -326,9 +326,28 @@ interface LigneProfil {
             <span groupe-nom>{{ g.nom }}</span>
           }
           <ng-container groupe-actions>
+            @if (v.m.dim.key === 'id') {
+                        @let dl = v.m.datesLimitesAxes?.find((x) => x.code === g.cle);
+                        @let axeEch = v.m.echeancier.find((x) => x.axeCode === g.cle);
+                        @if (dl) {
+                          <button type="button" class="dl-badge" [class]="'dl-badge dl-' + dl.etat" [title]="infoBulleDateLimite(dl)" (click)="etat.ouvrirAxe(g.cle, 'nom')">⚑ {{ dl.libelle }}</button>
+                        } @else if (v.droits.peutModifier) {
+                          <button type="button" class="dl-badge dl-empty" title="Fixer une date limite pour cet axe" (click)="etat.ouvrirAxe(g.cle, 'nom')">+ Date limite</button>
+                        }
+                      }
             @if (g.echeance) {
               <span class="eur-dot" title="Phase liée à une échéance de facturation">€</span>
             }
+            @if (v.m.dim.key === 'id' && v.m.echeancier.length) {
+                        @let axeEch = v.m.echeancier.find((x) => x.axeCode === g.cle);
+                        @if (axeEch) {
+                          <button type="button" class="eur-badge" [class]="'eur-badge eur-' + (axeEch.realiseLe ? 'facturee' : axeEch.pret ? 'prete' : 'cours')" [title]="'Facturation de l’axe ' + g.cle" (click)="etat.ouvrirAxe(g.cle, 'fact')">
+                            € Échéance n° {{ axeEch.n }}{{ axeEch.realiseLe ? ' · facturée le ' + fD(axeEch.realiseLe) + (axeEch.payeeLe ? ' · payée' : '') : axeEch.pret ? ' prête à facturer · ' + fE(axeEch.montant ?? 0) : ' · ' + fE(axeEch.montant ?? 0) + ' · ' + fP(axeEch.avLie ?? 0) }}
+                          </button>
+                        } @else if (v.droits.peutModifier) {
+                          <button type="button" class="eur-badge eur-empty" title="Lier cet axe à une échéance de facturation" (click)="etat.ouvrirAxe(g.cle, 'fact')">€ Lier à une facture</button>
+                        }
+                      }
           </ng-container>
         </app-entete-groupe>
       </ng-template>
