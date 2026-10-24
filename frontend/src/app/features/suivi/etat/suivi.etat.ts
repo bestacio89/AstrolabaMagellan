@@ -101,6 +101,7 @@ export class SuiviEtat {
   readonly retourPlanning = signal<string | null>(null);
   /** Carte à mettre en évidence lors de l'ouverture du volet d'un axe. */
   readonly sectionAxe = signal<'nom' | 'fact' | null>(null);
+  readonly sectionTache = signal<'commentaires' | null>(null);
   /** La tâche a été ouverte depuis une action (« Tâche concernée ») : « act:<id> », pour y revenir. */
   readonly retourAction = signal<string | null>(null);
   readonly fenetre = signal<FenetreDemandee | null>(null);
@@ -277,7 +278,8 @@ export class SuiviEtat {
 
   // ---------------------------------------------------------------- panneau de détail
 
-  ouvrirTache(uid: string, retourMarge: string | null = null, retourPlanning: string | null = null, retourAction: string | null = null): void {
+  ouvrirTache(uid: string, retourMarge: string | null = null, retourPlanning: string | null = null, retourAction: string | null = null, section: 'commentaires' | null = null): void {
+    this.sectionTache.set(section);
     this.retourPlanning.set(retourPlanning);
     this.retourAction.set(retourAction);
     // « ‹ Avancement » : tâche ouverte depuis le détail de l'avancement, gardé en passant d'une tâche à l'autre
@@ -296,7 +298,12 @@ export class SuiviEtat {
     this.panneau.set(PANNEAU_MARGE + cle);
   }
 
+  ouvrirTacheCommentaires(uid: string): void {
+    this.ouvrirTache(uid, null, null, null, 'commentaires');
+  }
+
   ouvrirAxe(code: string, section: 'nom' | 'fact' = 'nom'): void {
+    this.sectionTache.set(null);
     this.retourAction.set(null);
     this.retourPlanning.set(null);
     this.retourAvancement.set(false);
@@ -341,6 +348,7 @@ export class SuiviEtat {
   }
 
   fermerPanneau(): void {
+    this.sectionTache.set(null);
     this.retourAction.set(null);
     this.retourPlanning.set(null);
     this.retourAvancement.set(false);

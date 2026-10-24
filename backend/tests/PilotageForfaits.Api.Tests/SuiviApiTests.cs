@@ -375,7 +375,7 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
         var chef = _api.ClientPour("chef");
         var id = await ImporterAsync(chef);
         var suiviInitial = await chef.GetFromJsonAsync<JsonObject>($"/api/projets/{id}/suivi");
-        var tacheId = suiviInitial!["projet"]!["track"]!["r7"]!["id"]!.GetValue<Guid>();
+        var tacheId = suiviInitial!["modele"]!["tasks"]!.AsArray().Single(x => x!["uid"]!.GetValue<string>() == "r7")!["cibleId"]!.GetValue<Guid>();
         var url = $"/api/projets/{id}/commentaires/Tache/{tacheId}";
         await Refuser(chef, HttpMethod.Post, url, new { texte = "   " }, HttpStatusCode.UnprocessableEntity);
         await Saisir(chef, HttpMethod.Post, url, new { texte = "Atelier décalé, budget déplacement 1 200 €" });
@@ -443,7 +443,7 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
         var tacheOuverte = modele["tasks"]!.AsArray().First(x => x!["statut"]!.GetValue<string>() != "Validé" && x["axe"] is not null)!;
         var codeAxe = tacheOuverte["axe"]!.GetValue<string>();
         var nomAxe = suivi["projet"]!["axes"]![codeAxe]?.GetValue<string>() ?? codeAxe;
-        var dateLimite = new DateOnly(2026, 10, 19).ToString("yyyy-MM-dd");
+        var dateLimite = new DateOnly(2020, 1, 1).ToString("yyyy-MM-dd");
         var resultatAxe = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/axes/{Uri.EscapeDataString(codeAxe)}", new { nom = nomAxe, dateLimite });
         var modeleAvecDate = resultatAxe["suivi"]!["modele"]!;
         var etatAxe = modeleAvecDate["datesLimitesAxes"]!.AsArray().Single(x => x!["code"]!.GetValue<string>() == codeAxe)!;

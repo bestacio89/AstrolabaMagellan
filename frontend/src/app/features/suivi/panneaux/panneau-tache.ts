@@ -770,7 +770,7 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
               </section>
             }
 
-            <app-carte-commentaires [cibleType]="'Tache'" [cibleId]="t.cibleId ?? ''" [cle]="t.uid" [ancienCommentaire]="t.commentaire" />
+            <app-carte-commentaires [class.commentaires-cible]="etat.sectionTache() === 'commentaires'" [cibleType]="'Tache'" [cibleId]="t.cibleId ?? ''" [cle]="t.uid" [ancienCommentaire]="t.commentaire" />
 
             @if (t.hypothese) {
               <section>
@@ -831,6 +831,7 @@ export class PanneauTache {
 
   readonly uid = input.required<string>();
   protected readonly etat = inject(SuiviEtat);
+  private readonly hote = inject(ElementRef<HTMLElement>);
   private readonly ui = inject(UiEtat);
   private readonly api = inject(SuiviApi);
   private readonly router = inject(Router);
@@ -878,6 +879,15 @@ export class PanneauTache {
     this.ui.ui();
     const liste = listeAffichee();
     return { pos: liste.indexOf(this.uid()), total: liste.length };
+  });
+
+  private readonly scrollCommentaires = effect(() => {
+    if (this.etat.sectionTache() !== 'commentaires') return;
+    queueMicrotask(() => {
+      const carte = this.hote.nativeElement.querySelector('app-carte-commentaires');
+      carte?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+      this.etat.sectionTache.set(null);
+    });
   });
 
   constructor() {
