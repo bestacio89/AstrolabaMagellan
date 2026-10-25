@@ -4,7 +4,7 @@ import { Action, PointVigilance } from '../api/modeles';
 import { SuiviApi } from '../api/suivi.api';
 import { calculerAlertes } from '../etat/alertes';
 import { estFinancier } from '../etat/vigilance';
-import { fD, fJ, fP, fSigned, largeur, sgn } from '../etat/formats';
+import { fD, fE, fJ, fP, fSigned, largeur, sgn } from '../etat/formats';
 import { SuiviEtat } from '../etat/suivi.etat';
 import { EtatUi, UiEtat } from '../etat/ui.etat';
 import { atHoraire } from '../etat/vue';
@@ -353,6 +353,7 @@ export class TableauDeBord {
   protected readonly afficherPointsDeVigilance = false;
 
   protected readonly fD = fD;
+  protected readonly fE = fE;
   protected readonly fJ = fJ;
   protected readonly fP = fP;
   protected readonly fSigned = fSigned;
