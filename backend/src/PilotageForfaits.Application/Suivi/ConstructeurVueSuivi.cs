@@ -20,6 +20,7 @@ public static class ConstructeurVueSuivi
         var p = d.Projet;
         var indexAchat = d.BudgetAchats.Select((x, i) => (x.Id, i)).ToDictionary(x => x.Id, x => x.i);
         var tacheParId = d.Taches.ToDictionary(t => t.Id);
+        var tacheParRepere = d.Taches.ToDictionary(t => t.Repere, StringComparer.Ordinal);
         var dernierImport = d.Imports.LastOrDefault();
 
         // ---- fiche ----
@@ -120,7 +121,7 @@ public static class ConstructeurVueSuivi
             Grille = d.Grille.Select(g => new GrilleVueDto(g.Profil, g.TjmParis, g.CjmParis, g.TjmRegion, g.CjmRegion)).ToList(),
             Tasks = c.Tasks.Select((t, k) => new TacheVueDto
             {
-                Uid = t.Uid, CibleId = d.Taches[k].Id, Version = d.Taches[k].Version, Ligne = t.Ligne, Id = t.Id, Lot = t.Lot, Phase = t.Phase, Etape = t.Etape, Label = t.Label,
+                Uid = t.Uid, CibleId = tacheParRepere[t.Uid].Id, Version = tacheParRepere[t.Uid].Version, Ligne = t.Ligne, Id = t.Id, Lot = t.Lot, Phase = t.Phase, Etape = t.Etape, Label = t.Label,
                 Charges = t.Charges, Section = t.Section, Livrable = t.Livrable, Hypothese = t.Hypothese, Ajout = t.Ajout, LivCol = t.LivCol,
             }).ToList(),
             Track = track,
