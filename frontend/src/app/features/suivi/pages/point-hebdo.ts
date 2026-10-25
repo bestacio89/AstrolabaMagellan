@@ -28,10 +28,11 @@ import { SuiviEtat } from '../etat/suivi.etat';
       } @else if (d(); as dd) {
         <div class="sechead">
           <div>
-            <h2>Point {{ type() === 'mois' ? 'mensuel' : 'hebdo' }}</h2>
-            <p>La diapositive du point de suivi delivery, à ajouter au support de l’entreprise. Les chiffres viennent du suivi ; complétez ce qui ne se calcule pas.</p>
+            <h2>{{ type() === 'quinzaine' ? 'Revue bimensuelle' : type() === 'mois' ? 'Point mensuel' : 'Point hebdomadaire' }}</h2>
+            <p>Préparez les éléments de la revue delivery. Les chiffres sont calculés à partir du suivi ; les appréciations et commentaires sont conservés d’une séance à l’autre.</p>
           </div>
           <div class="seg" role="group" aria-label="Période">
+            <button type="button" [attr.aria-pressed]="type() === 'quinzaine'" (click)="type.set('quinzaine')">Revue bimensuelle</button>
             <button type="button" [attr.aria-pressed]="type() === 'semaine'" (click)="type.set('semaine')">Hebdomadaire</button>
             <button type="button" [attr.aria-pressed]="type() === 'mois'" (click)="type.set('mois')">Mensuel</button>
           </div>
@@ -39,10 +40,10 @@ import { SuiviEtat } from '../etat/suivi.etat';
         <div class="ph-grille">
           <aside class="card ph-form" aria-label="À compléter">
             <label class="field"
-              >{{ type() === 'mois' ? 'Mois' : 'Semaine' }}
+              >{{ type() === 'mois' ? 'Mois' : type() === 'quinzaine' ? 'Date de la séance' : 'Semaine' }}
               <select class="in" #per (change)="choisirPeriode(per.value)">
                 @for (p of periodes(); track p.valeur) {
-                  <option [value]="p.valeur" [selected]="p.valeur === (type() === 'mois' ? mois() : semaine())">{{ p.libelle }}</option>
+                  <option [value]="p.valeur" [selected]="p.valeur === (type() === 'mois' ? mois() : type() === 'quinzaine' ? seance() : semaine())">{{ p.libelle }}</option>
                 }
               </select>
             </label>
@@ -58,7 +59,7 @@ import { SuiviEtat } from '../etat/suivi.etat';
               </span>
             }
             <label class="field"
-              >{{ type() === 'mois' ? 'Ce mois-ci' : 'Cette semaine' }} <span class="auto">une ligne par point</span>
+              >{{ type() === 'mois' ? 'Faits marquants du mois' : type() === 'quinzaine' ? 'Faits marquants de la quinzaine' : 'Faits marquants de la semaine' }} <span class="auto">une ligne par point</span>
               <textarea class="in ph-txt" rows="4" name="actualites" placeholder="Ex. Atelier de cadrage réalisé avec le client" [value]="texte('actualites')" [disabled]="lecture()" #ac
                 (input)="brouillon.set({ ...brouillon(), actualites: lignes(ac.value) })" (change)="enregistrer({ actualites: lignes(ac.value) })"></textarea>
             </label>
@@ -67,8 +68,22 @@ import { SuiviEtat } from '../etat/suivi.etat';
               <textarea class="in ph-txt" rows="3" name="attention" placeholder="Ex. Disponibilité du RSSI à sécuriser" [value]="texte('attention')" [disabled]="lecture()" #at
                 (input)="brouillon.set({ ...brouillon(), attention: lignes(at.value) })" (change)="enregistrer({ attention: lignes(at.value) })"></textarea>
             </label>
+            @if (type() === 'quinzaine') {
+              <label class="field">À évoquer en séance
+                <span class="seg ph-seg" role="group">
+                  <button type="button" [attr.aria-pressed]="!saisie().aEvoquer" [disabled]="lecture()" (click)="enregistrer({ aEvoquer: false })">Non</button>
+                  <button type="button" [attr.aria-pressed]="!!saisie().aEvoquer" [disabled]="lecture()" (click)="enregistrer({ aEvoquer: true })">Oui</button>
+                </span>
+              </label>
+              <label class="field">Difficulté rencontrée
+                <textarea class="in ph-txt" rows="2" [value]="saisie().difficulte ?? ''" [disabled]="lecture()" #df (change)="enregistrer({ difficulte: df.value })"></textarea>
+              </label>
+              <label class="field">Impact
+                <textarea class="in ph-txt" rows="2" [value]="saisie().impact ?? ''" [disabled]="lecture()" #im (change)="enregistrer({ impact: im.value })"></textarea>
+              </label>
+            }
             <fieldset class="ph-ind" [disabled]="lecture()">
-              <legend>Indicateurs <span class="auto">{{ dd.periode.colS }} : {{ type() === 'mois' ? 'ce mois' : 'cette semaine' }} · {{ dd.periode.colS1 }} : prévision</span></legend>
+              <legend>Indicateurs <span class="auto">{{ dd.periode.colS }} : {{ type() === 'mois' ? 'ce mois' : type() === 'quinzaine' ? 'la quinzaine' : 'cette semaine' }} · {{ dd.periode.colS1 }} : prévision</span></legend>
               <div class="ph-ind-l ph-ind-tete"><span></span><span>{{ dd.periode.colS }}</span><span>{{ dd.periode.colS1 }}</span></div>
               @for (i of dd.indicateurs; track i.cle) {
                 <div class="ph-ind-l">
@@ -127,7 +142,7 @@ import { SuiviEtat } from '../etat/suivi.etat';
           <section class="ph-apercu" aria-label="Aperçu de la diapositive">
             <div class="ph-barre">
               <span class="muted">Aperçu, identique au fichier PowerPoint (16:9, modifiable)</span><span class="spacer"></span>
-              <button type="button" class="btn primary" [disabled]="occupe()" (click)="telecharger()">{{ occupe() ? 'Préparation…' : 'Télécharger le PowerPoint' }}</button>
+              <button type="button" class="btn primary" [disabled]="occupe()" (click)="telecharger()">{{ occupe() ? 'Préparation…' : type() === 'quinzaine' ? 'Télécharger le PowerPoint (3 slides)' : 'Télécharger le PowerPoint' }}</button>
             </div>
             <div class="ph-cadre" #cadre [style.height.px]="hauteur()">
               <div class="ph-echelle" [style.transform]="'scale(' + echelle() + ')'" [innerHTML]="html()"></div>
@@ -165,13 +180,19 @@ export class PointHebdo {
 
   // ---- période affichée ----
   private readonly aujourdhui = computed(() => this.vue()?.aujourdhui ?? new Date().toISOString().slice(0, 10));
-  protected readonly type = signal<TypePeriode>('semaine');
+  protected readonly type = signal<TypePeriode>('quinzaine');
   protected readonly semaine = linkedSignal(() => lundiDe(this.aujourdhui()));
   protected readonly mois = linkedSignal(() => this.aujourdhui().slice(0, 7));
-  private readonly cle = computed(() => clePeriode(this.type(), this.semaine(), this.mois()));
+  protected readonly seance = linkedSignal(() => this.aujourdhui());
+  private readonly cle = computed(() => clePeriode(this.type(), this.semaine(), this.mois(), this.seance()));
   /** 13 semaines passées et la suivante ; 12 mois passés et le suivant (✓ : point enregistré). */
   protected readonly periodes = computed(() => {
     const p = this.vue()?.projet.pointsHebdo?.periodes ?? {}, auj = this.aujourdhui();
+    if (this.type() === 'quinzaine') {
+      const dates = new Set<string>(Object.keys(p).filter((k) => k.startsWith('Q:')).map((k) => k.slice(2)));
+      for (let k = 0; k < 14; k++) dates.add(plusJours(auj, -14 * k));
+      return [...dates].sort((a, b) => b.localeCompare(a)).slice(0, 14).map((d) => ({ valeur: d, libelle: `Séance du ${fD(d)}${d === auj ? ' (aujourd’hui)' : ''}${p['Q:' + d] ? ' ✓' : ''}` }));
+    }
     if (this.type() === 'mois') {
       const l: { valeur: string; libelle: string }[] = [];
       for (let m = moisSuivant(auj.slice(0, 7)), k = 0; k < 14; k++, m = moisPrecedent(m))
@@ -207,7 +228,7 @@ export class PointHebdo {
   protected readonly d = computed(() => {
     const e = this.entree();
     return e
-      ? donneesDiapo(e, { periode: this.type(), semaine: this.semaine(), mois: this.mois(), aujourdhui: this.aujourdhui(), saisie: this.saisie(), reglages: this.reglages(), logoEntrepriseParDefaut: this.logoDefaut() })
+      ? donneesDiapo(e, { periode: this.type(), semaine: this.semaine(), mois: this.mois(), seance: this.seance(), aujourdhui: this.aujourdhui(), saisie: this.saisie(), reglages: this.reglages(), logoEntrepriseParDefaut: this.logoDefaut() })
       : null;
   });
   // Aperçu : tout texte saisi y est échappé et les images contrôlées (voir apercu()) ; il peut donc être inséré tel quel,
@@ -254,13 +275,14 @@ export class PointHebdo {
 
   protected choisirPeriode(valeur: string): void {
     if (this.type() === 'mois') this.mois.set(valeur);
+    else if (this.type() === 'quinzaine') this.seance.set(valeur);
     else this.semaine.set(valeur);
   }
 
   /** Enregistre la saisie de la période (le serveur la remplace entière). */
   protected async enregistrer(maj: Partial<SaisiePeriode>, genere = false): Promise<boolean> {
     const s = { ...this.saisie(), ...maj }, cle = this.cle();
-    const corps: SaisiePeriode = { actualites: s.actualites, attention: s.attention, indicateurs: s.indicateurs, satisfaction: s.satisfaction ?? null, esprit: s.esprit ?? null, extension: s.extension };
+    const corps: SaisiePeriode = { actualites: s.actualites, attention: s.attention, indicateurs: s.indicateurs, satisfaction: s.satisfaction ?? null, esprit: s.esprit ?? null, extension: s.extension, aEvoquer: !!s.aEvoquer, difficulte: s.difficulte ?? '', impact: s.impact ?? '' };
     const r = await this.etat.saisir((id) => this.api.pointHebdo(id, cle, corps, genere));
     if (r) this.brouillon.set({});
     return !!r;

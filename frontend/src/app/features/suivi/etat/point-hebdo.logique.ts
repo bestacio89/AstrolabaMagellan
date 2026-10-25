@@ -11,7 +11,7 @@ import { riskNiveau } from './constantes';
 export type Niveau = 'vert' | 'jaune' | 'rouge' | 'gris';
 export type Meteo = 'soleil' | 'nuage' | 'orage';
 export type Tendance = 'vert' | 'jaune' | 'rouge';
-export type TypePeriode = 'semaine' | 'mois';
+export type TypePeriode = 'quinzaine' | 'semaine' | 'mois';
 
 export const COULEURS = {
   marine: '003C5A', bleu: '00B9FF', texte: '003C5A', doux: '5B7083', vert: '009581', jaune: 'FFCC66', rouge: 'C30045', neutre: 'BFC7CE', blanc: 'FFFFFF', fond: 'F4F7F9',
@@ -26,7 +26,7 @@ export const NIVEAUX: Record<Niveau, { couleur: string; libelle: string }> = {
 export const LISTE_NIVEAUX: Niveau[] = ['vert', 'jaune', 'rouge', 'gris'];
 
 export const INDICATEURS = [
-  ['planning', 'Planning'], ['qualite', 'Qualité'], ['perimetre', 'Périmètre'], ['budget', 'Budget'], ['ressources', 'Ressources'], ['facturation', 'Facturation'],
+  ['planning', 'Planning'], ['qualite', 'Qualité'], ['perimetre', 'Périmètre'], ['budget', 'Budget'], ['ressources', 'Ressources'], ['facturation', 'Facturation'], ['satisfaction', 'Satisfaction client'], ['esprit', 'État d’esprit interne'],
 ] as const;
 export type CleIndicateur = (typeof INDICATEURS)[number][0];
 
@@ -128,7 +128,7 @@ function joursOuvres(de: string, a: string): number {
 }
 
 /** Clé d'une période, comme le serveur la range : « S:lundi » ou « M:AAAA-MM ». */
-export const clePeriode = (type: TypePeriode, semaine: string, mois: string): string => (type === 'mois' ? `M:${mois}` : `S:${semaine}`);
+export const clePeriode = (type: TypePeriode, semaine: string, mois: string, seance = semaine): string => type === 'mois' ? `M:${mois}` : type === 'quinzaine' ? `Q:${seance}` : `S:${semaine}`;
 
 // ---- formats de la diapositive (espaces ordinaires : PowerPoint n'a pas toujours l'espace fine) ----
 const nfE = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
@@ -168,11 +168,11 @@ export function saisieDeLaPeriode(points: PointsHebdo | null | undefined, cle: s
  * (vendredi de la semaine, ou fin du mois) et valorisé au TJM (prix de vente).
  */
 export function donneesDiapo(e: EntreePointHebdo, o: {
-  periode: TypePeriode; semaine: string; mois: string; aujourdhui: string; saisie: SaisiePeriode; reglages: ReglagesPointHebdo; logoEntrepriseParDefaut: string | null;
+  periode: TypePeriode; semaine: string; mois: string; seance?: string; aujourdhui: string; saisie: SaisiePeriode; reglages: ReglagesPointHebdo; logoEntrepriseParDefaut: string | null;
 }): DonneesDiapo {
   const typeP = o.periode;
-  const debut = typeP === 'mois' ? `${o.mois}-01` : lundiDe(o.semaine);
-  const fin = typeP === 'mois' ? plusJours(`${moisSuivant(o.mois)}-01`, -1) : plusJours(debut, 4);
+  const debut = typeP === 'mois' ? `${o.mois}-01` : typeP === 'quinzaine' ? plusJours(o.seance ?? o.semaine, -13) : lundiDe(o.semaine);
+  const fin = typeP === 'mois' ? plusJours(`${moisSuivant(o.mois)}-01`, -1) : typeP === 'quinzaine' ? (o.seance ?? o.semaine) : plusJours(debut, 4);
   const mois = fin.slice(0, 7), m1 = moisSuivant(mois);
   const s = o.saisie, r = o.reglages, P = e.P;
   const tjm = (i: number): number => P[i]?.tjmR ?? P[i]?.tjm ?? 0;
@@ -280,6 +280,7 @@ export function donneesDiapo(e: EntreePointHebdo, o: {
     actualites: s.actualites.filter((x) => x.trim()), attention: s.attention.filter((x) => x.trim()),
     phases, echeances, indicateurs, risques, actions,
     satisfaction: s.satisfaction ?? { meteo: 'soleil', tendance: 'vert' }, esprit: s.esprit ?? { meteo: 'soleil', tendance: 'vert' },
+    aEvoquer: !!s.aEvoquer, difficulte: s.difficulte ?? (s.attention.find((x) => x.trim()) || ''), impact: s.impact ?? '',
     genereLe: o.aujourdhui, logoEntreprise: o.logoEntrepriseParDefaut,
   };
 }
