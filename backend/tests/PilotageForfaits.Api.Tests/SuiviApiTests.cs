@@ -651,4 +651,23 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
         Assert.Equal(new[] { "camille.martin@example.test", "alex.durand@example.test" },
             atelier["dest"]!.AsArray().Select(x => x!.GetValue<string>()).ToArray());
     }
+    [Fact]
+    public async Task Les_axes_et_lots_conservent_leurs_codes_et_leurs_metadonnees_sont_modifiables()
+    {
+        var client = _api.ClientPour("chef");
+        var id = await ImporterAsync(client);
+        var urlAxe = $"/api/projets/{id}/suivi/axes/AXE1";
+        var r = await Saisir(client, HttpMethod.Put, urlAxe, new { nom = "Conception", dateLimite = "2026-10-30" });
+        Assert.Equal("Conception", r["suivi"]!["projet"]!["axes"]!["AXE1"]!.GetValue<string>());
+        Assert.Equal("2026-10-30", r["suivi"]!["projet"]!["datesLimitesAxes"]!["AXE1"]!.GetValue<string>());
+
+        r = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/suivi/lots/1.1", new { nom = "Cadrage et conception" });
+        Assert.Equal("Cadrage et conception", r["suivi"]!["projet"]!["lots"]!["1.1"]!.GetValue<string>());
+        Assert.Contains(r["suivi"]!["projet"]!["tasks"]!.AsArray(), t => t!["lot"]!.GetValue<string>() == "1.1");
+
+        r = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/suivi/lots/1.1", new { nom = "" });
+        Assert.False(r["suivi"]!["projet"]!["lots"]!.AsObject().ContainsKey("1.1"));
+        r = await Saisir(client, HttpMethod.Put, urlAxe, new { nom = "Conception", dateLimite = (string?)null });
+        Assert.Null(r["suivi"]!["projet"]!["datesLimitesAxes"]!["AXE1"]);
+    }
 }
