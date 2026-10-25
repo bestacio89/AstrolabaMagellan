@@ -1422,6 +1422,9 @@
 .ph-diapo .ph-tb { border-collapse: collapse; table-layout: fixed; }
 .ph-diapo .ph-tb td { padding: 0 4pt; vertical-align: middle; overflow: hidden; line-height: 1.15; }
 .suivi .ph-apercu .auto { white-space: normal; }
+.suivi .ph-client { display: flex; align-items: center; gap: 10px; margin: 0; }
+.suivi .ph-client img { width: 56px; height: 40px; object-fit: contain; border: 1px solid var(--line); border-radius: 6px; background: white; padding: 4px; }
+.suivi .ph-subhead { margin: 12px 0 4px; font-size: 13px; font-weight: 650; color: var(--ink); }
 
 /* Rentabilité : détail d'une colonne de la cascade ouvert dans le volet → les cartes passent sur toute la largeur, la cascade reste lisible à côté */
 .suivi.rt-volet .s-grille > [class*="c-"] { grid-column: 1 / -1; }

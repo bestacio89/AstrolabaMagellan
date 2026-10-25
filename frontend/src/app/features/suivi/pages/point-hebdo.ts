@@ -160,7 +160,7 @@ export class PointHebdo {
   protected readonly niveaux = LISTE_NIVEAUX;
   protected readonly quand = ['s', 's1'] as const;
   protected readonly ouiNon = ['Non', 'Oui'] as const;
-  protected readonly champsEquipe: { cle: keyof ReglagesPointHebdo; libelle: string; aide: string }[] = [
+  protected readonly champsEquipe: { cle: Exclude<keyof ReglagesPointHebdo, 'odt'>; libelle: string; aide: string }[] = [
     { cle: 'commercial', libelle: 'Commercial', aide: 'Prénom NOM' }, { cle: 'avv', libelle: 'AVV', aide: 'Prénom NOM' },
     { cle: 'pilote', libelle: 'Pilote delivery', aide: 'Prénom NOM' }, { cle: 'modeFacturation', libelle: 'Mode de facturation', aide: 'J.H, UO…' },
   ];
@@ -253,7 +253,7 @@ export class PointHebdo {
     return (this.etatSaisie().saisie[champ] ?? []).join('\n');
   }
 
-  protected valeurReglage(cle: keyof ReglagesPointHebdo): string {
+  protected valeurReglage(cle: Exclude<keyof ReglagesPointHebdo, 'odt'>): string {
     const r = this.reglages();
     if (cle === 'commercial') return r.commercial ?? this.vue()?.projet.fiche.champs.find((c) => c.key === 'commercial')?.value ?? '';
     if (cle === 'modeFacturation') return r.modeFacturation ?? 'J.H';
