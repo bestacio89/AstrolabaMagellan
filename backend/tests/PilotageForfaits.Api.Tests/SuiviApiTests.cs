@@ -684,4 +684,33 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
             new { axe = "AXE1", numero = (int?)null, phasesADelier = Array.Empty<string>() });
         Assert.Contains(r["messages"]!.AsArray(), m => m!["texte"]!.GetValue<string>().Contains("ne déclenche plus"));
     }
+    [Fact]
+    public async Task Les_commentaires_de_tache_sont_ordonnes_et_seul_l_auteur_peut_modifier_ou_supprimer()
+    {
+        var chef = _api.ClientPour("chef");
+        var id = await ImporterAsync(chef);
+        var suiviInitial = await chef.GetFromJsonAsync<JsonObject>($"/api/projets/{id}/suivi");
+        var tache = suiviInitial!["projet"]!["tasks"]!.AsArray().Single(x => x!["uid"]!.GetValue<string>() == "r7")!;
+        var cibleId = tache["cibleId"]!.GetValue<Guid>();
+        var url = $"/api/projets/{id}/commentaires/Tache/{cibleId}";
+
+        var premier = await Saisir(chef, HttpMethod.Post, url, new { texte = "Premier commentaire" });
+        var premierId = premier["suivi"]!["projet"]!["commentaires"]!["r7"]![0]!["id"]!.GetValue<Guid>();
+        Horloge.Maintenant = Horloge.Maintenant.AddMinutes(1);
+        var second = await Saisir(chef, HttpMethod.Post, url, new { texte = "Deuxième commentaire" });
+        var commentaires = second["suivi"]!["projet"]!["commentaires"]!["r7"]!.AsArray();
+        Assert.Equal("Deuxième commentaire", commentaires[0]!["texte"]!.GetValue<string>());
+        Assert.Equal("Premier commentaire", commentaires[1]!["texte"]!.GetValue<string>());
+
+        var autreChef = _api.ClientPour("chef2");
+        await Refuser(autreChef, HttpMethod.Put, $"/api/projets/{id}/commentaires/{premierId}",
+            new { texte = "Modification interdite" }, HttpStatusCode.Forbidden);
+        var modifie = await Saisir(chef, HttpMethod.Put, $"/api/projets/{id}/commentaires/{premierId}", new { texte = "Commentaire modifié" });
+        Assert.Contains(modifie["suivi"]!["projet"]!["commentaires"]!["r7"]!.AsArray(),
+            c => c?["id"]?.GetValue<Guid>() == premierId && c?["texte"]?.GetValue<string>() == "Commentaire modifié");
+
+        var supprime = await Saisir(chef, HttpMethod.Delete, $"/api/projets/{id}/commentaires/{premierId}");
+        Assert.DoesNotContain(supprime["suivi"]!["projet"]!["commentaires"]!["r7"]!.AsArray(),
+            c => c?["id"]?.GetValue<Guid>() == premierId);
+    }
 }
