@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { donneesDiapo, EntreePointHebdo, lignes, lundiDe, nomFichier, numeroSemaine, PointsHebdo, saisieDeLaPeriode, SaisiePeriode } from './point-hebdo.logique';
+import { clePeriode, donneesDiapo, EntreePointHebdo, lignes, lundiDe, nomFichier, numeroSemaine, PointsHebdo, saisieDeLaPeriode, SaisiePeriode } from './point-hebdo.logique';
 
 /** Projet fictif : 2 profils (TJM 800 et 600), 2 tâches de la phase CONSTRUCTION, 2 échéances. */
 function entree(partiel: Partial<EntreePointHebdo> = {}): EntreePointHebdo {

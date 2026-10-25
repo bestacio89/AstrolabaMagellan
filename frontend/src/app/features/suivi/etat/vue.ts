@@ -222,7 +222,7 @@ export function libelleProfil(p: ProfilVue, fE: (n: number | undefined) => strin
 
 /** Filtres communs (barre de filtres) : groupe, recherche, évolutions du périmètre. */
 export interface FiltresTaches {
-  axe: string;
+  axe: string | null;
   q: string;
   onlyAjout: boolean;
 }

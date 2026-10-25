@@ -14,6 +14,7 @@ const METEO_COLOR: Record<string, string> = { Soleil: '3FB97C', Nuageux: 'FFC33C
 const money = (v: number | null | undefined): string => fE(v ?? 0).replace(/\u00a0/g, ' ');
 const date = (v: string | null | undefined): string => v ? fD(v) : '—';
 const short = (s: string, max = 85): string => s.length > max ? s.slice(0, max - 1) + '…' : s;
+const severity = (s: Niveau): string => s === 'rouge' ? 'Fort' : s === 'jaune' ? 'Moyen' : s === 'vert' ? 'Faible' : 'N/A';
 const criticality = (s: Niveau): string => s === 'rouge' ? 'Fort' : s === 'jaune' ? 'Moyen' : s === 'vert' ? 'Faible' : 'N/A';
 
 function parseXml(xml: string): XMLDocument {
