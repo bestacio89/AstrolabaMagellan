@@ -124,6 +124,10 @@ public sealed class SuiviController(
     public Task<ResultatSaisieDto> PointHebdoMois(Guid id, string mois, PointHebdoCommande c, CancellationToken a) =>
         pointsHebdo.EnregistrerAsync(id, PointsHebdoService.CleMois(mois), c, a);
 
+    [HttpPut("points-hebdo/quinzaines/{seance}")]
+    public Task<ResultatSaisieDto> RevueBimensuelle(Guid id, string seance, PointHebdoCommande c, CancellationToken a) =>
+        pointsHebdo.EnregistrerAsync(id, PointsHebdoService.CleQuinzaine(seance), c, a);
+
     [HttpPut("points-hebdo/reglages/{champ}")]
     public Task<ResultatSaisieDto> PointHebdoReglage(Guid id, string champ, ReglagePointHebdoCommande c, CancellationToken a) =>
         pointsHebdo.RegleAsync(id, champ, c, a);

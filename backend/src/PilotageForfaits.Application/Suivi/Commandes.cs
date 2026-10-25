@@ -57,7 +57,7 @@ public sealed record MeteoPointHebdo(string? Meteo, string? Tendance);
 /// <summary>Saisie d'une période du point hebdo (remplace la précédente).</summary>
 public sealed record PointHebdoCommande(
     List<string>? Actualites, List<string>? Attention, Dictionary<string, IndicateurPointHebdo>? Indicateurs,
-    MeteoPointHebdo? Satisfaction, MeteoPointHebdo? Esprit, string? Extension, bool Genere);
+    MeteoPointHebdo? Satisfaction, MeteoPointHebdo? Esprit, string? Extension, bool Genere, bool AEvoquer = false, string? Difficulte = null, string? Impact = null);
 /// <summary>Réglage du point hebdo (commercial, AVV, pilote, mode de facturation, logos) ; vide : retiré.</summary>
 public sealed record ReglagePointHebdoCommande(string? Valeur);
 

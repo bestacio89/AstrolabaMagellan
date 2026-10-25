@@ -540,9 +540,21 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
         Assert.NotNull(r["suivi"]!["projet"]!["pointsHebdo"]!["periodes"]!["S:2026-10-05"]!["genereLe"]);
         r = await Saisir(client, HttpMethod.Put, $"{url}/semaines/2026-10-05", saisie);
         Assert.NotNull(r["suivi"]!["projet"]!["pointsHebdo"]!["periodes"]!["S:2026-10-05"]!["genereLe"]);
-        // point mensuel, distinct du point hebdo
+        // point mensuel et revue bimensuelle, distincts du point hebdo
         r = await Saisir(client, HttpMethod.Put, $"{url}/mois/2026-10", saisie);
-        Assert.Equal(2, r["suivi"]!["projet"]!["pointsHebdo"]!["periodes"]!.AsObject().Count);
+        r = await Saisir(client, HttpMethod.Put, $"{url}/quinzaines/2026-10-21", new
+        {
+            actualites = Array.Empty<string>(), attention = new[] { "Risque de décalage" },
+            indicateurs = new Dictionary<string, object> { ["satisfaction"] = new { s = "vert", s1 = "jaune" }, ["esprit"] = new { s = "vert", s1 = "vert" } },
+            aEvoquer = true, difficulte = "Disponibilité client", impact = "Décalage d'une semaine",
+            extension = "Non", genere = false,
+        });
+        var revue = r["suivi"]!["projet"]!["pointsHebdo"]!["periodes"]!["Q:2026-10-21"]!;
+        Assert.True(revue["aEvoquer"]!.GetValue<bool>());
+        Assert.Equal("Disponibilité client", revue["difficulte"]!.GetValue<string>());
+        Assert.Equal("Décalage d'une semaine", revue["impact"]!.GetValue<string>());
+        Assert.Equal("vert", revue["indicateurs"]!["satisfaction"]!["s"]!.GetValue<string>());
+        Assert.Equal(3, r["suivi"]!["projet"]!["pointsHebdo"]!["periodes"]!.AsObject().Count);
         // contrôles : une semaine commence un lundi, niveaux et météos connus, logo en image
         await Refuser(client, HttpMethod.Put, $"{url}/semaines/2026-10-06", saisie, HttpStatusCode.UnprocessableEntity);
         await Refuser(client, HttpMethod.Put, $"{url}/semaines/2026-10-05",

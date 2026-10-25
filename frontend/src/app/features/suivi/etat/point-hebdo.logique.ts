@@ -42,6 +42,9 @@ export interface SaisiePeriode {
   satisfaction?: MeteoSaisie | null;
   esprit?: MeteoSaisie | null;
   extension: 'Oui' | 'Non';
+  aEvoquer?: boolean;
+  difficulte?: string;
+  impact?: string;
   genereLe?: string | null;
   majLe?: string;
   par?: string;

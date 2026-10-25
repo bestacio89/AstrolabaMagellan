@@ -99,7 +99,7 @@ export class SuiviApi {
   }
   // ---- point hebdo ----
   pointHebdo(id: string, cle: string, saisie: SaisiePeriode, genere = false) {
-    const chemin = cle.startsWith('M:') ? `points-hebdo/mois/${cle.slice(2)}` : `points-hebdo/semaines/${cle.slice(2)}`;
+    const chemin = cle.startsWith('M:') ? `points-hebdo/mois/${cle.slice(2)}` : cle.startsWith('Q:') ? `points-hebdo/quinzaines/${cle.slice(2)}` : `points-hebdo/semaines/${cle.slice(2)}`;
     return this.put(id, chemin, { ...saisie, genere });
   }
   reglagePointHebdo(id: string, champ: keyof ReglagesPointHebdo, valeur: string) {

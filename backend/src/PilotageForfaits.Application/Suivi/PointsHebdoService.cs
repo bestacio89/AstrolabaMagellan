@@ -17,7 +17,7 @@ namespace PilotageForfaits.Application.Suivi;
 public sealed class PointsHebdoService(SaisieOutils o)
 {
     public const string CleReglages = "reglages";
-    public static readonly IReadOnlySet<string> Indicateurs = new HashSet<string> { "planning", "qualite", "perimetre", "budget", "ressources", "facturation" };
+    public static readonly IReadOnlySet<string> Indicateurs = new HashSet<string> { "planning", "qualite", "perimetre", "budget", "ressources", "facturation", "satisfaction", "esprit" };
     public static readonly IReadOnlySet<string> Niveaux = new HashSet<string> { "vert", "jaune", "rouge", "gris" };
     public static readonly IReadOnlySet<string> Meteos = new HashSet<string> { "soleil", "nuage", "orage" };
     public static readonly IReadOnlySet<string> Tendances = new HashSet<string> { "vert", "jaune", "rouge" };
@@ -40,6 +40,14 @@ public sealed class PointsHebdoService(SaisieOutils o)
         if (!DateOnly.TryParseExact(mois + "-01", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
             throw new RegleMetierException("Mois invalide (AAAA-MM).");
         return "M:" + mois;
+    }
+
+    /// <summary>Clé d'une revue bimensuelle : « Q:AAAA-MM-JJ », date de la séance.</summary>
+    public static string CleQuinzaine(string seance)
+    {
+        if (!DateOnly.TryParseExact(seance, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
+            throw new RegleMetierException("Date de séance invalide (AAAA-MM-JJ).");
+        return "Q:" + seance;
     }
 
     /// <summary>Enregistre la saisie d'une période (elle remplace la précédente).</summary>
@@ -70,6 +78,9 @@ public sealed class PointsHebdoService(SaisieOutils o)
             ["satisfaction"] = c.Satisfaction is null ? null : JsonSerializer.SerializeToNode(c.Satisfaction, Json),
             ["esprit"] = c.Esprit is null ? null : JsonSerializer.SerializeToNode(c.Esprit, Json),
             ["extension"] = c.Extension ?? "Non",
+            ["aEvoquer"] = c.AEvoquer,
+            ["difficulte"] = Texte(c.Difficulte, "Difficulté rencontrée"),
+            ["impact"] = Texte(c.Impact, "Impact"),
         };
         var ligne = await LigneAsync(projetId, cle, a);
         var maintenant = o.Horloge.Maintenant.UtcDateTime;
@@ -133,6 +144,13 @@ public sealed class PointsHebdoService(SaisieOutils o)
         return ligne;
     }
 
+    private static string Texte(string? texte, string quoi)
+    {
+        var valeur = SaisieOutils.Nettoyer(texte);
+        if (valeur.Length > MaxTexte) throw new RegleMetierException($"{quoi} : {MaxTexte} caractères au maximum.");
+        return valeur;
+    }
+
     private static JsonArray Liste(List<string>? l, string quoi)
     {
         var points = (l ?? new()).Select(SaisieOutils.Nettoyer).Where(x => x.Length > 0).ToList();
@@ -141,5 +159,5 @@ public sealed class PointsHebdoService(SaisieOutils o)
         return new JsonArray(points.Select(x => (JsonNode?)JsonValue.Create(x)).ToArray());
     }
 
-    private static string Libelle(string cle) => cle.StartsWith("M:", StringComparison.Ordinal) ? $"point mensuel {cle[2..]}" : $"point hebdo du {cle[2..]}";
+    private static string Libelle(string cle) => cle.StartsWith("M:", StringComparison.Ordinal) ? $"point mensuel {cle[2..]}" : cle.StartsWith("Q:", StringComparison.Ordinal) ? $"revue bimensuelle du {cle[2..]}" : $"point hebdo du {cle[2..]}";
 }
