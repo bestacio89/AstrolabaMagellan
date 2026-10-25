@@ -65,7 +65,7 @@ export interface PointsHebdo {
 
 // ---- ce dont le calcul a besoin (extrait de la vue du suivi) ----
 export interface EntreePointHebdo {
-  P: { tjmR?: number; tjm?: number; collaborateur: string }[];
+  P: { nom?: string; tjmR?: number; tjm?: number; collaborateur: string }[];
   taches: {
     phase: string; chargesV: number[]; chargeTSP: number; charge: number; restP: number[]; raf: number; annulee: boolean; statut: string;
     debut?: string | null; fin?: string | null; tr: { consoP?: Record<string, Record<string, number>> | null };
@@ -93,6 +93,10 @@ export interface DonneesDiapo {
   commercial: string; avv: string; pilote: string; consultants: string[]; extension: string;
   actualites: string[]; attention: string[];
   phases: Phase[]; echeances: Echeance[];
+  profils: { profil: string; vendu: number; conso: number; raf: number; m1: number; tend: Niveau }[];
+  odt: Record<string, string>;
+  aEvoquer: boolean; difficulte: string; impact: string;
+  meteoProjet: 'Soleil' | 'Nuageux' | 'Pluie' | 'Hors période';
   indicateurs: { cle: CleIndicateur; libelle: string; s: Niveau; s1: Niveau; propose: Niveau; raison: string }[];
   risques: { libelle: string; parade: string; niveau: Niveau }[];
   actions: { libelle: string; pilote: string; echeance: string; statut: string; commentaire: string; retard: boolean }[];
@@ -256,6 +260,31 @@ export function donneesDiapo(e: EntreePointHebdo, o: {
     const S = s.indicateurs?.[cle]?.s ?? propose[cle];
     return { cle, libelle, s: S, s1: s.indicateurs?.[cle]?.s1 ?? S, propose: propose[cle], raison: raison[cle] };
   });
+  // ---- par profil : vendu, consommé, reste à faire et prévision du mois suivant ----
+  const profilsTous = P.map((pr, i) => {
+    let vendu = 0, conso = 0, raf = 0, m1Profil = 0;
+    for (const t of e.taches) {
+      const fini = t.annulee || t.statut === 'Validé';
+      const reste = fini ? 0 : (t.restP[i] ?? 0);
+      vendu += t.chargesV[i] ?? 0;
+      conso += consoA(t, i);
+      raf += reste;
+      if (reste > 0 && t.fin) {
+        const apres = plusJours(fin, 1);
+        const de = t.debut && t.debut > apres ? t.debut : apres;
+        const a = t.fin;
+        const total = de <= a ? joursOuvres(de, a) : 0;
+        const debutM1 = `${m1}-01`, finM1 = plusJours(`${moisSuivant(m1)}-01`, -1);
+        if (total > 0) {
+          const x = de > debutM1 ? de : debutM1, y = a < finM1 ? a : finM1;
+          if (x <= y) m1Profil += reste * joursOuvres(x, y) / total;
+        }
+      }
+    }
+    const ratio = vendu > 0 ? (conso + raf) / vendu - 1 : conso + raf > 0 ? 1 : 0;
+    return { profil: pr.nom?.trim() || pr.collaborateur?.trim() || `Profil ${i + 1}`, vendu, conso, raf, m1: m1Profil, tend: !conso && !raf ? 'gris' as Niveau : ratio > 0.01 ? 'rouge' as Niveau : ratio > 0.0001 ? 'jaune' as Niveau : 'vert' as Niveau };
+  }).filter((p) => p.vendu || p.conso || p.raf);
+  const gravite = indicateurs.some((x) => x.s === 'rouge') ? 'Pluie' : indicateurs.some((x) => x.s === 'jaune') ? 'Nuageux' : indicateurs.every((x) => x.s === 'gris') ? 'Hors période' : 'Soleil';
   // ---- risques et actions ----
   const crit = (c: number): Niveau => ({ fort: 'rouge', moyen: 'jaune', faible: 'vert' } as const)[riskNiveau(c)];
   const risques = [...e.risques].sort((a, b) => b.crit - a.crit).slice(0, 3).map((x) => ({ libelle: x.libelle || '', parade: x.parade || '', niveau: crit(x.crit) }));
@@ -283,10 +312,10 @@ export function donneesDiapo(e: EntreePointHebdo, o: {
     commercial: r.commercial ?? fiche['commercial'] ?? '', avv: r.avv ?? '', pilote: r.pilote ?? '', consultants,
     extension: s.extension || 'Non',
     actualites: s.actualites.filter((x) => x.trim()), attention: s.attention.filter((x) => x.trim()),
-    phases, echeances, indicateurs, risques, actions,
+    phases, echeances, indicateurs, risques, actions, profils: profilsTous, odt: r.odt ?? {}, meteoProjet: gravite,
     satisfaction: s.satisfaction ?? { meteo: 'soleil', tendance: 'vert' }, esprit: s.esprit ?? { meteo: 'soleil', tendance: 'vert' },
     aEvoquer: !!s.aEvoquer, difficulte: s.difficulte ?? (s.attention.find((x) => x.trim()) || ''), impact: s.impact ?? '',
-    genereLe: o.aujourdhui, logoEntreprise: o.logoEntrepriseParDefaut,
+    genereLe: o.aujourdhui, logoClient: r.logoClient ?? null, logoEntreprise: r.logoEntreprise ?? o.logoEntrepriseParDefaut,
   };
 }
 
