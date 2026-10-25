@@ -56,6 +56,7 @@ export interface ReglagesPointHebdo {
   modeFacturation?: string;
   logoClient?: string;
   logoEntreprise?: string;
+  odt?: Record<string, string>;
 }
 export interface PointsHebdo {
   reglages: ReglagesPointHebdo;

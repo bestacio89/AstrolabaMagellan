@@ -563,6 +563,9 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
         // réglages communs
         r = await Saisir(client, HttpMethod.Put, $"{url}/reglages/avv", new { valeur = "Hugo LEROY" });
         Assert.Equal("Hugo LEROY", r["suivi"]!["projet"]!["pointsHebdo"]!["reglages"]!["avv"]!.GetValue<string>());
+        r = await Saisir(client, HttpMethod.Put, $"{url}/reglages/odt", new { valeur = "{\"CONCEPTION\":\"ODT-12\",\"CONSTRUCTION\":\"ODT-13\"}" });
+        Assert.Equal("ODT-12", r["suivi"]!["projet"]!["pointsHebdo"]!["reglages"]!["odt"]!["CONCEPTION"]!.GetValue<string>());
+        await Refuser(client, HttpMethod.Put, $"{url}/reglages/odt", new { valeur = "not-json" }, HttpStatusCode.UnprocessableEntity);
         r = await Saisir(client, HttpMethod.Put, $"{url}/reglages/logoClient", new { valeur = "data:image/png;base64,iVBORw0KGgo=" });
         Assert.StartsWith("data:image/png", r["suivi"]!["projet"]!["pointsHebdo"]!["reglages"]!["logoClient"]!.GetValue<string>());
         r = await Saisir(client, HttpMethod.Put, $"{url}/reglages/avv", new { valeur = "" });

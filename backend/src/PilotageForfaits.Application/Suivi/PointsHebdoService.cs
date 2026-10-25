@@ -21,7 +21,7 @@ public sealed class PointsHebdoService(SaisieOutils o)
     public static readonly IReadOnlySet<string> Niveaux = new HashSet<string> { "vert", "jaune", "rouge", "gris" };
     public static readonly IReadOnlySet<string> Meteos = new HashSet<string> { "soleil", "nuage", "orage" };
     public static readonly IReadOnlySet<string> Tendances = new HashSet<string> { "vert", "jaune", "rouge" };
-    public static readonly IReadOnlySet<string> Reglages = new HashSet<string> { "commercial", "avv", "pilote", "modeFacturation", "logoClient", "logoEntreprise" };
+    public static readonly IReadOnlySet<string> Reglages = new HashSet<string> { "commercial", "avv", "pilote", "modeFacturation", "logoClient", "logoEntreprise", "odt" };
     private const int MaxPoints = 15, MaxTexte = 300, MaxReglage = 200, MaxLogo = 1_000_000;
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private static readonly Regex Logo = new(@"^data:image/(png|jpeg);base64,[A-Za-z0-9+/]+=*$", RegexOptions.CultureInvariant);
@@ -106,10 +106,24 @@ public sealed class PointsHebdoService(SaisieOutils o)
             if (valeur.Length > MaxLogo) throw new RegleMetierException("Logo trop lourd : choisissez une image plus petite.");
             if (valeur.Length > 0 && !Logo.IsMatch(valeur)) throw new RegleMetierException("Logo invalide : image PNG ou JPEG attendue.");
         }
+        else if (champ == "odt")
+        {
+            if (valeur.Length > 5000) throw new RegleMetierException("Les numéros ODT dépassent la taille autorisée.");
+            if (valeur.Length > 0)
+            {
+                JsonObject objet;
+                try { objet = JsonNode.Parse(valeur) as JsonObject ?? throw new JsonException(); }
+                catch (JsonException) { throw new RegleMetierException("Les numéros ODT doivent être un objet JSON phase → numéro."); }
+                if (objet.Any(x => x.Key.Length > 100 || x.Value is not JsonValue v || !v.TryGetValue<string>(out var n) || n.Length > 100))
+                    throw new RegleMetierException("Un numéro ODT ou un nom de phase est invalide.");
+            }
+        }
         else if (valeur.Length > MaxReglage) throw new RegleMetierException($"Texte trop long : {MaxReglage} caractères au maximum.");
         var ligne = await LigneAsync(projetId, CleReglages, a);
         var contenu = JsonNode.Parse(ligne.Contenu) as JsonObject ?? new JsonObject();
-        if (valeur.Length == 0) contenu.Remove(champ); else contenu[champ] = valeur;
+        if (valeur.Length == 0) contenu.Remove(champ);
+        else if (champ == "odt") contenu[champ] = JsonNode.Parse(valeur);
+        else contenu[champ] = valeur;
         ligne.Contenu = contenu.ToJsonString();
         ligne.MajLe = o.Horloge.Maintenant.UtcDateTime;
         ligne.ParId = u.Id;

@@ -7,7 +7,7 @@ import { chargerPptxGen, logoEntrepriseParDefaut } from '../etat/point-hebdo.cha
 import { apercu, presentation } from '../etat/point-hebdo.diapo';
 import { telechargerFichier } from '../etat/fichiers';
 import {
-  CleIndicateur, clePeriode, donneesDiapo, EntreePointHebdo, lignes, LISTE_NIVEAUX, lundiDe, Meteo, MeteoSaisie, moisPrecedent, moisSuivant, MOIS_L, Niveau, NIVEAUX,
+  CleIndicateur, clePeriode, donneesDiapo, EntreePointHebdo, lignes, LISTE_NIVEAUX, lundiDe, moisPrecedent, moisSuivant, MOIS_L, Niveau, NIVEAUX,
   nomFichier, numeroSemaine, plusJours, ReglagesPointHebdo, saisieDeLaPeriode, SaisiePeriode, Tendance, TypePeriode,
 } from '../etat/point-hebdo.logique';
 import { SuiviEtat } from '../etat/suivi.etat';
@@ -30,6 +30,7 @@ import { SuiviEtat } from '../etat/suivi.etat';
           <div>
             <h2>{{ type() === 'quinzaine' ? 'Revue bimensuelle' : type() === 'mois' ? 'Point mensuel' : 'Point hebdomadaire' }}</h2>
             <p>Préparez les éléments de la revue delivery. Les chiffres sont calculés à partir du suivi ; les appréciations et commentaires sont conservés d’une séance à l’autre.</p>
+            @if (v.projet.pointsHebdo?.reglages.logoClient; as logo) { <p class="ph-client"><img [src]="logo" alt="Logo du client" /><a routerLink="../parametres">Modifier le logo du client dans Paramètres du projet</a></p> }
           </div>
           <div class="seg" role="group" aria-label="Période">
             <button type="button" [attr.aria-pressed]="type() === 'quinzaine'" (click)="type.set('quinzaine')">Revue bimensuelle</button>
@@ -103,21 +104,7 @@ import { SuiviEtat } from '../etat/suivi.etat';
                   <span><i [class]="'ph-pt n-' + n"></i>{{ libelleNiveau(n) }}</span>
                 }
               </p>
-              @for (m of meteos; track m.cle) {
-                <div class="ph-ind-l ph-meteo-l">
-                  <span>{{ m.libelle }}</span>
-                  <span class="ph-choix" role="radiogroup" aria-label="Météo">
-                    @for (x of choixMeteo; track x.v) {
-                      <button type="button" class="ph-meteo" role="radio" [attr.aria-checked]="dd[m.cle].meteo === x.v" [title]="x.titre" (click)="meteo(m.cle, { meteo: x.v })">{{ x.icone }}</button>
-                    }
-                  </span>
-                  <span class="ph-choix" role="radiogroup" aria-label="Tendance">
-                    @for (x of choixTendance; track x.v) {
-                      <button type="button" [class]="'ph-tend n-' + x.v" role="radio" [attr.aria-checked]="dd[m.cle].tendance === x.v" [title]="x.titre" (click)="meteo(m.cle, { tendance: x.v })">{{ x.icone }}</button>
-                    }
-                  </span>
-                </div>
-              }
+
             </fieldset>
             <div class="field">
               Possibilité d’extension de périmètre ?
@@ -137,11 +124,18 @@ import { SuiviEtat } from '../etat/suivi.etat';
                 }
               </div>
               <p class="auto">Consultants : repris des collaborateurs des profils (<a routerLink="../parametres">Paramètres du projet</a>).</p>
+            <h3 class="ph-subhead">N° ODT des phases</h3>
+            <p class="auto">Les numéros sont conservés d’une revue à l’autre.</p>
+            @for (phase of v.m.phases; track phase) {
+              <label class="field">{{ phase }}
+                <input class="in" [value]="numeroOdt(phase)" [disabled]="lecture()" #odt (change)="odtPhase(phase, odt.value)" />
+              </label>
+            }
             </details>
           </aside>
           <section class="ph-apercu" aria-label="Aperçu de la diapositive">
             <div class="ph-barre">
-              <span class="muted">Aperçu, identique au fichier PowerPoint (16:9, modifiable)</span><span class="spacer"></span>
+              <span class="muted">Aperçu de la revue bimensuelle (16:9)</span><span class="spacer"></span>
               <button type="button" class="btn primary" [disabled]="occupe()" (click)="telecharger()">{{ occupe() ? 'Préparation…' : type() === 'quinzaine' ? 'Télécharger le PowerPoint (3 slides)' : 'Télécharger le PowerPoint' }}</button>
             </div>
             <div class="ph-cadre" #cadre [style.height.px]="hauteur()">
@@ -166,13 +160,6 @@ export class PointHebdo {
   protected readonly niveaux = LISTE_NIVEAUX;
   protected readonly quand = ['s', 's1'] as const;
   protected readonly ouiNon = ['Non', 'Oui'] as const;
-  protected readonly meteos = [{ cle: 'satisfaction', libelle: 'Satisfaction client' }, { cle: 'esprit', libelle: 'État d’esprit de l’équipe' }] as const;
-  protected readonly choixMeteo: { v: Meteo; icone: string; titre: string }[] = [
-    { v: 'soleil', icone: '☀', titre: 'Content, tout va bien' }, { v: 'nuage', icone: '☁', titre: 'Neutre, pourrait être mieux' }, { v: 'orage', icone: '⛈', titre: 'Insatisfait / démotivé' },
-  ];
-  protected readonly choixTendance: { v: Tendance; icone: string; titre: string }[] = [
-    { v: 'vert', icone: '↗', titre: 'En amélioration' }, { v: 'jaune', icone: '→', titre: 'À surveiller' }, { v: 'rouge', icone: '↘', titre: 'En baisse' },
-  ];
   protected readonly champsEquipe: { cle: keyof ReglagesPointHebdo; libelle: string; aide: string }[] = [
     { cle: 'commercial', libelle: 'Commercial', aide: 'Prénom NOM' }, { cle: 'avv', libelle: 'AVV', aide: 'Prénom NOM' },
     { cle: 'pilote', libelle: 'Pilote delivery', aide: 'Prénom NOM' }, { cle: 'modeFacturation', libelle: 'Mode de facturation', aide: 'J.H, UO…' },
@@ -302,13 +289,19 @@ export class PointHebdo {
     void this.enregistrer({ indicateurs: ind });
   }
 
-  protected meteo(cle: 'satisfaction' | 'esprit', maj: Partial<MeteoSaisie>): void {
-    const avant = this.saisie()[cle] ?? { meteo: 'soleil', tendance: 'vert' };
-    void this.enregistrer({ [cle]: { ...avant, ...maj } });
-  }
-
   protected regler(cle: keyof ReglagesPointHebdo, valeur: string): void {
     void this.etat.saisir((id) => this.api.reglagePointHebdo(id, cle, valeur.trim()));
+  }
+
+  protected numeroOdt(phase: string): string {
+    return this.reglages().odt?.[phase] ?? '';
+  }
+
+  protected odtPhase(phase: string, valeur: string): void {
+    const odt = { ...(this.reglages().odt ?? {}) };
+    if (valeur.trim()) odt[phase] = valeur.trim();
+    else delete odt[phase];
+    void this.etat.saisir((id) => this.api.reglagePointHebdo(id, 'odt', JSON.stringify(odt)));
   }
 
   /** Fabrique le PowerPoint dans le navigateur, le propose au téléchargement et note la date de génération. */
