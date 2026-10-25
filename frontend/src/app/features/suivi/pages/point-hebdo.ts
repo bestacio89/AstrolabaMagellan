@@ -5,6 +5,7 @@ import { SuiviApi } from '../api/suivi.api';
 import { fD } from '../etat/formats';
 import { chargerPptxGen, logoEntrepriseParDefaut } from '../etat/point-hebdo.chargement';
 import { apercu, presentation } from '../etat/point-hebdo.diapo';
+import { genererRevueBimensuelle } from '../etat/revue-bimensuelle';
 import { telechargerFichier } from '../etat/fichiers';
 import {
   CleIndicateur, clePeriode, donneesDiapo, EntreePointHebdo, lignes, LISTE_NIVEAUX, lundiDe, moisPrecedent, moisSuivant, MOIS_L, Niveau, NIVEAUX,
@@ -310,13 +311,17 @@ export class PointHebdo {
     if (!d) return;
     this.occupe.set(true);
     try {
-      const Pptx = await chargerPptxGen();
-      const blob = (await presentation(Pptx, d).write({ outputType: 'blob' })) as Blob;
+      let blob: Blob;
+      if (this.type() === 'quinzaine') blob = await genererRevueBimensuelle(d);
+      else {
+        const Pptx = await chargerPptxGen();
+        blob = (await presentation(Pptx, d).write({ outputType: 'blob' })) as Blob;
+      }
       telechargerFichier(blob, nomFichier(d));
       if (!this.lecture()) await this.enregistrer({}, true);
       this.etat.afficher('PowerPoint généré.', 'succes');
-    } catch {
-      this.etat.afficher('Le PowerPoint n’a pas pu être généré. Rechargez la page et réessayez.', 'erreur');
+    } catch (erreur) {
+      this.etat.afficher(erreur instanceof Error ? erreur.message : 'Le PowerPoint n’a pas pu être généré. Rechargez la page et réessayez.', 'erreur');
     } finally {
       this.occupe.set(false);
     }
