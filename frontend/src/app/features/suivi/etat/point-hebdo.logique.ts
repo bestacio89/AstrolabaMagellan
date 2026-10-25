@@ -51,6 +51,7 @@ export interface ReglagesPointHebdo {
   avv?: string;
   pilote?: string;
   modeFacturation?: string;
+  logoClient?: string;
   logoEntreprise?: string;
 }
 export interface PointsHebdo {
