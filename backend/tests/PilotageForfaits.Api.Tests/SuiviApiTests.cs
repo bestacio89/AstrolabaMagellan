@@ -377,7 +377,7 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
         var suiviInitial = await chef.GetFromJsonAsync<JsonObject>($"/api/projets/{id}/suivi");
         var tacheId = suiviInitial!["projet"]!["tasks"]!.AsArray()
             .Single(x => x!["uid"]!.GetValue<string>() == "r7")!["cibleId"]!.GetValue<Guid>();
-        var url = $"/api/projets/{id}/suivi/commentaires/Tache/{tacheId}";
+        var url = $"/api/projets/{id}/commentaires/Tache/{tacheId}";
         await Refuser(chef, HttpMethod.Post, url, new { texte = "   " }, HttpStatusCode.UnprocessableEntity);
         await Saisir(chef, HttpMethod.Post, url, new { texte = "Atelier décalé, budget déplacement 1 200 €" });
         var consultant = _api.ClientPour("consultant");
@@ -656,7 +656,7 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
     {
         var client = _api.ClientPour("chef");
         var id = await ImporterAsync(client);
-        var urlAxe = $"/api/projets/{id}/suivi/axes/AXE1";
+        var urlAxe = $"/api/projets/{id}/axes/AXE1";
         var r = await Saisir(client, HttpMethod.Put, urlAxe, new { nom = "Conception", dateLimite = "2026-10-30" });
         Assert.Equal("Conception", r["suivi"]!["projet"]!["axes"]!["AXE1"]!.GetValue<string>());
         Assert.Equal("2026-10-30", r["suivi"]!["projet"]!["datesLimitesAxes"]!["AXE1"]!.GetValue<string>());
@@ -675,12 +675,12 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
     {
         var client = _api.ClientPour("chef");
         var id = await ImporterAsync(client);
-        await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/suivi/axes/AXE1", new { nom = "Axe un", dateLimite = (string?)null });
-        await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/suivi/axes/AXE2", new { nom = "Axe deux", dateLimite = (string?)null });
-        await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/suivi/axes/AXE1/facturation", new { axe = "AXE1", numero = 1, phasesADelier = Array.Empty<string>() });
-        await Refuser(client, HttpMethod.Put, $"/api/projets/{id}/suivi/axes/AXE2/facturation",
+        await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/axes/AXE1", new { nom = "Axe un", dateLimite = (string?)null });
+        await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/axes/AXE2", new { nom = "Axe deux", dateLimite = (string?)null });
+        await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/axes/AXE1/facturation", new { axe = "AXE1", numero = 1, phasesADelier = Array.Empty<string>() });
+        await Refuser(client, HttpMethod.Put, $"/api/projets/{id}/axes/AXE2/facturation",
             new { axe = "AXE2", numero = 1, phasesADelier = Array.Empty<string>() }, HttpStatusCode.UnprocessableEntity);
-        var r = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/suivi/axes/AXE1/facturation",
+        var r = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/axes/AXE1/facturation",
             new { axe = "AXE1", numero = (int?)null, phasesADelier = Array.Empty<string>() });
         Assert.Contains(r["messages"]!.AsArray(), m => m!["texte"]!.GetValue<string>().Contains("ne déclenche plus"));
     }
