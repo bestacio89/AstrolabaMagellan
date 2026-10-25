@@ -703,8 +703,26 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
         Assert.Equal("Premier commentaire", commentaires[1]!["texte"]!.GetValue<string>());
 
         var autreChef = _api.ClientPour("chef2");
+        // L'utilisateur doit être membre du même projet : sinon le filtre d'accès renvoie 404
+        // avant que l'API puisse vérifier la propriété du commentaire.
+        var moi = await autreChef.GetAsync("/api/moi");
+        Assert.Equal(HttpStatusCode.OK, moi.StatusCode);
+        await ModifierBaseAsync(async db =>
+        {
+            var utilisateur = await db.Utilisateurs.FirstAsync(x => x.IdentifiantExterne == "tenant-tests:oid-chef-2");
+            db.Habilitations.Add(new Habilitation
+            {
+                ProjetId = id,
+                UtilisateurId = utilisateur.Id,
+                Role = RoleProjet.ChefDeProjet,
+                Depuis = Horloge.Maintenant,
+            });
+        });
+
         await Refuser(autreChef, HttpMethod.Put, $"/api/projets/{id}/commentaires/{premierId}",
             new { texte = "Modification interdite" }, HttpStatusCode.Forbidden);
+        await Refuser(autreChef, HttpMethod.Delete, $"/api/projets/{id}/commentaires/{premierId}",
+            null, HttpStatusCode.Forbidden);
         var modifie = await Saisir(chef, HttpMethod.Put, $"/api/projets/{id}/commentaires/{premierId}", new { texte = "Commentaire modifié" });
         Assert.Contains(modifie["suivi"]!["projet"]!["commentaires"]!["r7"]!.AsArray(),
             c => c?["id"]?.GetValue<Guid>() == premierId && c?["texte"]?.GetValue<string>() == "Commentaire modifié");
