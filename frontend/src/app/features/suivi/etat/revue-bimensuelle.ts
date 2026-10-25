@@ -78,7 +78,7 @@ function setCellFill(cell: Element, color: string): void {
   const fill = doc.createElementNS(A_NS, 'a:solidFill');
   const rgb = doc.createElementNS(A_NS, 'a:srgbClr'); rgb.setAttribute('val', color); fill.appendChild(rgb); tcPr.insertBefore(fill, tcPr.firstChild);
 }
-function setTable(doc: XMLDocument, name: string, rows: string[][], fills: Record<string, string> = {}, minimumDataRows = 0): void {
+function setTable(doc: XMLDocument, name: string, rows: string[][], fills: Record<string, string> = {}, minimumDataRows = 0, maximumDataRows = Number.MAX_SAFE_INTEGER): void {
   const frame = named(doc, 'graphicFrame', name);
   const tbl = frame?.getElementsByTagNameNS(A_NS, 'tbl')[0];
   if (!frame || !tbl) return;
@@ -86,7 +86,14 @@ function setTable(doc: XMLDocument, name: string, rows: string[][], fills: Recor
   if (!trParent) return;
   let trs = Array.from(tbl.getElementsByTagNameNS(A_NS, 'tr'));
   const originalDataRows = trs.length - 1;
-  const targetDataRows = Math.max(originalDataRows, rows.length, minimumDataRows);
+  const targetDataRows = Math.max(minimumDataRows, Math.min(Math.max(originalDataRows, rows.length), maximumDataRows));
+  if (targetDataRows < originalDataRows) {
+    for (const row of trs.slice(targetDataRows + 1)) trParent.removeChild(row);
+    trs = Array.from(tbl.getElementsByTagNameNS(A_NS, 'tr'));
+    const ext = frame.getElementsByTagNameNS(A_NS, 'ext')[0];
+    const height = trs.reduce((sum, row) => sum + Number.parseInt(row.getAttribute('h') ?? '0', 10), 0);
+    if (ext) ext.setAttribute('cy', String(height));
+  }
   if (targetDataRows > originalDataRows) {
     const prototype = trs[trs.length - 1];
     for (let i = originalDataRows; i < targetDataRows; i++) {
@@ -216,7 +223,7 @@ export async function genererRevueBimensuelle(d: DonneesDiapo, fetcher: typeof f
       setShapeText(doc, 'Title 1', 'Suivi global : la météo du portefeuille en un coup d’œil');
       setTable(doc, 'Table 12', [[d.aEvoquer ? 'À évoquer' : '', projet, d.pilote || '—', money(d.budgetInitial), money(d.budgetConsomme), fJ(d.prevu), fJ(d.conso), `${Math.round(d.avancement * 100)} %`, NIV[satisfaction], meteo, short(d.difficulte, 90), short(d.impact, 60)]], {
         ...(d.aEvoquer ? Object.fromEntries(Array.from({ length: 12 }, (_, i) => [`0:${i}`, 'A9C4FF'])) : {}), [`0:8`]: statusColor(satisfaction), [`0:9`]: METEO_COLOR[meteo] ?? METEO_COLOR['Hors période'],
-      });
+      }, 0, 1);
     },
     2: (doc) => {
       setShapeText(doc, 'TextBox 10', 'CLIENT  ·  FICHE PROJET · PILOTAGE');
@@ -232,7 +239,7 @@ export async function genererRevueBimensuelle(d: DonneesDiapo, fetcher: typeof f
       setTable(doc, 'Table 33', d.indicateurs.map((x) => [x.libelle, NIV[x.s], NIV[x.s1]]), Object.fromEntries(d.indicateurs.flatMap((x, i) => [[`${i}:1`, statusColor(x.s)], [`${i}:2`, statusColor(x.s1)]])));
       setTable(doc, 'Table 50', d.risques.map((x) => [criticality(x.niveau), short(x.type || '—', 30), short(x.libelle, 60), short(x.parade, 60)]), Object.fromEntries(d.risques.map((x, i) => [`${i}:0`, statusColor(x.niveau)])));
       setTable(doc, 'Table 55', d.actions.map((x) => [short(x.libelle, 45), x.pilote, date(x.echeance), x.retard ? 'En retard' : x.statut, short(x.commentaire, 40)]), Object.fromEntries(d.actions.map((x, i) => [`${i}:3`, x.retard ? 'EE6B57' : x.statut === 'Fait' ? '3FB97C' : x.statut === 'En cours' ? 'A9C4FF' : 'E4E8F0'])));
-      setShapeText(doc, 'TextBox 104', 'Cellule de tableau : trame de fond selon le statut.');
+      // The explanatory legend remains exactly as supplied by the agency template.
     },
     3: (doc) => {
       setShapeText(doc, 'Title 1', projet);
