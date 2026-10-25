@@ -18,10 +18,11 @@ function suivi(): Suivi {
         { id: 'a1', ref: 'A-001', libelle: 'Relancer le client', porteur: 'camille lefevre', statut: 'En cours', echeance: '2026-10-02' },
         { id: 'a2', ref: 'A-002', libelle: 'Autre', porteur: 'Romain', statut: 'En cours', echeance: '2026-10-02' },
       ],
-      misesAJour: {
+      misesAJour: {},
+      commentaires: {
         t1: [
-          { at: '2026-10-06T09:00:00+00:00', by: 'Romain Dupont', texte: '@Camille peux-tu reprendre ?' },
-          { at: '2026-10-05T09:00:00+00:00', by: 'Camille Lefèvre', texte: '@Camille note pour moi' },
+          { id: 'c1', at: '2026-10-06T09:00:00+00:00', by: 'Romain Dupont', auteurId: 'u2', texte: '@Camille peux-tu reprendre ?', modifieLe: null },
+          { id: 'c2', at: '2026-10-05T09:00:00+00:00', by: 'Camille Lefèvre', auteurId: 'u1', texte: '@Camille note pour moi', modifieLe: null },
         ],
       },
       journal: [
