@@ -237,6 +237,8 @@ export function donneesDiapo(e: EntreePointHebdo, o: {
     budget: !demarre ? 'gris' : derive > 0.01 ? 'rouge' : derive > 0.0001 ? 'jaune' : 'vert',
     ressources: 'vert',
     facturation: retardsEch ? 'jaune' : 'vert',
+    satisfaction: s.satisfaction?.meteo === 'soleil' ? 'vert' : s.satisfaction?.meteo === 'nuage' ? 'jaune' : s.satisfaction?.meteo === 'orage' ? 'rouge' : 'gris',
+    esprit: s.esprit?.meteo === 'soleil' ? 'vert' : s.esprit?.meteo === 'nuage' ? 'jaune' : s.esprit?.meteo === 'orage' ? 'rouge' : 'gris',
   };
   const pct = (v: number): string => `${(Math.round(v * 1000) / 10).toLocaleString('fr-FR')} %`;
   const raison: Record<CleIndicateur, string> = {
@@ -246,6 +248,8 @@ export function donneesDiapo(e: EntreePointHebdo, o: {
     budget: !demarre ? 'Rien de consommé' : derive > 0.0001 ? `Dérive de ${pct(derive)} (atterrissage / prévu)` : 'Pas de dérive',
     ressources: 'À apprécier par le chef de projet',
     facturation: retardsEch ? `${retardsEch} échéance(s) en retard` : 'Pas de retard de facturation',
+    satisfaction: 'À apprécier par le chef de projet',
+    esprit: 'À apprécier par le chef de projet',
   };
   const indicateurs = INDICATEURS.map(([cle, libelle]) => {
     const S = s.indicateurs?.[cle]?.s ?? propose[cle];
