@@ -663,7 +663,7 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
 
         r = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/suivi/lots/1.1", new { nom = "Cadrage et conception" });
         Assert.Equal("Cadrage et conception", r["suivi"]!["projet"]!["lots"]!["1.1"]!.GetValue<string>());
-        Assert.Contains(r["suivi"]!["projet"]!["tasks"]!.AsArray(), t => t!["lot"]!.GetValue<string>() == "1.1");
+        Assert.Contains(r["suivi"]!["projet"]!["tasks"]!.AsArray(), t => t?["lot"]?.GetValue<string>() == "1.1");
 
         r = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/suivi/lots/1.1", new { nom = "" });
         Assert.False(r["suivi"]!["projet"]!["lots"]!.AsObject().ContainsKey("1.1"));
