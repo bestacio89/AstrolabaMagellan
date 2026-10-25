@@ -304,7 +304,7 @@ function previewShape(g: GabaritRevue, slideIndex: number, name: string, value: 
   const text = (Array.isArray(value) ? value : [value]).map(esc).join('<br>');
   const font = Math.max(8, (first.sz ?? 1000) / 75);
   const color = /^[0-9A-Fa-f]{6}$/.test(first.col ?? '') ? first.col : 'FFFFFF';
-  return `<div class="rv-shape" style="${geometry(shape.xf, g)};font-size:${font}px;color:#${color};font-weight:${first.b ? 700 : 400};text-align:${shape.algn === 'ctr' ? 'center' : shape.algn === 'r' ? 'right' : 'left'};display:flex;align-items:${shape.anchor === 't' ? 'flex-start' : 'center'}">${text}</div>`;
+  return `<div class="rv-shape" style="${geometry(shape.xf, g)};font-size:${font / 12.8}cqw;color:#${color};font-weight:${first.b ? 700 : 400};text-align:${shape.algn === 'ctr' ? 'center' : shape.algn === 'r' ? 'right' : 'left'};display:flex;align-items:${shape.anchor === 't' ? 'flex-start' : 'center'}">${text}</div>`;
 }
 interface PreviewTable { name: string; rows: string[][]; fills?: Record<string, string>; skipColumns?: number[] }
 function previewTable(g: GabaritRevue, slideIndex: number, t: PreviewTable): string {
@@ -327,7 +327,7 @@ function previewTable(g: GabaritRevue, slideIndex: number, t: PreviewTable): str
         const font = Math.max(7, (style.sz ?? 900) / 75);
         const align = style.algn === 'ctr' ? 'center' : style.algn === 'r' ? 'right' : 'left';
         const margin = Math.max(1, (style.marL ?? 27000) / g.W * 1280);
-        out += `<div class="rv-cell" style="left:${left / g.W * 100}%;top:${top / g.H * 100}%;width:${cw / g.W * 100}%;height:${meta.rows[ri + 1] / g.H * 100}%;font-size:${font}px;text-align:${align};padding-left:${margin}px;padding-right:${margin}px;${fill ? `background:#${fill};` : ''}">${esc(val)}</div>`;
+        out += `<div class="rv-cell" style="left:${left / g.W * 100}%;top:${top / g.H * 100}%;width:${cw / g.W * 100}%;height:${meta.rows[ri + 1] / g.H * 100}%;font-size:${font / 12.8}cqw;text-align:${align};padding-left:${margin / 12.8}cqw;padding-right:${margin / 12.8}cqw;${fill ? `background:#${fill};` : ''}">${esc(val)}</div>`;
       }
       left += cw;
     }
