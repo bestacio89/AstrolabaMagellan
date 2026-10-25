@@ -5,7 +5,7 @@ import { SuiviApi } from '../api/suivi.api';
 import { fD } from '../etat/formats';
 import { chargerPptxGen, logoEntrepriseParDefaut } from '../etat/point-hebdo.chargement';
 import { apercu, presentation } from '../etat/point-hebdo.diapo';
-import { genererRevueBimensuelle } from '../etat/revue-bimensuelle';
+import { apercuRevueBimensuelle, chargerGabaritRevue, genererRevueBimensuelle, GabaritRevue } from '../etat/revue-bimensuelle';
 import { telechargerFichier } from '../etat/fichiers';
 import {
   CleIndicateur, clePeriode, donneesDiapo, EntreePointHebdo, lignes, LISTE_NIVEAUX, lundiDe, moisPrecedent, moisSuivant, MOIS_L, Niveau, NIVEAUX,
@@ -203,6 +203,7 @@ export class PointHebdo {
   protected readonly logoDefaut = signal<string | null>(null);
   protected readonly lecture = computed(() => !this.vue()?.droits.peutModifier);
   protected readonly occupe = signal(false);
+  protected readonly gabaritRevue = signal<GabaritRevue | null>(null);
 
   // ---- diapositive ----
   private readonly entree = computed<EntreePointHebdo | null>(() => {
@@ -221,15 +222,16 @@ export class PointHebdo {
   });
   // Aperçu : tout texte saisi y est échappé et les images contrôlées (voir apercu()) ; il peut donc être inséré tel quel,
   // ce qui garde les styles de position (Angular les retirerait sinon).
-  protected readonly html = computed(() => { const d = this.d(); return this.assainisseur.bypassSecurityTrustHtml(d ? apercu(d) : ''); });
+  protected readonly html = computed(() => { const d = this.d(); const g = this.gabaritRevue(); return this.assainisseur.bypassSecurityTrustHtml(d ? this.type() === 'quinzaine' && g ? apercuRevueBimensuelle(d, g) : apercu(d) : ''); });
 
   // ---- mise à l'échelle de l'aperçu (13,333 × 7,5 pouces) ----
   private readonly cadre = viewChild<ElementRef<HTMLElement>>('cadre');
   private readonly largeur = signal(0);
   protected readonly echelle = computed(() => this.largeur() / (13.333 * 96) || 0.5);
-  protected readonly hauteur = computed(() => 7.5 * 96 * this.echelle());
+  protected readonly hauteur = computed(() => (this.type() === 'quinzaine' ? 3 * 720 + 32 : 7.5 * 96) * this.echelle());
 
   constructor() {
+    void chargerGabaritRevue().then((g) => this.gabaritRevue.set(g));
     void logoEntrepriseParDefaut().then((l) => this.logoDefaut.set(l));
     const destruction = inject(DestroyRef);
     afterNextRender(() => {

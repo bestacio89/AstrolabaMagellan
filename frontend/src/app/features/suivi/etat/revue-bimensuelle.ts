@@ -212,3 +212,101 @@ export async function genererRevueBimensuelle(d: DonneesDiapo, fetcher: typeof f
   await updateCharts(zip, d.meteoProjet, d.avancement);
   return zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
 }
+
+export interface GabaritRevue {
+  W: number;
+  H: number;
+  slides: {
+    formes: Record<string, { xf: number[]; algn?: string; anchor?: string; runs?: { t?: string; sz?: number; b?: boolean; col?: string }[]; ins?: number[] }>;
+    tables: Record<string, { xf: number[]; cols: number[]; rows: number[]; cells: { algn?: string; sz?: number; marL?: number; marR?: number }[] }>;
+  }[];
+}
+export async function chargerGabaritRevue(fetcher: typeof fetch = fetch): Promise<GabaritRevue | null> {
+  try {
+    const r = await fetcher('/modeles/gabarit.json');
+    if (!r.ok) return null;
+    return (await r.json()) as GabaritRevue;
+  } catch { return null; }
+}
+const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+function geometry(xf: number[], g: GabaritRevue): string {
+  const [x, y, w, h] = xf;
+  return `left:${x / g.W * 100}%;top:${y / g.H * 100}%;width:${w / g.W * 100}%;height:${h / g.H * 100}%`;
+}
+function previewShape(g: GabaritRevue, slideIndex: number, name: string, value: string | string[]): string {
+  const shape = g.slides[slideIndex]?.formes[name];
+  if (!shape) return '';
+  const first = shape.runs?.[0] ?? {};
+  const text = (Array.isArray(value) ? value : [value]).map(esc).join('<br>');
+  const font = Math.max(8, (first.sz ?? 1000) / 75);
+  const color = /^[0-9A-Fa-f]{6}$/.test(first.col ?? '') ? first.col : 'FFFFFF';
+  return `<div class="rv-shape" style="${geometry(shape.xf, g)};font-size:${font}px;color:#${color};font-weight:${first.b ? 700 : 400};text-align:${shape.algn === 'ctr' ? 'center' : shape.algn === 'r' ? 'right' : 'left'};display:flex;align-items:${shape.anchor === 't' ? 'flex-start' : 'center'}">${text}</div>`;
+}
+interface PreviewTable { name: string; rows: string[][]; fills?: Record<string, string>; skipColumns?: number[] }
+function previewTable(g: GabaritRevue, slideIndex: number, t: PreviewTable): string {
+  const meta = g.slides[slideIndex]?.tables[t.name];
+  if (!meta) return '';
+  const [x, y, w, h] = meta.xf;
+  const totalCols = meta.cols.reduce((a, b) => a + b, 0) || 1;
+  const totalRows = meta.rows.reduce((a, b) => a + b, 0) || 1;
+  let top = y;
+  let out = '';
+  for (let ri = 0; ri < meta.rows.length - 1; ri++) {
+    top += meta.rows[ri];
+    let left = x;
+    for (let ci = 0; ci < meta.cols.length; ci++) {
+      const cw = meta.cols[ci];
+      const val = t.rows[ri]?.[ci] ?? '';
+      if (val && !(t.skipColumns ?? []).includes(ci)) {
+        const style = meta.cells[ci] ?? {};
+        const fill = t.fills?.[`${ri}:${ci}`];
+        const font = Math.max(7, (style.sz ?? 900) / 75);
+        const align = style.algn === 'ctr' ? 'center' : style.algn === 'r' ? 'right' : 'left';
+        const margin = Math.max(1, (style.marL ?? 27000) / g.W * 1280);
+        out += `<div class="rv-cell" style="left:${left / g.W * 100}%;top:${top / g.H * 100}%;width:${cw / g.W * 100}%;height:${meta.rows[ri + 1] / g.H * 100}%;font-size:${font}px;text-align:${align};padding-left:${margin}px;padding-right:${margin}px;${fill ? `background:#${fill};` : ''}">${esc(val)}</div>`;
+      }
+      left += cw;
+    }
+  }
+  return out;
+}
+export function apercuRevueBimensuelle(d: DonneesDiapo, g: GabaritRevue): string {
+  const projet = `${d.client || 'Client'} – ${d.projet || 'Projet'}`;
+  const sat = d.indicateurs.find((x) => x.cle === 'satisfaction')?.s ?? 'gris';
+  const textBySlide: Record<number, Record<string, string | string[]>> = {
+    1: { 'Title 1': 'Suivi global : la météo du portefeuille en un coup d’œil' },
+    2: {
+      'TextBox 10': 'CLIENT · FICHE PROJET · PILOTAGE', 'Title 1': projet, 'TextBox 13': d.typologie || 'Forfait',
+      'TextBox 16': `Facturation ${d.modeFacturation || 'J.H'}`, 'TextBox 19': `${date(d.debut)} → ${date(d.fin)}`,
+      'TextBox 22': `Extension : ${d.extension}`, 'TextBox 28': `COMMERCIAL  ${d.commercial || '—'}   |   AVV  ${d.avv || '—'}   |   PILOTE DELIVERY  ${d.pilote || '—'}   |   CONSULTANTS  ${d.consultants.join(', ') || '—'}`,
+      'TextBox 37': `Quinzaine du ${date(d.periode.debut)} au ${date(d.periode.fin)}`,
+      'TextBox 39': lines(d.actualites, 3), 'TextBox 44': lines([d.difficulte, ...d.attention], 3),
+      'TextBox 48': d.aEvoquer ? 'À évoquer en séance' : 'Pas de point à évoquer',
+    },
+    3: {
+      'Title 1': projet, 'TextBox 11': `Données au ${date(d.genereLe)}`, 'TextBox 14': money(d.budgetInitial),
+      'TextBox 17': money(d.budgetConsomme), 'TextBox 20': fJ(d.prevu), 'TextBox 23': fJ(d.conso),
+      'TextBox 26': fJ(d.raf), 'TextBox 29': money(d.facture),
+    },
+  };
+  const tables: Record<number, PreviewTable[]> = {
+    1: [{ name: 'Table 12', rows: [[date(d.periode.fin), projet, d.pilote || '—', money(d.budgetInitial), money(d.budgetConsomme), fJ(d.prevu), fJ(d.conso), `${Math.round(d.avancement * 100)} %`, NIV[sat], d.meteoProjet, short(d.difficulte), short(d.impact)]], fills: { '0:8': statusColor(sat), '0:9': METEO_COLOR[d.meteoProjet] ?? METEO_COLOR['Hors période'], '0:0': d.aEvoquer ? 'A9C4FF' : 'E4E8F0' } }],
+    2: [
+      { name: 'Table 33', rows: d.indicateurs.map((x) => [x.libelle, NIV[x.s], NIV[x.s1]]), fills: Object.fromEntries(d.indicateurs.flatMap((x, i) => [[`${i}:1`, statusColor(x.s)], [`${i}:2`, statusColor(x.s1)]])), skipColumns: [0] },
+      { name: 'Table 50', rows: d.risques.map((x) => [severity(x.niveau), x.niveau === 'rouge' ? 'Fort' : x.niveau === 'jaune' ? 'Moyen' : 'Faible', short(x.libelle, 70), short(x.parade, 70)]), fills: Object.fromEntries(d.risques.map((x, i) => [`${i}:0`, statusColor(x.niveau)])) },
+      { name: 'Table 55', rows: d.actions.map((x) => [short(x.libelle, 65), x.pilote, date(x.echeance), x.retard ? 'En retard' : x.statut, short(x.commentaire, 60)]), fills: Object.fromEntries(d.actions.map((x, i) => [`${i}:3`, x.retard ? 'EE6B57' : x.statut === 'Fait' ? '3FB97C' : x.statut === 'En cours' ? 'A9C4FF' : 'E4E8F0'])) },
+    ],
+    3: [
+      { name: 'Table 35', rows: d.phases.slice(0, 6).map((x) => [d.odt[x.phase] || '—', x.phase, fJ(x.vendu), fJ(x.conso), NIV[x.tend]]), fills: Object.fromEntries(d.phases.slice(0, 6).map((x, i) => [`${i}:4`, statusColor(x.tend)])) },
+      { name: 'Table 41', rows: d.profils.slice(0, 6).map((x) => [x.profil, fJ(x.vendu), fJ(x.conso), fJ(x.raf), fJ(x.m1), NIV[x.tend]]), fills: Object.fromEntries(d.profils.slice(0, 6).map((x, i) => [`${i}:5`, statusColor(x.tend)])) },
+    ],
+  };
+  return g.slides.map((slide, i) => {
+    const n = i + 1;
+    let html = `<div class="rv-slide" style="background-image:url('/modeles/fond${n}.jpg')">`;
+    for (const [name, value] of Object.entries(textBySlide[n] ?? {})) html += previewShape(g, i, name, value);
+    for (const t of tables[n] ?? []) html += previewTable(g, i, t);
+    html += '</div>';
+    return html;
+  }).join('');
+}
