@@ -214,20 +214,25 @@ export function notificationsDuProjet(s: Suivi, projetId: string, moi: Personne,
   const parMoi = (par: string) => designe(par, moi);
   const liste: NotificationTravail[] = [];
 
-  // 1. mentions dans le fil des tâches
-  for (const [uid, fil] of Object.entries(s.projet.misesAJour ?? {})) {
-    const tache = s.modele.tasks.find((t) => t.uid === uid);
-    for (const m of fil) {
+  // 1. mentions dans l'historique partagé des commentaires (tâches et registres).
+  for (const [cible, commentaires] of Object.entries(s.projet.commentaires ?? {})) {
+    const uid = cible.startsWith('act:') || cible.startsWith('dec:') || cible.startsWith('rk:') ? undefined : cible;
+    const tache = uid ? s.modele.tasks.find((t) => t.uid === uid) : undefined;
+    const action = cible.startsWith('act:') ? s.projet.actions.find((x) => x.id === cible.slice(4)) : undefined;
+    const decision = cible.startsWith('dec:') ? s.projet.decisions.find((x) => x.id === cible.slice(4)) : undefined;
+    const risque = cible.startsWith('rk:') ? s.projet.risques.find((x) => x.id === cible.slice(3)) : undefined;
+    const sujet = tache?.label ?? action?.libelle ?? decision?.libelle ?? risque?.libelle ?? cible;
+    for (const m of commentaires) {
       if (parMoi(m.by) || !mentionne(m.texte, moi.prenom, moi.nom)) continue;
       liste.push({
-        cle: `${projetId}:m:${uid}:${m.at}`,
+        cle: `${projetId}:c:${cible}:${m.id}`,
         projetId,
         projet,
         le: m.at,
         par: m.by,
-        texte: `vous a mentionné(e) sur « ${tache?.label ?? uid} » : ${m.texte.length > 140 ? m.texte.slice(0, 139) + '…' : m.texte}`,
+        texte: `vous a mentionné(e) sur « ${sujet} » : ${m.texte.length > 140 ? m.texte.slice(0, 139) + '…' : m.texte}`,
         uid,
-        ecran: 'workload',
+        ecran: uid ? 'workload' : 'actions',
       });
     }
   }
