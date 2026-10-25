@@ -670,4 +670,18 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
         r = await Saisir(client, HttpMethod.Put, urlAxe, new { nom = "Conception", dateLimite = (string?)null });
         Assert.Null(r["suivi"]!["projet"]!["datesLimitesAxes"]!["AXE1"]);
     }
+    [Fact]
+    public async Task Une_echeance_ne_peut_etre_declenchee_par_deux_axes()
+    {
+        var client = _api.ClientPour("chef");
+        var id = await ImporterAsync(client);
+        await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/suivi/axes/AXE1", new { nom = "Axe un", dateLimite = (string?)null });
+        await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/suivi/axes/AXE2", new { nom = "Axe deux", dateLimite = (string?)null });
+        await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/suivi/axes/AXE1/facturation", new { axe = "AXE1", numero = 1, phasesADelier = Array.Empty<string>() });
+        await Refuser(client, HttpMethod.Put, $"/api/projets/{id}/suivi/axes/AXE2/facturation",
+            new { axe = "AXE2", numero = 1, phasesADelier = Array.Empty<string>() }, HttpStatusCode.UnprocessableEntity);
+        var r = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/suivi/axes/AXE1/facturation",
+            new { axe = "AXE1", numero = (int?)null, phasesADelier = Array.Empty<string>() });
+        Assert.Null(r["suivi"]!["projet"]!["echeancier"]!.AsArray().Single(x => x!["n"]!.GetValue<int>() == 1)! ["axeCode"]);
+    }
 }
