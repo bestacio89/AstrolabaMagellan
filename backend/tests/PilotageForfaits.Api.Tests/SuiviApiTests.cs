@@ -375,11 +375,8 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
         var chef = _api.ClientPour("chef");
         var id = await ImporterAsync(chef);
         var suiviInitial = await chef.GetFromJsonAsync<JsonObject>($"/api/projets/{id}/suivi");
-        Guid tacheId = Guid.Empty;
-        await ModifierBaseAsync(async db =>
-        {
-            tacheId = (await db.Taches.SingleAsync(x => x.ProjetId == id && x.Repere == "r7")).Id;
-        });
+        var tacheId = suiviInitial!["projet"]!["tasks"]!.AsArray()
+            .Single(x => x!["uid"]!.GetValue<string>() == "r7")!["cibleId"]!.GetValue<Guid>();
         var url = $"/api/projets/{id}/commentaires/Tache/{tacheId}";
         await Refuser(chef, HttpMethod.Post, url, new { texte = "   " }, HttpStatusCode.UnprocessableEntity);
         await Saisir(chef, HttpMethod.Post, url, new { texte = "Atelier décalé, budget déplacement 1 200 €" });

@@ -157,9 +157,14 @@ export function saisieDeLaPeriode(points: PointsHebdo | null | undefined, cle: s
   const prec = Object.keys(periodes).filter((k) => k[0] === cle[0] && k < cle).sort().pop() ?? null;
   const p = prec ? periodes[prec] : null;
   const indicateurs: SaisiePeriode['indicateurs'] = {};
-  for (const c of ['qualite', 'ressources'] as const) {
+  for (const c of ['qualite', 'ressources', 'satisfaction', 'esprit'] as const) {
     const i = p?.indicateurs?.[c];
     if (i) indicateurs[c] = { s: i.s1 || i.s, s1: i.s1 || i.s };
+    else if (c === 'satisfaction' || c === 'esprit') {
+      const meteo = c === 'satisfaction' ? p?.satisfaction?.meteo : p?.esprit?.meteo;
+      const niveau = meteo === 'soleil' ? 'vert' : meteo === 'nuage' ? 'jaune' : meteo === 'orage' ? 'rouge' : null;
+      if (niveau) indicateurs[c] = { s: niveau, s1: niveau };
+    }
   }
   return {
     saisie: { actualites: [], attention: p?.attention ?? [], indicateurs, satisfaction: p?.satisfaction ?? null, esprit: p?.esprit ?? null, extension: p?.extension ?? 'Non' },

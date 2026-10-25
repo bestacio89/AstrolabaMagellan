@@ -31,7 +31,7 @@ import { SuiviEtat } from '../etat/suivi.etat';
           <div>
             <h2>{{ type() === 'quinzaine' ? 'Revue bimensuelle' : type() === 'mois' ? 'Point mensuel' : 'Point hebdomadaire' }}</h2>
             <p>Préparez les éléments de la revue delivery. Les chiffres sont calculés à partir du suivi ; les appréciations et commentaires sont conservés d’une séance à l’autre.</p>
-            @if (v.projet.pointsHebdo?.reglages.logoClient; as logo) { <p class="ph-client"><img [src]="logo" alt="Logo du client" /><a routerLink="../parametres">Modifier le logo du client dans Paramètres du projet</a></p> }
+            @if (v.projet.pointsHebdo?.reglages?.logoClient; as logo) { <p class="ph-client"><img [src]="logo" alt="Logo du client" /><a routerLink="../parametres">Modifier le logo du client dans Paramètres du projet</a></p> }
           </div>
           <div class="seg" role="group" aria-label="Période">
             <button type="button" [attr.aria-pressed]="type() === 'quinzaine'" (click)="type.set('quinzaine')">Revue bimensuelle</button>
@@ -42,19 +42,24 @@ import { SuiviEtat } from '../etat/suivi.etat';
         <div class="ph-grille">
           <aside class="card ph-form" aria-label="À compléter">
             <label class="field"
-              >{{ type() === 'mois' ? 'Mois' : type() === 'quinzaine' ? 'Date de la séance' : 'Semaine' }}
+              >{{ type() === 'mois' ? 'Mois' : type() === 'quinzaine' ? 'Séance enregistrée' : 'Semaine' }}
               <select class="in" #per (change)="choisirPeriode(per.value)">
                 @for (p of periodes(); track p.valeur) {
                   <option [value]="p.valeur" [selected]="p.valeur === (type() === 'mois' ? mois() : type() === 'quinzaine' ? seance() : semaine())">{{ p.libelle }}</option>
                 }
               </select>
             </label>
+            @if (type() === 'quinzaine') {
+              <label class="field">Date de la séance
+                <input class="in" type="date" [value]="seance()" #dateSeance (change)="seance.set(dateSeance.value)" />
+              </label>
+            }
             @if (etatSaisie(); as e) {
               <span class="ph-etat" [class.ok]="e.enregistree">
                 @if (e.enregistree) {
                   Enregistré{{ e.saisie.majLe ? ' le ' + fD(e.saisie.majLe.slice(0, 10)) : '' }}{{ e.saisie.par ? ' par ' + e.saisie.par : '' }}{{ e.saisie.genereLe ? ' · PowerPoint généré le ' + fD(e.saisie.genereLe.slice(0, 10)) : '' }}
                 } @else if (e.reprise) {
-                  Nouveau point : points d’attention, appréciations et météo repris du point précédent
+                  Nouvelle séance : points d’attention et appréciations reprises de la séance précédente
                 } @else {
                   Nouveau point
                 }
@@ -127,7 +132,7 @@ import { SuiviEtat } from '../etat/suivi.etat';
               <p class="auto">Consultants : repris des collaborateurs des profils (<a routerLink="../parametres">Paramètres du projet</a>).</p>
             <h3 class="ph-subhead">N° ODT des phases</h3>
             <p class="auto">Les numéros sont conservés d’une revue à l’autre.</p>
-            @for (phase of v.m.phases; track phase) {
+            @for (phase of v.projet.ref.phases; track phase) {
               <label class="field">{{ phase }}
                 <input class="in" [value]="numeroOdt(phase)" [disabled]="lecture()" #odt (change)="odtPhase(phase, odt.value)" />
               </label>
@@ -136,7 +141,7 @@ import { SuiviEtat } from '../etat/suivi.etat';
           </aside>
           <section class="ph-apercu" aria-label="Aperçu de la diapositive">
             <div class="ph-barre">
-              <span class="muted">Aperçu de la revue bimensuelle (16:9)</span><span class="spacer"></span>
+              <span class="muted">Aperçu de la revue bimensuelle (3 diapositives · 16:9)</span><span class="spacer"></span>
               <button type="button" class="btn primary" [disabled]="occupe() || (type() === 'quinzaine' && !gabaritRevue())" (click)="telecharger()">{{ occupe() ? 'Préparation…' : type() === 'quinzaine' && !gabaritRevue() ? 'Modèle de revue manquant' : type() === 'quinzaine' ? 'Télécharger le PowerPoint (3 slides)' : 'Télécharger le PowerPoint' }}</button>
             </div>
             @if (type() === 'quinzaine' && !gabaritRevue()) { <p class="ph-asset-warning">Le modèle et les fonds de revue doivent être installés dans <code>frontend/public/modeles/</code> pour afficher les trois diapositives et générer le PowerPoint.</p> }
@@ -199,7 +204,7 @@ export class PointHebdo {
   protected readonly etatSaisie = computed(() => saisieDeLaPeriode(this.vue()?.projet.pointsHebdo, this.cle()));
   /** Texte en cours de frappe (l'aperçu le suit) ; effacé quand on change de période. */
   protected readonly brouillon = linkedSignal<string, Partial<SaisiePeriode>>({ source: this.cle, computation: () => ({}) });
-  private readonly saisie = computed<SaisiePeriode>(() => ({ ...this.etatSaisie().saisie, ...this.brouillon() }));
+  protected readonly saisie = computed<SaisiePeriode>(() => ({ ...this.etatSaisie().saisie, ...this.brouillon() }));
   protected readonly reglages = computed<ReglagesPointHebdo>(() => this.vue()?.projet.pointsHebdo?.reglages ?? {});
   protected readonly logoDefaut = signal<string | null>(null);
   protected readonly lecture = computed(() => !this.vue()?.droits.peutModifier);

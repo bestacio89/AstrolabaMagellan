@@ -203,11 +203,11 @@ const RANG: Record<ElementATraiter['niveau'], number> = { crit: 0, facturer: 1, 
               }
             </details>
           </section>
-          @if ((v.m.datesLimitesAxes?.length ?? 0)) {
+          @if (datesLimites().length) {
             <section class="tdb-carte tdb-dl" aria-labelledby="tdb-dl-t">
               <header>
                 <h2 id="tdb-dl-t">Dates limites des axes</h2>
-                <span class="tdb-resume">{{ v.m.datesLimitesAxes.length }} date(s) fixée(s)</span>
+                <span class="tdb-resume">{{ nbDatesLimites() }} date(s) fixée(s)</span>
               </header>
               <div class="tdb-dl-list">
                 @for (x of datesLimites(); track x.code) {
@@ -461,6 +461,8 @@ export class TableauDeBord {
   });
   protected readonly aTraiterVisibles = computed(() => (this.todoOuvert() ? this.aTraiter() : this.aTraiter().slice(0, this.maxTodo)));
   protected readonly retardTotal = computed(() => this.aTraiter().filter((x) => x.niveau === 'crit').length);
+
+  protected readonly nbDatesLimites = computed(() => this.datesLimites().filter((x) => !!x.date).length);
 
   protected readonly datesLimites = computed(() => {
     const v = this.vue();

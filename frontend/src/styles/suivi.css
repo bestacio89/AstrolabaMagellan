@@ -1425,6 +1425,7 @@
 .suivi .ph-client { display: flex; align-items: center; gap: 10px; margin: 0; }
 .suivi .ph-client img { width: 56px; height: 40px; object-fit: contain; border: 1px solid var(--line); border-radius: 6px; background: white; padding: 4px; }
 .suivi .ph-subhead { margin: 12px 0 4px; font-size: 13px; font-weight: 650; color: var(--ink); }
+.suivi .ph-asset-warning { margin: 8px 0; padding: 10px 12px; border-left: 3px solid var(--c-attention); background: var(--surface-2); color: var(--ink); font-size: 12px; }
 .suivi .rv-slide { position: relative; width: 1280px; height: 720px; margin-bottom: 16px; overflow: hidden; background-size: 100% 100%; background-color: #fff; }
 .suivi .rv-shape, .suivi .rv-cell { position: absolute; box-sizing: border-box; overflow: hidden; line-height: 1.12; white-space: normal; }
 .suivi .rv-cell { display: flex; align-items: center; padding-top: 1px; padding-bottom: 1px; color: #23232f; }

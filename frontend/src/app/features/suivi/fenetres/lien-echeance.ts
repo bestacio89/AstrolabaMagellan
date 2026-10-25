@@ -61,7 +61,7 @@ import { EtiquetteAjout } from '../ui/tache';
                           type="checkbox"
                           [attr.aria-label]="t.label"
                           [disabled]="phasesCochees().has(t.phase) || t.viaPhase || t.viaAxe"
-                          [checked]="phasesCochees().has(t.phase) || t.viaPhase && v.phaseEch[t.phase] === d.e.n || t.viaAxe || tachesCochees().has(t.uid)"
+                          [checked]="phasesCochees().has(t.phase) || t.viaPhase && d.phaseEch[t.phase] === d.e.n || t.viaAxe || tachesCochees().has(t.uid)"
                           #ct
                           (change)="cocherTache(t.uid, ct.checked)"
                         />
@@ -110,8 +110,11 @@ export class FenetreLienEcheance implements OnInit {
         return { nom: ph, n: ts.length, jh: sum(ts.map((t) => t.charge)), autre: o != null && o !== e.n ? o : null };
       });
     const taches = v.tasks.map((t) => ({ ...t, viaAxe: !!e.axeCode && t.axe === e.axeCode && !t.echViaPhase, viaPhase: !!t.echViaPhase, autre: !t.echViaPhase && !t.echViaAxe && t.tr.ech != null && t.tr.ech !== e.n ? t.tr.ech : null }));
-    const axes = [...new Set(v.tasks.map((t) => t.axe).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr')).map((id) => ({ id, nom: v.projet.axes?.[id] || id }));
-    return { e, phases, taches, axes };
+    const axes = [...new Set(v.tasks.map((t) => t.axe).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr')).map((id) => {
+      const autre = v.m.echeancier.find((x) => x.n !== e.n && x.axeCode === id);
+      return { id, nom: v.projet.axes?.[id] || id, prisPar: autre?.n ?? null, facturee: !!autre?.realiseLe };
+    });
+    return { e, phases, taches, axes, phaseEch: v.phaseEch };
   });
 
   ngOnInit(): void {

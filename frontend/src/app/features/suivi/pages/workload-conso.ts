@@ -343,7 +343,7 @@ interface LigneProfil {
                         @let axeEch = v.m.echeancier.find((x) => x.axeCode === g.cle);
                         @if (axeEch) {
                           <button type="button" class="eur-badge" [class]="'eur-badge eur-' + (axeEch.realiseLe ? 'facturee' : axeEch.pret ? 'prete' : 'cours')" [title]="'Facturation de l’axe ' + g.cle" (click)="etat.ouvrirAxe(g.cle, 'fact')">
-                            € Échéance n° {{ axeEch.n }}{{ axeEch.realiseLe ? ' · facturée le ' + fD(axeEch.realiseLe) + (axeEch.payeeLe ? ' · payée' : '') : axeEch.pret ? ' prête à facturer · ' + fE(axeEch.montant ?? 0) : ' · ' + fE(axeEch.montant ?? 0) + ' · ' + fP(axeEch.avLie ?? 0) }}
+                            € Échéance n° {{ axeEch.n }}{{ axeEch.realiseLe ? ' · facturée le ' + fD(axeEch.realiseLe) + (axeEch.payeeLe ? ' · payée' : '') : axeEch.pret ? ' prête à facturer · ' + fE(axeEch.montant ?? 0) : ' · ' + fE(axeEch.montant ?? 0) + ' · ' + fP(axeEch?.avLie ?? 0) }}
                           </button>
                         } @else if (v.droits.peutModifier) {
                           <button type="button" class="eur-badge eur-empty" title="Lier cet axe à une échéance de facturation" (click)="etat.ouvrirAxe(g.cle, 'fact')">€ Lier à une facture</button>
@@ -378,6 +378,8 @@ export class WorkloadConso {
   /** Saisie agrandie (toute la fenêtre, cases plus grandes) : le temps de la saisie, non mémorisé. */
   protected readonly plein = signal(false);
   protected readonly fD = fD;
+  protected readonly fE = fE;
+  protected readonly fP = fP;
   protected readonly fJ = fJ;
   protected readonly fJz = fJz;
   protected readonly fML = fML;
