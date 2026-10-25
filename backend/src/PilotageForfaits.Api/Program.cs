@@ -95,6 +95,10 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     await AppliquerMigrationsDeDeveloppementAsync(app);
 }
+else if (!app.Environment.IsEnvironment("Tests"))
+{
+    await VerifierMigrationsAppliqueesAsync(app);
+}
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -120,6 +124,16 @@ static async Task AppliquerMigrationsDeDeveloppementAsync(WebApplication app)
             "Le modèle EF Core diffère de la dernière migration. Créez une nouvelle migration avant de démarrer l'API.");
 
     await db.Database.MigrateAsync();
+}
+
+static async Task VerifierMigrationsAppliqueesAsync(WebApplication app)
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<PilotageDbContext>();
+    var enAttente = (await db.Database.GetPendingMigrationsAsync()).ToArray();
+    if (enAttente.Length > 0)
+        throw new InvalidOperationException(
+            "La base de données n'est pas à jour. Appliquez les migrations EF Core avant de démarrer l'API : " + string.Join(", ", enAttente));
 }
 
 
