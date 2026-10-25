@@ -1428,6 +1428,7 @@
 .suivi .ph-asset-warning { margin: 8px 0; padding: 10px 12px; border-left: 3px solid var(--c-attention); background: var(--surface-2); color: var(--ink); font-size: 12px; }
 .suivi .rv-slide { position: relative; width: 100%; max-width: 1280px; aspect-ratio: 16 / 9; height: auto; margin-bottom: 16px; overflow: hidden; container-type: inline-size; background-size: 100% 100%; background-color: #fff; }
 .suivi .rv-shape, .suivi .rv-cell { position: absolute; box-sizing: border-box; overflow: hidden; line-height: 1.12; white-space: normal; }
+.suivi .rv-logo { position:absolute; z-index:1; object-fit:contain; }
 .suivi .rv-cell { display: flex; align-items: center; padding-top: 1px; padding-bottom: 1px; color: #23232f; }
 
 /* Rentabilité : détail d'une colonne de la cascade ouvert dans le volet → les cartes passent sur toute la largeur, la cascade reste lisible à côté */

@@ -374,6 +374,7 @@ export function apercuRevueBimensuelle(d: DonneesDiapo, g: GabaritRevue): string
   return g.slides.map((slide, i) => {
     const n = i + 1;
     let html = `<div class="rv-slide" style="background-image:url('/modeles/fond${n}.jpg')">`;
+    if (n === 2 || n === 3) html += `<img class="rv-logo" src="/modeles/magellan.png" alt="" style="left:${585936 / g.W * 100}%;top:${347472 / g.H * 100}%;width:${1188000 / g.W * 100}%;height:${914400 / g.H * 100}%" />`;
     for (const [name, value] of Object.entries(textBySlide[n] ?? {})) html += previewShape(g, i, name, value);
     for (const t of tables[n] ?? []) html += previewTable(g, i, t, 0, n === 1 && t.name === 'Table 12' ? 1 : Number.MAX_SAFE_INTEGER);
     html += '</div>';
