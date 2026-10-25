@@ -42,6 +42,25 @@ describe('Point hebdo', () => {
     expect(d.periode).toMatchObject({ debut: '2026-10-01', fin: '2026-10-31', colS: 'M', colS1: 'M+1' });
   });
 
+  it('prépare une revue bimensuelle de 14 jours et convertit les anciennes météos en indicateurs', () => {
+    const saisie: SaisiePeriode = {
+      ...vide,
+      satisfaction: { meteo: 'orage', tendance: 'rouge' },
+      esprit: { meteo: 'nuage', tendance: 'jaune' },
+      aEvoquer: true,
+      difficulte: 'Disponibilité client',
+      impact: 'Décalage d’une semaine',
+    };
+    const d = donneesDiapo(entree(), options({ periode: 'quinzaine', seance: '2026-10-21', saisie }));
+    expect(clePeriode('quinzaine', '2026-10-19', '2026-10', '2026-10-21')).toBe('Q:2026-10-21');
+    expect(d.periode.debut).toBe('2026-10-08');
+    expect(d.periode.fin).toBe('2026-10-21');
+    expect(d.indicateurs).toHaveLength(8);
+    expect(d.indicateurs.find((x) => x.cle === 'satisfaction')).toMatchObject({ s: 'rouge', propose: 'rouge' });
+    expect(d.indicateurs.find((x) => x.cle === 'esprit')).toMatchObject({ s: 'jaune', propose: 'jaune' });
+    expect(d).toMatchObject({ aEvoquer: true, difficulte: 'Disponibilité client', impact: 'Décalage d’une semaine', meteoProjet: 'Pluie' });
+  });
+
   it('propose les indicateurs d’après le calcul, et la saisie les remplace', () => {
     const d = donneesDiapo(entree(), options());
     const ind = (c: string) => d.indicateurs.find((i) => i.cle === c);

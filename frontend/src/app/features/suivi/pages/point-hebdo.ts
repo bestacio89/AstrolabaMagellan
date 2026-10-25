@@ -137,8 +137,9 @@ import { SuiviEtat } from '../etat/suivi.etat';
           <section class="ph-apercu" aria-label="Aperçu de la diapositive">
             <div class="ph-barre">
               <span class="muted">Aperçu de la revue bimensuelle (16:9)</span><span class="spacer"></span>
-              <button type="button" class="btn primary" [disabled]="occupe()" (click)="telecharger()">{{ occupe() ? 'Préparation…' : type() === 'quinzaine' ? 'Télécharger le PowerPoint (3 slides)' : 'Télécharger le PowerPoint' }}</button>
+              <button type="button" class="btn primary" [disabled]="occupe() || (type() === 'quinzaine' && !gabaritRevue())" (click)="telecharger()">{{ occupe() ? 'Préparation…' : type() === 'quinzaine' && !gabaritRevue() ? 'Modèle de revue manquant' : type() === 'quinzaine' ? 'Télécharger le PowerPoint (3 slides)' : 'Télécharger le PowerPoint' }}</button>
             </div>
+            @if (type() === 'quinzaine' && !gabaritRevue()) { <p class="ph-asset-warning">Le modèle et les fonds de revue doivent être installés dans <code>frontend/public/modeles/</code> pour afficher les trois diapositives et générer le PowerPoint.</p> }
             <div class="ph-cadre" #cadre [style.height.px]="hauteur()">
               <div class="ph-echelle" [style.transform]="'scale(' + echelle() + ')'" [innerHTML]="html()"></div>
             </div>

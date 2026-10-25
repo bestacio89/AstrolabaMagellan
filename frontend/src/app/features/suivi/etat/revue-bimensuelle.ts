@@ -189,6 +189,7 @@ export async function genererRevueBimensuelle(d: DonneesDiapo, fetcher: typeof f
       setShapeText(doc, 'TextBox 16', `Facturation ${d.modeFacturation || 'J.H'}`);
       setShapeText(doc, 'TextBox 19', `${date(d.debut)} → ${date(d.fin)}`);
       setShapeText(doc, 'TextBox 22', `Extension : ${d.extension}`);
+      setShapeText(doc, 'TextBox 37', `Quinzaine du ${date(d.periode.debut)} au ${date(d.periode.fin)}`);
       setShapeRuns(doc, 'TextBox 28', ['COMMERCIAL  ', d.commercial || '—', '   |   ', 'AVV  ', d.avv || '—', '   |   ', 'PILOTE DELIVERY  ', d.pilote || '—', '   |   ', 'CONSULTANTS  ', d.consultants[0] || '—', d.consultants.slice(1).join(', ')]);
       setShapeText(doc, 'TextBox 39', lines(d.actualites, 3));
       setShapeText(doc, 'TextBox 44', lines([d.difficulte, ...d.attention], 3));
@@ -297,7 +298,7 @@ export function apercuRevueBimensuelle(d: DonneesDiapo, g: GabaritRevue): string
     2: {
       'TextBox 10': 'CLIENT · FICHE PROJET · PILOTAGE', 'Title 1': projet, 'TextBox 13': d.typologie || 'Forfait',
       'TextBox 16': `Facturation ${d.modeFacturation || 'J.H'}`, 'TextBox 19': `${date(d.debut)} → ${date(d.fin)}`,
-      'TextBox 22': `Extension : ${d.extension}`, 'TextBox 28': `COMMERCIAL  ${d.commercial || '—'}   |   AVV  ${d.avv || '—'}   |   PILOTE DELIVERY  ${d.pilote || '—'}   |   CONSULTANTS  ${d.consultants.join(', ') || '—'}`,
+      'TextBox 22': `Extension : ${d.extension}`, 'TextBox 37': `Quinzaine du ${date(d.periode.debut)} au ${date(d.periode.fin)}`, 'TextBox 28': `COMMERCIAL  ${d.commercial || '—'}   |   AVV  ${d.avv || '—'}   |   PILOTE DELIVERY  ${d.pilote || '—'}   |   CONSULTANTS  ${d.consultants.join(', ') || '—'}`,
       'TextBox 37': `Quinzaine du ${date(d.periode.debut)} au ${date(d.periode.fin)}`,
       'TextBox 39': lines(d.actualites, 3), 'TextBox 44': lines([d.difficulte, ...d.attention], 3),
       'TextBox 48': d.aEvoquer ? 'À évoquer en séance' : 'Pas de point à évoquer',
