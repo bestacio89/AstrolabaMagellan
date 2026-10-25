@@ -398,6 +398,7 @@ export class WorkloadListe {
   protected readonly statuts = STATUTS;
   protected readonly avancements = AVANCEMENTS;
   protected readonly fD = fD;
+  protected readonly fE = fE;
   protected readonly fJ = fJ;
   protected readonly fP = fP;
   protected readonly fSigned = fSigned;

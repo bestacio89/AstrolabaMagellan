@@ -101,8 +101,8 @@ const REGROUPEMENTS: { cle: 'id' | 'lot' | 'phase'; libelle: string; colonne: st
         <div class="s-titre">
           <div class="s-titre-g">
             <div class="s-titre-ligne">
-              @if (v.projet.pointsHebdo?.reglages.logoClient; as logoClient) {
-                <img class="s-logo-client" [src]="logoClient" alt="Logo du client" />
+              @if (v.projet.pointsHebdo?.reglages.logoEntreprise; as logoClient) {
+                <img class="s-logo-client" [src]="logoClient" alt="Logo de l’entreprise" />
               }
               <h1>{{ nomProjet() }}</h1>
               @if (lectureProjet(); as l) {
@@ -245,8 +245,8 @@ const REGROUPEMENTS: { cle: 'id' | 'lot' | 'phase'; libelle: string; colonne: st
       </main>
 
       @if (etat.panneau(); as p) {
-        @if (p.startsWith(PANNEAU_AXE)) {
-          <app-panneau-axe [code]="p.slice(PANNEAU_AXE.length)" />
+        @if (p.startsWith(panneauAxe)) {
+          <app-panneau-axe [code]="p.slice(panneauAxe.length)" />
         } @else if (p.startsWith('ph:')) {
           <app-panneau-phase [phase]="p.slice(3)" />
         } @else if (p === panneauAvancement) {

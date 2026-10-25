@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input } f
 import { SuiviApi } from '../api/suivi.api';
 import { avancementValide } from '../etat/avancement';
 import { STATUTS } from '../etat/constantes';
-import { fD, fE, fJ, fP, stSlug } from '../etat/formats';
+import { fD, fE, fJ, fP, fSigned, stSlug } from '../etat/formats';
 import { sum } from '../etat/outils';
 import { SuiviEtat } from '../etat/suivi.etat';
 import { TacheVue, defaultAxeName } from '../etat/vue';
@@ -42,7 +42,7 @@ import { EtiquetteAjout } from '../ui/tache';
               @if (d.dateEtat.auDela.length) {
                 <div class="ax-alert" role="status">{{ d.dateEtat.auDela.length }} tâche(s) finissent après le {{ fD(d.dateEtat.date) }} :
                   @for (t of d.dateEtat.auDela.slice(0, 4); track t.uid) {
-                    <button type="button" class="linklike" (click)="ouvrirTache(t.uid)">{{ t.label }}</button>
+                    <button type="button" class="linklike" (click)="ouvrirTache(t.uid)">{{ t.libelle }}</button>
                   }
                 </div>
               }

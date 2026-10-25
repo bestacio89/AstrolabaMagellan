@@ -195,6 +195,10 @@ export class SuiviApi {
   dateEcheance(id: string, n: number, champ: 'datePrevue' | 'realiseLe' | 'payeeLe', valeur: string | null, version?: number) {
     return this.put(id, `echeances/${n}/dates`, { champ, valeur, version });
   }
+  /** Marque une échéance comme facturée à la date donnée. */
+  realiserEcheance(id: string, n: number, date: string) {
+    return this.dateEcheance(id, n, 'realiseLe', date);
+  }
   perimetreEcheance(id: string, n: number, phases: string[], taches: string[], axeCode: string | null = null) {
     return this.put(id, `echeances/${n}/perimetre`, { phases, taches, axeCode });
   }

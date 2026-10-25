@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Action } from '../api/modeles';
 import { SuiviApi } from '../api/suivi.api';
