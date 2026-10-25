@@ -15,8 +15,9 @@ import { Barre } from '../ui/petits';
 /** Un élément de la liste « À traiter », quelle que soit sa nature. */
 interface ElementATraiter {
   cle: string;
-  niveau: 'crit' | 'warn' | 'info' | 'ia';
+  niveau: 'crit' | 'warn' | 'info' | 'ia' | 'facturer';
   quand: string;
+  ordre?: number;
   genre: string;
   titre: string;
   sous: string;
@@ -28,7 +29,7 @@ interface ElementATraiter {
 }
 
 /** Ordre d'affichage : en retard, puis aujourd'hui, puis bilans IA, puis à venir. */
-const RANG: Record<ElementATraiter['niveau'], number> = { crit: 0, warn: 1, ia: 2, info: 3 };
+const RANG: Record<ElementATraiter['niveau'], number> = { crit: 0, facturer: 1, warn: 2, ia: 3, info: 4 };
 
 /**
  * Tableau de bord du projet (version de référence) : à traiter, période, charges, finances, évolutions du périmètre,
@@ -424,15 +425,22 @@ export class TableauDeBord {
     if (v.droits.voitMontants) {
       for (const x of al.echeances) {
         const e = x.echeance;
+        const aFacturer = e.pret && !e.realiseLe;
+        const perimetre = e.axeCode
+          ? `Axe ${e.axeCode} terminé : ${e.nLiesValides} / ${e.nLies} tâches validées`
+          : e.phases.length
+            ? `Phase${e.phases.length > 1 ? 's' : ''} ${e.phases.join(', ')} terminée${e.phases.length > 1 ? 's' : ''} : ${e.nLiesValides} / ${e.nLies} tâches validées`
+            : `Tâches liées terminées : ${e.nLiesValides} / ${e.nLies} tâches validées`;
         liste.push({
           cle: 'e-' + e.n,
-          niveau: x.etat === 'crit' ? 'crit' : x.etat === 'warn' ? 'warn' : 'info',
-          quand: x.quand,
+          niveau: aFacturer ? 'facturer' : x.etat === 'crit' ? 'crit' : x.etat === 'warn' ? 'warn' : 'info',
+          ordre: aFacturer ? 1 : undefined,
+          quand: aFacturer ? 'À facturer' : x.quand,
           genre: 'Facturation',
-          titre: `Échéance n° ${e.n}`,
-          sous: `${e.nom} · prévue le ${fD(e.datePrevue)}`,
+          titre: `Échéance n° ${e.n} · ${fE(e.montant ?? 0)}`,
+          sous: aFacturer ? perimetre : `${e.nom} · prévue le ${fD(e.datePrevue)}`,
           onglet: ['facturation', {}],
-          action: modif ? { libelle: '✓ Facturée', titre: 'Indiquer que la facture est émise aujourd’hui', faire: () => this.echeanceFacturee(e.n) } : undefined,
+          action: modif ? { libelle: aFacturer ? '✓ Facture émise' : '✓ Facturée', titre: 'Indiquer que la facture est émise aujourd’hui', faire: () => this.echeanceFacturee(e.n) } : undefined,
         });
       }
     }
@@ -448,7 +456,7 @@ export class TableauDeBord {
         action: modif ? { libelle: 'Faire le bilan', titre: 'Expliquer l’écart sur l’enveloppe IA', faire: () => this.etat.fenetre.set({ type: 'bilan-ia', uid: t.uid }) } : undefined,
       });
     }
-    return liste.map((x, i) => ({ x, i })).sort((p, q) => RANG[p.x.niveau] - RANG[q.x.niveau] || p.i - q.i).map((p) => p.x);
+    return liste.map((x, i) => ({ x, i })).sort((p, q) => (p.x.ordre ?? RANG[p.x.niveau]) - (q.x.ordre ?? RANG[q.x.niveau]) || p.i - q.i).map((p) => p.x);
   });
   protected readonly aTraiterVisibles = computed(() => (this.todoOuvert() ? this.aTraiter() : this.aTraiter().slice(0, this.maxTodo)));
   protected readonly retardTotal = computed(() => this.aTraiter().filter((x) => x.niveau === 'crit').length);

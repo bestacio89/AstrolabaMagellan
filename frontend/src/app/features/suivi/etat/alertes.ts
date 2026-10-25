@@ -91,8 +91,11 @@ export function calculerAlertes(v: Vue): BlocsAlertes {
 
   // échéances non facturées dans le délai
   const echeances = v.m.echeancier
-    .filter((e) => !e.realiseLe && e.jours != null && e.jours <= v.alerteEcheances)
-    .sort((a, b) => (a.jours ?? 0) - (b.jours ?? 0))
+    .filter((e) => !e.realiseLe && (e.pret || (e.jours != null && e.jours <= v.alerteEcheances)))
+    .sort((a, b) => {
+      const rang = (e: typeof a) => (e.jours ?? 0) < 0 ? 0 : e.pret ? 1 : 2;
+      return rang(a) - rang(b) || (a.jours ?? 0) - (b.jours ?? 0);
+    })
     .map((e) => {
       const [etat, quand] = echEtat(v, e);
       return { echeance: e, etat, quand };

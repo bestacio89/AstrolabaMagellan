@@ -1122,6 +1122,7 @@
 .suivi .tdb-quand.warn { background: var(--c-statut-encours); color: var(--c-statut-encours-texte); }
 .suivi .tdb-quand.info { background: var(--c-primaire-clair); color: var(--ink); }
 .suivi .tdb-quand.ia { background: var(--c-statut-test); color: var(--c-statut-test-texte); }
+.suivi .tdb-quand.facturer { background: var(--c-statut-valide); color: var(--c-statut-valide-texte); font-weight: 600; }
 .suivi .tdb-texte { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .suivi .tdb-titre { font: 500 14px/20px var(--police-texte); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .suivi .tdb-titre .tlink { font: inherit; }
