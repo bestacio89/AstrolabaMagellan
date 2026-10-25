@@ -314,7 +314,7 @@ function previewShape(g: GabaritRevue, slideIndex: number, name: string, value: 
   return `<div class="rv-shape" style="${geometry(shape.xf, g)};font-size:${font / 12.8}cqw;color:#${color};font-weight:${first.b ? 700 : 400};text-align:${shape.algn === 'ctr' ? 'center' : shape.algn === 'r' ? 'right' : 'left'};display:flex;align-items:${shape.anchor === 't' ? 'flex-start' : 'center'}">${text}</div>`;
 }
 interface PreviewTable { name: string; rows: string[][]; fills?: Record<string, string>; skipColumns?: number[] }
-function previewTable(g: GabaritRevue, slideIndex: number, t: PreviewTable): string {
+function previewTable(g: GabaritRevue, slideIndex: number, t: PreviewTable, minimumDataRows = 0, maximumDataRows = Number.MAX_SAFE_INTEGER): string {
   const meta = g.slides[slideIndex]?.tables[t.name];
   if (!meta) return '';
   const [x, y, w, h] = meta.xf;
@@ -322,7 +322,7 @@ function previewTable(g: GabaritRevue, slideIndex: number, t: PreviewTable): str
   const totalRows = meta.rows.reduce((a, b) => a + b, 0) || 1;
   let top = y;
   let out = '';
-  for (let ri = 0; ri < meta.rows.length - 1; ri++) {
+  for (let ri = 0; ri < Math.min(Math.max(meta.rows.length - 1, t.rows.length, minimumDataRows), maximumDataRows); ri++) {
     top += meta.rows[ri];
     let left = x;
     for (let ci = 0; ci < meta.cols.length; ci++) {
@@ -375,7 +375,7 @@ export function apercuRevueBimensuelle(d: DonneesDiapo, g: GabaritRevue): string
     const n = i + 1;
     let html = `<div class="rv-slide" style="background-image:url('/modeles/fond${n}.jpg')">`;
     for (const [name, value] of Object.entries(textBySlide[n] ?? {})) html += previewShape(g, i, name, value);
-    for (const t of tables[n] ?? []) html += previewTable(g, i, t);
+    for (const t of tables[n] ?? []) html += previewTable(g, i, t, 0, n === 1 && t.name === 'Table 12' ? 1 : Number.MAX_SAFE_INTEGER);
     html += '</div>';
     return html;
   }).join('');
