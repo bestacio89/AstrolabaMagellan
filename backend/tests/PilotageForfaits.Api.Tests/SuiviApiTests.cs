@@ -682,6 +682,6 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
             new { axe = "AXE2", numero = 1, phasesADelier = Array.Empty<string>() }, HttpStatusCode.UnprocessableEntity);
         var r = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/suivi/axes/AXE1/facturation",
             new { axe = "AXE1", numero = (int?)null, phasesADelier = Array.Empty<string>() });
-        Assert.Null(r["suivi"]!["projet"]!["echeancier"]!.AsArray().Single(x => x!["n"]!.GetValue<int>() == 1)! ["axeCode"]);
+        Assert.Contains(r["messages"]!.AsArray(), m => m!["texte"]!.GetValue<string>().Contains("ne déclenche plus"));
     }
 }
