@@ -22,6 +22,7 @@ export interface Droits {
   voitMontants: boolean;
   peutExporter: boolean;
   utilisateur: string;
+  utilisateurId?: string;
   /** Projet archivé : tout est en lecture seule. */
   archive?: boolean;
   /** Chef de projet (même archivé) : peut restaurer le projet, ou le supprimer s'il a été créé par erreur. */
@@ -68,6 +69,8 @@ export interface ProjetSuivi {
   dates: { debut: string | null; finContrat: string | null; finPrevue: string | null };
   ref: { phases: string[]; etapes: string[] };
   axes: Record<string, string>;
+  datesLimitesAxes?: Record<string, string | null>;
+  lots?: Record<string, string>;
   types: TypeTache[];
   frais?: FraisBudget[];
   achats?: AchatBudget[];
@@ -98,6 +101,7 @@ export interface ProjetSuivi {
   causes: string[];
   /** Fil de mises à jour de chaque tâche (clé : repère), du plus récent au plus ancien. */
   misesAJour: Record<string, MiseAJour[]>;
+  commentaires?: Record<string, Commentaire[]>;
   /** Personnes ajoutées à la main au planning des absences (hors profils du TSP). */
   personnesAjoutees?: { id: string; nom: string }[];
   /** Absences de l'équipe sur la période du projet (personne = nom normalisé ; moment : j, m ou a). */
@@ -146,6 +150,15 @@ export interface LigneReference {
   charge: number;
   cause: string | null;
   motif: string | null;
+}
+
+export interface Commentaire {
+  id: string;
+  at: string;
+  by: string;
+  auteurId: string | null;
+  texte: string;
+  modifieLe: string | null;
 }
 
 export interface MiseAJour {
@@ -411,6 +424,12 @@ export interface EntreeJournal {
 
 // ------------------------------------------------------------------ modèle (indicateurs calculés)
 
+export interface DateLimiteAxe {
+  code: string; date: string; etat: 'tenue' | 'tard' | 'depassee' | 'risque' | 'ok'; libelle: string; niveau: string;
+  jours: number; ecart: number | null; finMax: string | null; n: number; valides: number; ouvertes: number;
+  auDela: { uid: string; libelle: string; fin: string | null; statut: string }[];
+}
+
 export interface Modele {
   p: Personne[];
   months: string[];
@@ -447,6 +466,7 @@ export interface Modele {
   ateliers: { ateliers: Compteur; livrables: Compteur; parType: CompteurType[] };
   ia: Ia;
   vigilance: PointVigilance[];
+  datesLimitesAxes?: DateLimiteAxe[];
   nonDatees: string[];
 }
 
@@ -490,6 +510,7 @@ export interface Reaffectation {
 
 export interface TacheCalculee {
   uid: string;
+  cibleId?: string;
   ligne: number | null;
   id: string;
   label: string;
@@ -559,6 +580,7 @@ export interface TacheCalculee {
   finPrevue: string | null;
   echN: number | null;
   echViaPhase: boolean;
+  echViaAxe?: boolean;
   grp: string;
 }
 
@@ -873,6 +895,7 @@ export interface EcheanceCalculee {
   payeeLe: string | null;
   commentaire: string;
   phases: string[];
+  axeCode?: string | null;
   lies: string[];
   nLies: number;
   nLiesValides: number;

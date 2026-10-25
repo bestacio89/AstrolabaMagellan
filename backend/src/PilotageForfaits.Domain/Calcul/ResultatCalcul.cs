@@ -45,6 +45,7 @@ public sealed class ResultatCalcul
     public required AteliersEtLivrables Ateliers { get; init; }
     public required IndicateursIa Ia { get; init; }
     public required List<PointVigilance> Vigilance { get; init; }
+    public List<DateLimiteAxeCalculee> DatesLimitesAxes { get; init; } = new();
     /// <summary>Uid des tâches à faire sans dates prévues.</summary>
     public required List<string> NonDatees { get; init; }
 }
@@ -151,6 +152,7 @@ public sealed class TacheCalculee
     /// <summary>Numéro de l'échéance de facturation liée (directement ou par sa phase).</summary>
     public int? EchN { get; set; }
     public bool EchViaPhase { get; set; }
+    public bool EchViaAxe { get; set; }
     /// <summary>Code du groupe d'affichage (axe, lot ou phase selon le regroupement choisi).</summary>
     public string Grp { get; set; } = "";
 }
@@ -629,6 +631,7 @@ public sealed class EcheanceCalculee
     public DateOnly? RealiseLe { get; init; }
     public DateOnly? PayeeLe { get; init; }
     public string Commentaire { get; init; } = "";
+    public string? AxeCode { get; init; }
     public List<string> Phases { get; init; } = new();
     public List<string> Lies { get; init; } = new();
     public int NLies { get; init; }
@@ -742,6 +745,23 @@ public sealed class PointVigilance
     public string Niveau { get; init; } = "ok";
     public string? Detail { get; init; }
 }
+
+public sealed class DateLimiteAxeCalculee
+{
+    public string Code { get; init; } = "";
+    public DateOnly Date { get; init; }
+    public string Etat { get; init; } = "ok";
+    public string Libelle { get; init; } = "";
+    public string Niveau { get; init; } = "";
+    public int Jours { get; init; }
+    public int? Ecart { get; init; }
+    public DateOnly? FinMax { get; init; }
+    public int N { get; init; }
+    public int Valides { get; init; }
+    public int Ouvertes { get; init; }
+    public List<TacheAuDelaDateLimite> AuDela { get; init; } = new();
+}
+public sealed record TacheAuDelaDateLimite(string Uid, string Libelle, DateOnly? Fin, string Statut);
 
 public sealed class CalendrierProjet
 {

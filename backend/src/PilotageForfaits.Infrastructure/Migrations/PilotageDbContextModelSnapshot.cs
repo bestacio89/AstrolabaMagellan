@@ -273,6 +273,9 @@ namespace PilotageForfaits.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<DateOnly?>("DateLimite")
+                        .HasColumnType("date");
+
                     b.Property<string>("Nom")
                         .IsRequired()
                         .HasMaxLength(400)
@@ -296,6 +299,39 @@ namespace PilotageForfaits.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Axes", (string)null);
+                });
+
+            modelBuilder.Entity("PilotageForfaits.Domain.Entites.Lot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Nom")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
+                    b.Property<Guid>("ProjetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjetId");
+
+                    b.HasIndex("ProjetId", "Code")
+                        .IsUnique();
+
+                    b.ToTable("Lots", (string)null);
                 });
 
             modelBuilder.Entity("PilotageForfaits.Domain.Entites.BrouillonProjet", b =>
@@ -683,6 +719,10 @@ namespace PilotageForfaits.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AxeCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<string>("Commentaire")
                         .IsRequired()
                         .HasMaxLength(4000)
@@ -727,6 +767,9 @@ namespace PilotageForfaits.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ProjetId");
+
+                    b.HasIndex("ProjetId", "AxeCode")
+                        .IsUnique();
 
                     b.HasIndex("ProjetId", "Numero")
                         .IsUnique();
@@ -1431,7 +1474,7 @@ namespace PilotageForfaits.Infrastructure.Migrations
                     b.ToTable("Metriques", (string)null);
                 });
 
-            modelBuilder.Entity("PilotageForfaits.Domain.Entites.MiseAJourTache", b =>
+            modelBuilder.Entity("PilotageForfaits.Domain.Entites.Commentaire", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1440,13 +1483,21 @@ namespace PilotageForfaits.Infrastructure.Migrations
                     b.Property<Guid?>("AuteurId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("CibleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CibleType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<DateTime>("Le")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("ProjetId")
-                        .HasColumnType("uuid");
+                    b.Property<DateTime?>("ModifieLe")
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("TacheId")
+                    b.Property<Guid>("ProjetId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Texte")
@@ -1464,9 +1515,9 @@ namespace PilotageForfaits.Infrastructure.Migrations
 
                     b.HasIndex("ProjetId");
 
-                    b.HasIndex("TacheId");
+                    b.HasIndex("ProjetId", "CibleType", "CibleId", "Le");
 
-                    b.ToTable("MisesAJourTache", (string)null);
+                    b.ToTable("Commentaires", (string)null);
                 });
 
             modelBuilder.Entity("PilotageForfaits.Domain.Entites.Notification", b =>
@@ -2945,7 +2996,7 @@ namespace PilotageForfaits.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("PilotageForfaits.Domain.Entites.MiseAJourTache", b =>
+            modelBuilder.Entity("PilotageForfaits.Domain.Entites.Commentaire", b =>
                 {
                     b.HasOne("PilotageForfaits.Domain.Entites.Utilisateur", null)
                         .WithMany()
@@ -2958,11 +3009,6 @@ namespace PilotageForfaits.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PilotageForfaits.Domain.Entites.Tache", null)
-                        .WithMany()
-                        .HasForeignKey("TacheId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("PilotageForfaits.Domain.Entites.Notification", b =>
@@ -2984,6 +3030,15 @@ namespace PilotageForfaits.Infrastructure.Migrations
                 {
                     b.HasOne("PilotageForfaits.Domain.Entites.Projet", null)
                         .WithMany()
+                        .HasForeignKey("ProjetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+                        modelBuilder.Entity("PilotageForfaits.Domain.Entites.Lot", b =>
+                {
+                    b.HasOne("PilotageForfaits.Domain.Entites.Projet", null)
+                        .WithMany("Lots")
                         .HasForeignKey("ProjetId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -3271,6 +3326,7 @@ namespace PilotageForfaits.Infrastructure.Migrations
                     b.Navigation("Actions");
 
                     b.Navigation("Axes");
+
 
                     b.Navigation("BudgetAchats");
 

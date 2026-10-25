@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { donneesDiapo, EntreePointHebdo, lignes, lundiDe, nomFichier, numeroSemaine, PointsHebdo, saisieDeLaPeriode, SaisiePeriode } from './point-hebdo.logique';
+import { clePeriode, donneesDiapo, EntreePointHebdo, lignes, lundiDe, nomFichier, numeroSemaine, PointsHebdo, saisieDeLaPeriode, SaisiePeriode } from './point-hebdo.logique';
 
 /** Projet fictif : 2 profils (TJM 800 et 600), 2 tâches de la phase CONSTRUCTION, 2 échéances. */
 function entree(partiel: Partial<EntreePointHebdo> = {}): EntreePointHebdo {
@@ -40,6 +40,25 @@ describe('Point hebdo', () => {
     const d = donneesDiapo(entree(), options({ periode: 'mois' }));
     expect(d.conso).toBe(2);
     expect(d.periode).toMatchObject({ debut: '2026-10-01', fin: '2026-10-31', colS: 'M', colS1: 'M+1' });
+  });
+
+  it('prépare une revue bimensuelle de 14 jours et convertit les anciennes météos en indicateurs', () => {
+    const saisie: SaisiePeriode = {
+      ...vide,
+      satisfaction: { meteo: 'orage', tendance: 'rouge' },
+      esprit: { meteo: 'nuage', tendance: 'jaune' },
+      aEvoquer: true,
+      difficulte: 'Disponibilité client',
+      impact: 'Décalage d’une semaine',
+    };
+    const d = donneesDiapo(entree(), options({ periode: 'quinzaine', seance: '2026-10-21', saisie }));
+    expect(clePeriode('quinzaine', '2026-10-19', '2026-10', '2026-10-21')).toBe('Q:2026-10-21');
+    expect(d.periode.debut).toBe('2026-10-08');
+    expect(d.periode.fin).toBe('2026-10-21');
+    expect(d.indicateurs).toHaveLength(8);
+    expect(d.indicateurs.find((x) => x.cle === 'satisfaction')).toMatchObject({ s: 'rouge', propose: 'rouge' });
+    expect(d.indicateurs.find((x) => x.cle === 'esprit')).toMatchObject({ s: 'jaune', propose: 'jaune' });
+    expect(d).toMatchObject({ aEvoquer: true, difficulte: 'Disponibilité client', impact: 'Décalage d’une semaine', meteoProjet: 'Pluie' });
   });
 
   it('propose les indicateurs d’après le calcul, et la saisie les remplace', () => {

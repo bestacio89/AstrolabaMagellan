@@ -121,6 +121,8 @@ public sealed class Echeance : EntiteDeProjet
     /// <summary>Montant figé au moment de la facturation : il ne bouge plus ensuite.</summary>
     public decimal? MontantFacture { get; set; }
     public string Commentaire { get; set; } = "";
+    /// <summary>Code d'axe déclencheur de l'échéance ; null si aucun axe ne porte cette échéance.</summary>
+    public string? AxeCode { get; set; }
 
     public List<LienEcheancePhase> Phases { get; set; } = new();
 

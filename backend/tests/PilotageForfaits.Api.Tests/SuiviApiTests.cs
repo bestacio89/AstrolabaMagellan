@@ -374,7 +374,10 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
     {
         var chef = _api.ClientPour("chef");
         var id = await ImporterAsync(chef);
-        var url = $"/api/projets/{id}/taches/r7/mises-a-jour";
+        var suiviInitial = await chef.GetFromJsonAsync<JsonObject>($"/api/projets/{id}/suivi");
+        var tacheId = suiviInitial!["projet"]!["tasks"]!.AsArray()
+            .Single(x => x!["uid"]!.GetValue<string>() == "r7")!["cibleId"]!.GetValue<Guid>();
+        var url = $"/api/projets/{id}/commentaires/Tache/{tacheId}";
         await Refuser(chef, HttpMethod.Post, url, new { texte = "   " }, HttpStatusCode.UnprocessableEntity);
         await Saisir(chef, HttpMethod.Post, url, new { texte = "Atelier décalé, budget déplacement 1 200 €" });
         var consultant = _api.ClientPour("consultant");
@@ -401,6 +404,60 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
         Assert.Contains("Atelier décalé", fil[1]!["texte"]!.GetValue<string>());
         // le pilotage lit, mais n'écrit pas
         await Refuser(_api.ClientPour("pilotage"), HttpMethod.Post, url, new { texte = "x" }, HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Les_commentaires_de_registre_sont_modifiables_uniquement_par_leur_auteur()
+    {
+        var chef = _api.ClientPour("chef");
+        var id = await ImporterAsync(chef);
+        var actionCreation = await Saisir(chef, HttpMethod.Post, $"/api/projets/{id}/actions", new { });
+        var actionId = Guid.Parse(actionCreation["ouvrir"]!.GetValue<string>());
+        var url = $"/api/projets/{id}/commentaires/Action/{actionId}";
+        var creation = await Saisir(chef, HttpMethod.Post, url, new { texte = "Relance client prévue jeudi." });
+        var cle = $"act:{actionId}";
+        var commentaire = creation["suivi"]!["projet"]!["commentaires"]![cle]!.AsArray()[0]!;
+        var commentaireId = commentaire["id"]!.GetValue<Guid>();
+        Assert.Equal("Relance client prévue jeudi.", commentaire["texte"]!.GetValue<string>());
+
+        var modifie = await Saisir(chef, HttpMethod.Put, $"/api/projets/{id}/commentaires/{commentaireId}", new { texte = "Relance envoyée jeudi matin." });
+        Assert.Equal("Relance envoyée jeudi matin.", modifie["suivi"]!["projet"]!["commentaires"]![cle]!.AsArray()[0]!["texte"]!.GetValue<string>());
+        Assert.NotNull(modifie["suivi"]!["projet"]!["commentaires"]![cle]!.AsArray()[0]!["modifieLe"]);
+
+        var consultant = _api.ClientPour("consultant");
+        await consultant.GetAsync("/api/moi");
+        await ModifierBaseAsync(async db =>
+        {
+            var u = await db.Utilisateurs.FirstAsync(x => x.IdentifiantExterne == "tenant-tests:oid-consultant");
+            db.Habilitations.Add(new Habilitation { ProjetId = id, UtilisateurId = u.Id, Role = RoleProjet.Consultant, Depuis = DateTimeOffset.UtcNow });
+        });
+        await Refuser(consultant, HttpMethod.Put, $"/api/projets/{id}/commentaires/{commentaireId}", new { texte = "Modification non autorisée." }, HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Une_date_limite_d_axe_est_calculee_et_le_nouveau_lien_de_facturation_couvre_ses_taches()
+    {
+        var client = _api.ClientPour("chef");
+        var id = await ImporterAsync(client);
+        var suivi = await client.GetFromJsonAsync<JsonObject>($"/api/projets/{id}/suivi");
+        var modele = suivi!["modele"]!;
+        var tacheOuverte = modele["tasks"]!.AsArray().First(x => x!["statut"]!.GetValue<string>() != "Validé" && x["axe"] is not null)!;
+        var codeAxe = tacheOuverte["axe"]!.GetValue<string>();
+        var nomAxe = suivi["projet"]!["axes"]![codeAxe]?.GetValue<string>() ?? codeAxe;
+        var dateLimite = new DateOnly(2020, 1, 1).ToString("yyyy-MM-dd");
+        var resultatAxe = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/axes/{Uri.EscapeDataString(codeAxe)}", new { nom = nomAxe, dateLimite });
+        var modeleAvecDate = resultatAxe["suivi"]!["modele"]!;
+        var etatAxe = modeleAvecDate["datesLimitesAxes"]!.AsArray().Single(x => x!["code"]!.GetValue<string>() == codeAxe)!;
+        Assert.Equal("depassee", etatAxe["etat"]!.GetValue<string>());
+        Assert.Contains(modeleAvecDate["vigilance"]!.AsArray(), x => x!["cle"]!.GetValue<string>() == "echaxes");
+
+        var numero = modeleAvecDate["echeancier"]!.AsArray()[0]!["n"]!.GetValue<int>();
+        var lie = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/axes/{Uri.EscapeDataString(codeAxe)}/facturation", new { axe = codeAxe, numero, phasesADelier = Array.Empty<string>() });
+        var modeleLie = lie["suivi"]!["modele"]!;
+        var echeance = modeleLie["echeancier"]!.AsArray().Single(x => x!["n"]!.GetValue<int>() == numero)!;
+        Assert.Equal(codeAxe, echeance["axeCode"]!.GetValue<string>());
+        Assert.All(modeleLie["tasks"]!.AsArray().Where(x => x!["axe"]?.GetValue<string>() == codeAxe && x["statut"]!.GetValue<string>() != "Annulée"),
+            x => Assert.Equal(numero, x!["echN"]!.GetValue<int>()));
     }
 
     [Fact]
@@ -480,9 +537,21 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
         Assert.NotNull(r["suivi"]!["projet"]!["pointsHebdo"]!["periodes"]!["S:2026-10-05"]!["genereLe"]);
         r = await Saisir(client, HttpMethod.Put, $"{url}/semaines/2026-10-05", saisie);
         Assert.NotNull(r["suivi"]!["projet"]!["pointsHebdo"]!["periodes"]!["S:2026-10-05"]!["genereLe"]);
-        // point mensuel, distinct du point hebdo
+        // point mensuel et revue bimensuelle, distincts du point hebdo
         r = await Saisir(client, HttpMethod.Put, $"{url}/mois/2026-10", saisie);
-        Assert.Equal(2, r["suivi"]!["projet"]!["pointsHebdo"]!["periodes"]!.AsObject().Count);
+        r = await Saisir(client, HttpMethod.Put, $"{url}/quinzaines/2026-10-21", new
+        {
+            actualites = Array.Empty<string>(), attention = new[] { "Risque de décalage" },
+            indicateurs = new Dictionary<string, object> { ["satisfaction"] = new { s = "vert", s1 = "jaune" }, ["esprit"] = new { s = "vert", s1 = "vert" } },
+            aEvoquer = true, difficulte = "Disponibilité client", impact = "Décalage d'une semaine",
+            extension = "Non", genere = false,
+        });
+        var revue = r["suivi"]!["projet"]!["pointsHebdo"]!["periodes"]!["Q:2026-10-21"]!;
+        Assert.True(revue["aEvoquer"]!.GetValue<bool>());
+        Assert.Equal("Disponibilité client", revue["difficulte"]!.GetValue<string>());
+        Assert.Equal("Décalage d'une semaine", revue["impact"]!.GetValue<string>());
+        Assert.Equal("vert", revue["indicateurs"]!["satisfaction"]!["s"]!.GetValue<string>());
+        Assert.Equal(3, r["suivi"]!["projet"]!["pointsHebdo"]!["periodes"]!.AsObject().Count);
         // contrôles : une semaine commence un lundi, niveaux et météos connus, logo en image
         await Refuser(client, HttpMethod.Put, $"{url}/semaines/2026-10-06", saisie, HttpStatusCode.UnprocessableEntity);
         await Refuser(client, HttpMethod.Put, $"{url}/semaines/2026-10-05",
@@ -491,6 +560,9 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
         // réglages communs
         r = await Saisir(client, HttpMethod.Put, $"{url}/reglages/avv", new { valeur = "Hugo LEROY" });
         Assert.Equal("Hugo LEROY", r["suivi"]!["projet"]!["pointsHebdo"]!["reglages"]!["avv"]!.GetValue<string>());
+        r = await Saisir(client, HttpMethod.Put, $"{url}/reglages/odt", new { valeur = "{\"CONCEPTION\":\"ODT-12\",\"CONSTRUCTION\":\"ODT-13\"}" });
+        Assert.Equal("ODT-12", r["suivi"]!["projet"]!["pointsHebdo"]!["reglages"]!["odt"]!["CONCEPTION"]!.GetValue<string>());
+        await Refuser(client, HttpMethod.Put, $"{url}/reglages/odt", new { valeur = "not-json" }, HttpStatusCode.UnprocessableEntity);
         r = await Saisir(client, HttpMethod.Put, $"{url}/reglages/logoClient", new { valeur = "data:image/png;base64,iVBORw0KGgo=" });
         Assert.StartsWith("data:image/png", r["suivi"]!["projet"]!["pointsHebdo"]!["reglages"]!["logoClient"]!.GetValue<string>());
         r = await Saisir(client, HttpMethod.Put, $"{url}/reglages/avv", new { valeur = "" });
@@ -554,5 +626,109 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
         Assert.Equal(HttpStatusCode.OK, (await pilotage.PostAsync($"/api/projets/{id}/exports/copil", null)).StatusCode);
         var apres = await pilotage.GetFromJsonAsync<JsonObject>($"/api/projets/{id}/suivi");
         Assert.Empty(apres!["projet"]!["historique"]!.AsArray());
+    }
+    [Fact]
+    public async Task Un_atelier_peut_etre_cree_sans_charge_et_conserve_son_horaire_et_ses_participants()
+    {
+        var client = _api.ClientPour("chef");
+        var id = await ImporterAsync(client);
+        var creation = await Saisir(client, HttpMethod.Post, $"/api/projets/{id}/taches", new
+        {
+            label = "Atelier complémentaire sans charge propre", axe = "AXE1", lot = "1.2", phase = "CONSTRUCTION", etape = "",
+            type = "Atelier", debut = "2026-10-26", fin = "2026-10-26",
+            charges = Array.Empty<object>(), motif = "Atelier récurrent sans charge propre",
+            atelierDate = "2026-10-26", atelierHeureDebut = "09:00", atelierHeureFin = "10:30",
+            atelierParticipants = new[] { "camille.martin@example.test", "alex.durand@example.test", "CAMILLE.MARTIN@example.test" },
+        });
+
+        Assert.Equal("a1", creation["ouvrir"]!.GetValue<string>());
+        var tache = creation["suivi"]!["modele"]!["tasks"]!.AsArray()
+            .Single(x => x!["uid"]!.GetValue<string>() == "a1")!;
+        var atelier = creation["suivi"]!["projet"]!["track"]!["a1"]!["atelier"]!;
+        Assert.Equal("2026-10-26", atelier["date"]!.GetValue<string>());
+        Assert.Equal("09:00", atelier["heureDebut"]!.GetValue<string>());
+        Assert.Equal("10:30", atelier["heureFin"]!.GetValue<string>());
+        Assert.Equal(new[] { "camille.martin@example.test", "alex.durand@example.test" },
+            atelier["dest"]!.AsArray().Select(x => x!.GetValue<string>()).ToArray());
+    }
+    [Fact]
+    public async Task Les_axes_et_lots_conservent_leurs_codes_et_leurs_metadonnees_sont_modifiables()
+    {
+        var client = _api.ClientPour("chef");
+        var id = await ImporterAsync(client);
+        var urlAxe = $"/api/projets/{id}/axes/AXE1";
+        var r = await Saisir(client, HttpMethod.Put, urlAxe, new { nom = "Conception", dateLimite = "2026-10-30" });
+        Assert.Equal("Conception", r["suivi"]!["projet"]!["axes"]!["AXE1"]!.GetValue<string>());
+        Assert.Equal("2026-10-30", r["suivi"]!["projet"]!["datesLimitesAxes"]!["AXE1"]!.GetValue<string>());
+
+        r = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/lots/1.1", new { nom = "Cadrage et conception" });
+        Assert.Equal("Cadrage et conception", r["suivi"]!["projet"]!["lots"]!["1.1"]!.GetValue<string>());
+        Assert.Contains(r["suivi"]!["projet"]!["tasks"]!.AsArray(), t => t?["lot"]?.GetValue<string>() == "1.1");
+
+        r = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/lots/1.1", new { nom = "" });
+        Assert.False(r["suivi"]!["projet"]!["lots"]!.AsObject().ContainsKey("1.1"));
+        r = await Saisir(client, HttpMethod.Put, urlAxe, new { nom = "Conception", dateLimite = (string?)null });
+        Assert.Null(r["suivi"]!["projet"]!["datesLimitesAxes"]!["AXE1"]);
+    }
+    [Fact]
+    public async Task Une_echeance_ne_peut_etre_declenchee_par_deux_axes()
+    {
+        var client = _api.ClientPour("chef");
+        var id = await ImporterAsync(client);
+        await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/axes/AXE1", new { nom = "Axe un", dateLimite = (string?)null });
+        await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/axes/AXE2", new { nom = "Axe deux", dateLimite = (string?)null });
+        await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/axes/AXE1/facturation", new { axe = "AXE1", numero = 1, phasesADelier = Array.Empty<string>() });
+        await Refuser(client, HttpMethod.Put, $"/api/projets/{id}/axes/AXE2/facturation",
+            new { axe = "AXE2", numero = 1, phasesADelier = Array.Empty<string>() }, HttpStatusCode.UnprocessableEntity);
+        var r = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/axes/AXE1/facturation",
+            new { axe = "AXE1", numero = (int?)null, phasesADelier = Array.Empty<string>() });
+        Assert.Contains(r["messages"]!.AsArray(), m => m!["texte"]!.GetValue<string>().Contains("ne déclenche plus"));
+    }
+    [Fact]
+    public async Task Les_commentaires_de_tache_sont_ordonnes_et_seul_l_auteur_peut_modifier_ou_supprimer()
+    {
+        var chef = _api.ClientPour("chef");
+        var id = await ImporterAsync(chef);
+        var suiviInitial = await chef.GetFromJsonAsync<JsonObject>($"/api/projets/{id}/suivi");
+        var tache = suiviInitial!["projet"]!["tasks"]!.AsArray().Single(x => x!["uid"]!.GetValue<string>() == "r7")!;
+        var cibleId = tache["cibleId"]!.GetValue<Guid>();
+        var url = $"/api/projets/{id}/commentaires/Tache/{cibleId}";
+
+        var premier = await Saisir(chef, HttpMethod.Post, url, new { texte = "Premier commentaire" });
+        var premierId = premier["suivi"]!["projet"]!["commentaires"]!["r7"]![0]!["id"]!.GetValue<Guid>();
+        Horloge.Maintenant = Horloge.Maintenant.AddMinutes(1);
+        var second = await Saisir(chef, HttpMethod.Post, url, new { texte = "Deuxième commentaire" });
+        var commentaires = second["suivi"]!["projet"]!["commentaires"]!["r7"]!.AsArray();
+        Assert.Equal("Deuxième commentaire", commentaires[0]!["texte"]!.GetValue<string>());
+        Assert.Equal("Premier commentaire", commentaires[1]!["texte"]!.GetValue<string>());
+
+        var autreChef = _api.ClientPour("chef2");
+        // L'utilisateur doit être membre du même projet : sinon le filtre d'accès renvoie 404
+        // avant que l'API puisse vérifier la propriété du commentaire.
+        var moi = await autreChef.GetAsync("/api/moi");
+        Assert.Equal(HttpStatusCode.OK, moi.StatusCode);
+        await ModifierBaseAsync(async db =>
+        {
+            var utilisateur = await db.Utilisateurs.FirstAsync(x => x.IdentifiantExterne == "tenant-tests:oid-chef-2");
+            db.Habilitations.Add(new Habilitation
+            {
+                ProjetId = id,
+                UtilisateurId = utilisateur.Id,
+                Role = RoleProjet.ChefDeProjet,
+                Depuis = Horloge.Maintenant,
+            });
+        });
+
+        await Refuser(autreChef, HttpMethod.Put, $"/api/projets/{id}/commentaires/{premierId}",
+            new { texte = "Modification interdite" }, HttpStatusCode.Forbidden);
+        await Refuser(autreChef, HttpMethod.Delete, $"/api/projets/{id}/commentaires/{premierId}",
+            null, HttpStatusCode.Forbidden);
+        var modifie = await Saisir(chef, HttpMethod.Put, $"/api/projets/{id}/commentaires/{premierId}", new { texte = "Commentaire modifié" });
+        Assert.Contains(modifie["suivi"]!["projet"]!["commentaires"]!["r7"]!.AsArray(),
+            c => c?["id"]?.GetValue<Guid>() == premierId && c?["texte"]?.GetValue<string>() == "Commentaire modifié");
+
+        var supprime = await Saisir(chef, HttpMethod.Delete, $"/api/projets/{id}/commentaires/{premierId}");
+        Assert.DoesNotContain(supprime["suivi"]!["projet"]!["commentaires"]!["r7"]!.AsArray(),
+            c => c?["id"]?.GetValue<Guid>() == premierId);
     }
 }

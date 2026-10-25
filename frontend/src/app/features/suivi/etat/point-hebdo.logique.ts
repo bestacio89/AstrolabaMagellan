@@ -11,7 +11,7 @@ import { riskNiveau } from './constantes';
 export type Niveau = 'vert' | 'jaune' | 'rouge' | 'gris';
 export type Meteo = 'soleil' | 'nuage' | 'orage';
 export type Tendance = 'vert' | 'jaune' | 'rouge';
-export type TypePeriode = 'semaine' | 'mois';
+export type TypePeriode = 'quinzaine' | 'semaine' | 'mois';
 
 export const COULEURS = {
   marine: '003C5A', bleu: '00B9FF', texte: '003C5A', doux: '5B7083', vert: '009581', jaune: 'FFCC66', rouge: 'C30045', neutre: 'BFC7CE', blanc: 'FFFFFF', fond: 'F4F7F9',
@@ -26,7 +26,7 @@ export const NIVEAUX: Record<Niveau, { couleur: string; libelle: string }> = {
 export const LISTE_NIVEAUX: Niveau[] = ['vert', 'jaune', 'rouge', 'gris'];
 
 export const INDICATEURS = [
-  ['planning', 'Planning'], ['qualite', 'Qualité'], ['perimetre', 'Périmètre'], ['budget', 'Budget'], ['ressources', 'Ressources'], ['facturation', 'Facturation'],
+  ['planning', 'Planning'], ['qualite', 'Qualité'], ['perimetre', 'Périmètre'], ['budget', 'Budget'], ['ressources', 'Ressources'], ['facturation', 'Facturation'], ['satisfaction', 'Satisfaction client'], ['esprit', 'État d’esprit interne'],
 ] as const;
 export type CleIndicateur = (typeof INDICATEURS)[number][0];
 
@@ -42,6 +42,9 @@ export interface SaisiePeriode {
   satisfaction?: MeteoSaisie | null;
   esprit?: MeteoSaisie | null;
   extension: 'Oui' | 'Non';
+  aEvoquer?: boolean;
+  difficulte?: string;
+  impact?: string;
   genereLe?: string | null;
   majLe?: string;
   par?: string;
@@ -53,6 +56,7 @@ export interface ReglagesPointHebdo {
   modeFacturation?: string;
   logoClient?: string;
   logoEntreprise?: string;
+  odt?: Record<string, string>;
 }
 export interface PointsHebdo {
   reglages: ReglagesPointHebdo;
@@ -61,7 +65,7 @@ export interface PointsHebdo {
 
 // ---- ce dont le calcul a besoin (extrait de la vue du suivi) ----
 export interface EntreePointHebdo {
-  P: { tjmR?: number; tjm?: number; collaborateur: string }[];
+  P: { nom?: string; tjmR?: number; tjm?: number; collaborateur: string }[];
   taches: {
     phase: string; chargesV: number[]; chargeTSP: number; charge: number; restP: number[]; raf: number; annulee: boolean; statut: string;
     debut?: string | null; fin?: string | null; tr: { consoP?: Record<string, Record<string, number>> | null };
@@ -70,7 +74,7 @@ export interface EntreePointHebdo {
   chargeAjout: number;
   chargeAnnulee: number;
   echeancier: { n: number; nom: string; pct: number; mois: string | null; montant?: number; datePrevue: string | null; realiseLe: string | null; payeeLe: string | null }[];
-  risques: { libelle: string; parade: string; crit: number }[];
+  risques: { libelle: string; parade: string; crit: number; type?: string }[];
   actions: { libelle: string; porteur: string; statut: string; echeance: string | null; commentaire: string; faitLe: string | null }[];
   fiche: { client: string; projet: string; typeContrat: string; champs: { key: string; value: string }[] };
   dates: { debut: string | null; finContrat: string | null; finPrevue: string | null };
@@ -89,8 +93,12 @@ export interface DonneesDiapo {
   commercial: string; avv: string; pilote: string; consultants: string[]; extension: string;
   actualites: string[]; attention: string[];
   phases: Phase[]; echeances: Echeance[];
+  profils: { profil: string; vendu: number; conso: number; raf: number; m1: number; tend: Niveau }[];
+  odt: Record<string, string>;
+  aEvoquer: boolean; difficulte: string; impact: string;
+  meteoProjet: 'Soleil' | 'Nuageux' | 'Pluie' | 'Hors période';
   indicateurs: { cle: CleIndicateur; libelle: string; s: Niveau; s1: Niveau; propose: Niveau; raison: string }[];
-  risques: { libelle: string; parade: string; niveau: Niveau }[];
+  risques: { libelle: string; parade: string; niveau: Niveau; type: string }[];
   actions: { libelle: string; pilote: string; echeance: string; statut: string; commentaire: string; retard: boolean }[];
   satisfaction: MeteoSaisie; esprit: MeteoSaisie;
   genereLe: string; logoClient: string | null; logoEntreprise: string | null;
@@ -125,7 +133,7 @@ function joursOuvres(de: string, a: string): number {
 }
 
 /** Clé d'une période, comme le serveur la range : « S:lundi » ou « M:AAAA-MM ». */
-export const clePeriode = (type: TypePeriode, semaine: string, mois: string): string => (type === 'mois' ? `M:${mois}` : `S:${semaine}`);
+export const clePeriode = (type: TypePeriode, semaine: string, mois: string, seance = semaine): string => type === 'mois' ? `M:${mois}` : type === 'quinzaine' ? `Q:${seance}` : `S:${semaine}`;
 
 // ---- formats de la diapositive (espaces ordinaires : PowerPoint n'a pas toujours l'espace fine) ----
 const nfE = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
@@ -149,9 +157,14 @@ export function saisieDeLaPeriode(points: PointsHebdo | null | undefined, cle: s
   const prec = Object.keys(periodes).filter((k) => k[0] === cle[0] && k < cle).sort().pop() ?? null;
   const p = prec ? periodes[prec] : null;
   const indicateurs: SaisiePeriode['indicateurs'] = {};
-  for (const c of ['qualite', 'ressources'] as const) {
+  for (const c of ['qualite', 'ressources', 'satisfaction', 'esprit'] as const) {
     const i = p?.indicateurs?.[c];
     if (i) indicateurs[c] = { s: i.s1 || i.s, s1: i.s1 || i.s };
+    else if (c === 'satisfaction' || c === 'esprit') {
+      const meteo = c === 'satisfaction' ? p?.satisfaction?.meteo : p?.esprit?.meteo;
+      const niveau = meteo === 'soleil' ? 'vert' : meteo === 'nuage' ? 'jaune' : meteo === 'orage' ? 'rouge' : null;
+      if (niveau) indicateurs[c] = { s: niveau, s1: niveau };
+    }
   }
   return {
     saisie: { actualites: [], attention: p?.attention ?? [], indicateurs, satisfaction: p?.satisfaction ?? null, esprit: p?.esprit ?? null, extension: p?.extension ?? 'Non' },
@@ -165,11 +178,11 @@ export function saisieDeLaPeriode(points: PointsHebdo | null | undefined, cle: s
  * (vendredi de la semaine, ou fin du mois) et valorisé au TJM (prix de vente).
  */
 export function donneesDiapo(e: EntreePointHebdo, o: {
-  periode: TypePeriode; semaine: string; mois: string; aujourdhui: string; saisie: SaisiePeriode; reglages: ReglagesPointHebdo; logoEntrepriseParDefaut: string | null;
+  periode: TypePeriode; semaine: string; mois: string; seance?: string; aujourdhui: string; saisie: SaisiePeriode; reglages: ReglagesPointHebdo; logoEntrepriseParDefaut: string | null;
 }): DonneesDiapo {
   const typeP = o.periode;
-  const debut = typeP === 'mois' ? `${o.mois}-01` : lundiDe(o.semaine);
-  const fin = typeP === 'mois' ? plusJours(`${moisSuivant(o.mois)}-01`, -1) : plusJours(debut, 4);
+  const debut = typeP === 'mois' ? `${o.mois}-01` : typeP === 'quinzaine' ? plusJours(o.seance ?? o.semaine, -13) : lundiDe(o.semaine);
+  const fin = typeP === 'mois' ? plusJours(`${moisSuivant(o.mois)}-01`, -1) : typeP === 'quinzaine' ? (o.seance ?? o.semaine) : plusJours(debut, 4);
   const mois = fin.slice(0, 7), m1 = moisSuivant(mois);
   const s = o.saisie, r = o.reglages, P = e.P;
   const tjm = (i: number): number => P[i]?.tjmR ?? P[i]?.tjm ?? 0;
@@ -234,6 +247,8 @@ export function donneesDiapo(e: EntreePointHebdo, o: {
     budget: !demarre ? 'gris' : derive > 0.01 ? 'rouge' : derive > 0.0001 ? 'jaune' : 'vert',
     ressources: 'vert',
     facturation: retardsEch ? 'jaune' : 'vert',
+    satisfaction: s.satisfaction?.meteo === 'soleil' ? 'vert' : s.satisfaction?.meteo === 'nuage' ? 'jaune' : s.satisfaction?.meteo === 'orage' ? 'rouge' : 'gris',
+    esprit: s.esprit?.meteo === 'soleil' ? 'vert' : s.esprit?.meteo === 'nuage' ? 'jaune' : s.esprit?.meteo === 'orage' ? 'rouge' : 'gris',
   };
   const pct = (v: number): string => `${(Math.round(v * 1000) / 10).toLocaleString('fr-FR')} %`;
   const raison: Record<CleIndicateur, string> = {
@@ -243,18 +258,45 @@ export function donneesDiapo(e: EntreePointHebdo, o: {
     budget: !demarre ? 'Rien de consommé' : derive > 0.0001 ? `Dérive de ${pct(derive)} (atterrissage / prévu)` : 'Pas de dérive',
     ressources: 'À apprécier par le chef de projet',
     facturation: retardsEch ? `${retardsEch} échéance(s) en retard` : 'Pas de retard de facturation',
+    satisfaction: 'À apprécier par le chef de projet',
+    esprit: 'À apprécier par le chef de projet',
   };
   const indicateurs = INDICATEURS.map(([cle, libelle]) => {
     const S = s.indicateurs?.[cle]?.s ?? propose[cle];
     return { cle, libelle, s: S, s1: s.indicateurs?.[cle]?.s1 ?? S, propose: propose[cle], raison: raison[cle] };
   });
+  // ---- par profil : vendu, consommé, reste à faire et prévision du mois suivant ----
+  const profilsTous = P.map((pr, i) => {
+    let vendu = 0, conso = 0, raf = 0, m1Profil = 0;
+    for (const t of e.taches) {
+      const fini = t.annulee || t.statut === 'Validé';
+      const reste = fini ? 0 : (t.restP[i] ?? 0);
+      vendu += t.chargesV[i] ?? 0;
+      conso += consoA(t, i);
+      raf += reste;
+      if (reste > 0 && t.fin) {
+        const apres = plusJours(fin, 1);
+        const de = t.debut && t.debut > apres ? t.debut : apres;
+        const a = t.fin;
+        const total = de <= a ? joursOuvres(de, a) : 0;
+        const debutM1 = `${m1}-01`, finM1 = plusJours(`${moisSuivant(m1)}-01`, -1);
+        if (total > 0) {
+          const x = de > debutM1 ? de : debutM1, y = a < finM1 ? a : finM1;
+          if (x <= y) m1Profil += reste * joursOuvres(x, y) / total;
+        }
+      }
+    }
+    const ratio = vendu > 0 ? (conso + raf) / vendu - 1 : conso + raf > 0 ? 1 : 0;
+    return { profil: pr.nom?.trim() || pr.collaborateur?.trim() || `Profil ${i + 1}`, vendu, conso, raf, m1: m1Profil, tend: !conso && !raf ? 'gris' as Niveau : ratio > 0.01 ? 'rouge' as Niveau : ratio > 0.0001 ? 'jaune' as Niveau : 'vert' as Niveau };
+  }).filter((p) => p.vendu || p.conso || p.raf);
+  const gravite = indicateurs.some((x) => x.s === 'rouge') ? 'Pluie' : indicateurs.some((x) => x.s === 'jaune') ? 'Nuageux' : indicateurs.every((x) => x.s === 'gris') ? 'Hors période' : 'Soleil';
   // ---- risques et actions ----
   const crit = (c: number): Niveau => ({ fort: 'rouge', moyen: 'jaune', faible: 'vert' } as const)[riskNiveau(c)];
-  const risques = [...e.risques].sort((a, b) => b.crit - a.crit).slice(0, 3).map((x) => ({ libelle: x.libelle || '', parade: x.parade || '', niveau: crit(x.crit) }));
+  const risques = [...e.risques].sort((a, b) => b.crit - a.crit).slice(0, 3).map((x) => ({ libelle: x.libelle || '', parade: x.parade || '', type: x.type || '', niveau: crit(x.crit) }));
   const fermee = (st: string): boolean => st === 'Fait' || st === 'Annulée';
   const ouvertes = e.actions.filter((a) => a.libelle.trim() && !fermee(a.statut)).sort((a, b) => (a.echeance ?? '9999').localeCompare(b.echeance ?? '9999'));
   const faites = e.actions.filter((a) => a.libelle.trim() && a.statut === 'Fait' && a.faitLe && a.faitLe >= debut && a.faitLe <= fin);
-  const actions = [...ouvertes, ...faites].slice(0, 5).map((a) => ({
+  const actions = [...ouvertes, ...faites].slice(0, 4).map((a) => ({
     libelle: a.libelle, pilote: a.porteur || '', echeance: a.echeance ?? '', statut: a.statut || '', commentaire: a.commentaire || '',
     retard: !!(a.echeance && a.echeance < debut && !fermee(a.statut)),
   }));
@@ -275,9 +317,10 @@ export function donneesDiapo(e: EntreePointHebdo, o: {
     commercial: r.commercial ?? fiche['commercial'] ?? '', avv: r.avv ?? '', pilote: r.pilote ?? '', consultants,
     extension: s.extension || 'Non',
     actualites: s.actualites.filter((x) => x.trim()), attention: s.attention.filter((x) => x.trim()),
-    phases, echeances, indicateurs, risques, actions,
+    phases, echeances, indicateurs, risques, actions, profils: profilsTous, odt: r.odt ?? {}, meteoProjet: gravite,
     satisfaction: s.satisfaction ?? { meteo: 'soleil', tendance: 'vert' }, esprit: s.esprit ?? { meteo: 'soleil', tendance: 'vert' },
-    genereLe: o.aujourdhui, logoClient: r.logoClient || null, logoEntreprise: r.logoEntreprise || o.logoEntrepriseParDefaut,
+    aEvoquer: !!s.aEvoquer, difficulte: s.difficulte ?? (s.attention.find((x) => x.trim()) || ''), impact: s.impact ?? '',
+    genereLe: o.aujourdhui, logoClient: r.logoClient ?? null, logoEntreprise: r.logoEntreprise ?? o.logoEntrepriseParDefaut,
   };
 }
 

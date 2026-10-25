@@ -16,7 +16,7 @@ export interface Toast {
 
 /** Fenêtre à ouvrir (une seule à la fois), demandée par un écran, le panneau de détail ou un message. */
 export type FenetreDemandee =
-  | { type: 'nouvelle-tache'; groupe: string | null }
+  | { type: 'nouvelle-tache'; groupe: string | null; typeImpose?: string | null }
   | { type: 'ajout-profil'; uid: string }
   | { type: 'reaffectation'; uid: string; de: number | null }
   | { type: 'annulation'; uid: string }
@@ -28,7 +28,8 @@ export type FenetreDemandee =
   | { type: 'export-coproj' }
   | { type: 'reperes' }
   | { type: 'jalon'; id: string | null }
-  | { type: 'personne' };
+  | { type: 'personne' }
+  | { type: 'lot'; code: string };
 
 /** Bouton d'une fenêtre de confirmation. */
 export interface BoutonConfirmation<T> {
@@ -64,6 +65,8 @@ export const PANNEAU_AVANCEMENT = 'av:';
 export const PANNEAU_REGISTRE = 'ad:';
 /** Préfixe de « panneau » pour le volet d'une ligne du Planning (vue d'ensemble). */
 export const PANNEAU_PLANNING = 'pl:';
+/** Préfixe du volet de détail d'un axe (« ax:AXE1 »). */
+export const PANNEAU_AXE = 'ax:';
 /** Préfixe de « panneau » pour le détail d'une colonne de la cascade de la marge (Rentabilité). */
 export const PANNEAU_MARGE = 'rt:';
 /**
@@ -96,6 +99,9 @@ export class SuiviEtat {
   readonly retourMarge = signal<string | null>(null);
   /** La tâche a été ouverte depuis le volet d'une ligne du Planning : clé de la ligne, pour y revenir (« ‹ Planning »). */
   readonly retourPlanning = signal<string | null>(null);
+  /** Carte à mettre en évidence lors de l'ouverture du volet d'un axe. */
+  readonly sectionAxe = signal<'nom' | 'fact' | null>(null);
+  readonly sectionTache = signal<'commentaires' | null>(null);
   /** La tâche a été ouverte depuis une action (« Tâche concernée ») : « act:<id> », pour y revenir. */
   readonly retourAction = signal<string | null>(null);
   readonly fenetre = signal<FenetreDemandee | null>(null);
@@ -272,7 +278,8 @@ export class SuiviEtat {
 
   // ---------------------------------------------------------------- panneau de détail
 
-  ouvrirTache(uid: string, retourMarge: string | null = null, retourPlanning: string | null = null, retourAction: string | null = null): void {
+  ouvrirTache(uid: string, retourMarge: string | null = null, retourPlanning: string | null = null, retourAction: string | null = null, section: 'commentaires' | null = null): void {
+    this.sectionTache.set(section);
     this.retourPlanning.set(retourPlanning);
     this.retourAction.set(retourAction);
     // « ‹ Avancement » : tâche ouverte depuis le détail de l'avancement, gardé en passant d'une tâche à l'autre
@@ -289,6 +296,20 @@ export class SuiviEtat {
     this.retourAvancement.set(false);
     this.retourMarge.set(null);
     this.panneau.set(PANNEAU_MARGE + cle);
+  }
+
+  ouvrirTacheCommentaires(uid: string): void {
+    this.ouvrirTache(uid, null, null, null, 'commentaires');
+  }
+
+  ouvrirAxe(code: string, section: 'nom' | 'fact' = 'nom'): void {
+    this.sectionTache.set(null);
+    this.retourAction.set(null);
+    this.retourPlanning.set(null);
+    this.retourAvancement.set(false);
+    this.retourMarge.set(null);
+    this.sectionAxe.set(section);
+    this.panneau.set(PANNEAU_AXE + code);
   }
 
   ouvrirPhase(phase: string, depuisAvancement = false): void {
@@ -327,6 +348,7 @@ export class SuiviEtat {
   }
 
   fermerPanneau(): void {
+    this.sectionTache.set(null);
     this.retourAction.set(null);
     this.retourPlanning.set(null);
     this.retourAvancement.set(false);

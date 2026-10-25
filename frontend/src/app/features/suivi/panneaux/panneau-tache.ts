@@ -1,10 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Action } from '../api/modeles';
 import { SuiviApi } from '../api/suivi.api';
 import { AVANCEMENTS, IA_CONFORME, IA_ST, STATUTS } from '../etat/constantes';
-import { initialesDe, lienOuvrable, morceaux, nomDocument } from '../etat/fil.logique';
-import { fD, fDh, fDi, fE, fJ, fJz, fP, fSigned, sgn, stSlug } from '../etat/formats';
+import { lienOuvrable, nomDocument } from '../etat/fil.logique';
+import { fD, fDi, fE, fJ, fJz, fP, fSigned, sgn, stSlug } from '../etat/formats';
 import { joursEntre, lireNombre, round } from '../etat/outils';
 import { SuiviEtat } from '../etat/suivi.etat';
 import { UiEtat } from '../etat/ui.etat';
@@ -29,6 +29,7 @@ import {
 } from '../etat/vue';
 import { Fx } from '../ui/fx';
 import { MiniBarre, Etapes } from '../ui/petits';
+import { CarteCommentaires } from '../ui/carte-commentaires';
 
 type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
@@ -40,7 +41,7 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
  */
 @Component({
   selector: 'app-panneau-tache',
-  imports: [Fx, MiniBarre, Etapes],
+  imports: [Fx, MiniBarre, Etapes, CarteCommentaires],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(document:keydown)': 'clavier($event)' },
   template: `
@@ -126,6 +127,33 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
               }
               · Profil principal : {{ t.responsable }}
             </div>
+            <div class="dr-kpis dr-kpis-head">
+                <div>
+                  <span>
+                    @if (t.annulee) {
+                      Prévu <small>({{ fJ(t.chargeInit) }} − {{ fJ(t.chargeAnnulee) }} annulés)</small>
+                    } @else if (t.chargeAjout) {
+                      @if (t.estAjout) {
+                        Prévu <small>(tâche ajoutée)</small>
+                      } @else {
+                        Prévu <small>({{ fJ(t.chargeTSP) }} vendus + {{ fJ(t.chargeAjout) }} ajoutés)</small>
+                      }
+                    } @else {
+                      Prévu <small>(= vendu)</small>
+                    }
+                  </span>
+                  <b>{{ fJ(t.charge) }} JH</b>
+                </div>
+                <div>
+                  <span>Consommé</span><b [class.over]="isOver(t)">{{ fJ(t.consoTotal) }} JH</b>
+                </div>
+                <div>
+                  <span>Atterrissage</span><b>{{ fJ(t.atterrissage) }} JH</b>
+                </div>
+                <div>
+                  <span>Écart</span><b data-ecart [class]="sgn(t.ecart)">{{ fSigned(t.ecart) }} JH</b>
+                </div>
+              </div>
           </div>
 
           <div class="dr-body">
@@ -277,13 +305,13 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
                   }
                 </div>
                 <div class="field">
-                  Destinataires <span class="muted">({{ dest(t).length }})</span>
+                  Participants <span class="muted">({{ dest(t).length }})</span>
                   <div class="chips-in">
                     @for (d of dest(t); track d; let i = $index) {
                       <span class="chip"
                         >{{ d }}
                         @if (!lecture()) {
-                          <button type="button" class="s-chip-del" [attr.aria-label]="'Retirer ' + d" (mousedown)="$event.preventDefault()" (click)="retirerDestinataire(t, i)">×</button>
+                          <button type="button" class="s-chip-del" [attr.aria-label]="'Retirer ' + d" (mousedown)="$event.preventDefault()" (click)="retirerParticipant(t, i)">×</button>
                         }
                       </span>
                     }
@@ -292,10 +320,10 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
                         #nd
                         class="chip-input"
                         list="dl-dest"
-                        aria-label="Ajouter un destinataire"
+                        aria-label="Ajouter un participant"
                         [placeholder]="dest(t).length ? 'Ajouter…' : 'Nom ou e-mail, puis Entrée'"
-                        (keydown)="toucheDestinataire($event, t, nd)"
-                        (blur)="ajouterDestinataires(t, nd)"
+                        (keydown)="toucheParticipant($event, t, nd)"
+                        (blur)="ajouterParticipants(t, nd)"
                       />
                     }
                   </div>
@@ -424,33 +452,7 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
             <section>
               <h3>Charges</h3>
-              <div class="dr-kpis">
-                <div>
-                  <span>
-                    @if (t.annulee) {
-                      Prévu <small>({{ fJ(t.chargeInit) }} − {{ fJ(t.chargeAnnulee) }} annulés)</small>
-                    } @else if (t.chargeAjout) {
-                      @if (t.estAjout) {
-                        Prévu <small>(tâche ajoutée)</small>
-                      } @else {
-                        Prévu <small>({{ fJ(t.chargeTSP) }} vendus + {{ fJ(t.chargeAjout) }} ajoutés)</small>
-                      }
-                    } @else {
-                      Prévu <small>(= vendu)</small>
-                    }
-                  </span>
-                  <b>{{ fJ(t.charge) }} JH</b>
-                </div>
-                <div>
-                  <span>Consommé</span><b [class.over]="isOver(t)">{{ fJ(t.consoTotal) }} JH</b>
-                </div>
-                <div>
-                  <span>Atterrissage</span><b>{{ fJ(t.atterrissage) }} JH</b>
-                </div>
-                <div>
-                  <span>Écart</span><b data-ecart [class]="sgn(t.ecart)">{{ fSigned(t.ecart) }} JH</b>
-                </div>
-              </div>
+              
               @if (!t.annulee) {
                 <label class="field" style="margin-top: 10px">
                   <span [title]="aideRaf"
@@ -723,6 +725,12 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
                       >Échéance définie par la phase <b>{{ t.phase }}</b> : elle s’applique à toutes ses tâches.</span
                     ><button type="button" class="btn sm" [attr.data-openph]="t.phase">Ouvrir la phase</button>
                   </div>
+                } @else if (t.echViaAxe) {
+                  <div class="lockline">
+                    <span class="lock-ic" aria-hidden="true">🔒</span>
+                    <span>Échéance définie par l’axe <b>{{ v.projet.axes?.[t.axe] || t.axe }}</b> : elle s’applique à toutes ses tâches.</span>
+                    <button type="button" class="btn sm" (click)="etat.ouvrirAxe(t.axe, 'fact')">Ouvrir l’axe</button>
+                  </div>
                 } @else {
                   <label class="field"
                     >Échéance liée
@@ -744,7 +752,12 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
                         <span class="tag-ok">Prête à facturer</span>
                       }
                     </div>
-                  </div>
+                                      @if (t.echViaAxe) {
+                      @let axeCompte = compteAxe(v, t);
+                      <p class="muted">via l’axe · échéance n° {{ e.n }}</p>
+                      <p class="muted">Prête à facturer quand les {{ axeCompte.n }} tâche(s) de l’axe sont validées · {{ axeCompte.valides }} / {{ axeCompte.n }} aujourd’hui</p>
+                    }
+</div>
                 } @else if (!t.echViaPhase) {
                   <span class="auto"
                     >Liez la tâche à l’échéance de facturation qu’elle conditionne
@@ -757,64 +770,7 @@ type Champ = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
               </section>
             }
 
-            <section>
-              <h3>Commentaire</h3>
-              <textarea
-                #cm
-                class="in dr-cmt"
-                rows="4"
-                placeholder="Points d’attention, décisions, blocages…"
-                [value]="t.commentaire"
-                [disabled]="lecture()"
-                (change)="commentaire(t, cm)"
-              ></textarea>
-            </section>
-
-            <section class="fil">
-              <h3>
-                Mises à jour
-                @if (fil().length) {
-                  <span class="fil-n">{{ fil().length }}</span>
-                }
-              </h3>
-              @if (v.droits.peutSaisirConsomme) {
-                <div class="fil-saisie">
-                  <textarea
-                    #mj
-                    class="in"
-                    rows="2"
-                    maxlength="4000"
-                    placeholder="Où en est la tâche ? @Prénom pour prévenir quelqu’un"
-                    aria-label="Nouvelle mise à jour"
-                    (keydown.control.enter)="publier(t, mj)"
-                    (keydown.meta.enter)="publier(t, mj)"
-                  ></textarea>
-                  <div class="fil-pied">
-                    <span class="auto">Visible par toute l’équipe du projet · les montants en euros sont masqués pour les consultants.</span>
-                    <button type="button" class="btn sm primary" (click)="publier(t, mj)">Publier</button>
-                  </div>
-                </div>
-              }
-              @for (m of fil(); track $index) {
-                <div class="fil-msg">
-                  <span class="fil-av" aria-hidden="true">{{ initialesDe(m.by || '?') }}</span>
-                  <div class="fil-corps">
-                    <span class="fil-tete"><b>{{ m.by || 'Utilisateur' }}</b> · {{ fDh(m.at) }}</span>
-                    <p>
-                      @for (x of morceaux(m.texte); track $index) {
-                        @if (x.mention) {
-                          <span class="fil-mention">{{ x.texte }}</span>
-                        } @else {
-                          {{ x.texte }}
-                        }
-                      }
-                    </p>
-                  </div>
-                </div>
-              } @empty {
-                <p class="auto">Aucune mise à jour pour l’instant.</p>
-              }
-            </section>
+            <app-carte-commentaires [class.commentaires-cible]="etat.sectionTache() === 'commentaires'" [cibleType]="'Tache'" [cibleId]="t.cibleId ?? ''" [cle]="t.uid" [ancienCommentaire]="t.commentaire" />
 
             @if (t.hypothese) {
               <section>
@@ -875,6 +831,7 @@ export class PanneauTache {
 
   readonly uid = input.required<string>();
   protected readonly etat = inject(SuiviEtat);
+  private readonly hote = inject(ElementRef<HTMLElement>);
   private readonly ui = inject(UiEtat);
   private readonly api = inject(SuiviApi);
   private readonly router = inject(Router);
@@ -896,14 +853,9 @@ export class PanneauTache {
   protected readonly aideRaf =
     'Vide = calcul automatique, profil par profil : Σ max(prévu − consommé ; 0) ; Agent IA : reste de l’enveloppe. Toujours 0 quand la tâche est validée.';
   protected readonly fD = fD;
-  protected readonly fDh = fDh;
   protected readonly fDi = fDi;
-  protected readonly morceaux = morceaux;
   protected readonly lienOuvrable = lienOuvrable;
   protected readonly nomDocument = nomDocument;
-  protected readonly initialesDe = initialesDe;
-  /** Fil de mises à jour de la tâche, du plus récent au plus ancien. */
-  protected readonly fil = computed(() => this.vue()?.projet.misesAJour?.[this.uid()] ?? []);
   protected readonly fE = fE;
   protected readonly fJ = fJ;
   protected readonly fJz = fJz;
@@ -927,6 +879,15 @@ export class PanneauTache {
     this.ui.ui();
     const liste = listeAffichee();
     return { pos: liste.indexOf(this.uid()), total: liste.length };
+  });
+
+  private readonly scrollCommentaires = effect(() => {
+    if (this.etat.sectionTache() !== 'commentaires') return;
+    queueMicrotask(() => {
+      const carte = this.hote.nativeElement.querySelector('app-carte-commentaires');
+      carte?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+      this.etat.sectionTache.set(null);
+    });
   });
 
   constructor() {
@@ -1128,18 +1089,6 @@ export class PanneauTache {
     );
   }
 
-  /** Publie une mise à jour ; le champ est vidé une fois enregistrée. */
-  protected async publier(t: TacheVue, el: HTMLTextAreaElement): Promise<void> {
-    const texte = el.value.trim();
-    if (!texte) return;
-    const r = await this.etat.saisir((id) => this.api.miseAJour(id, t.uid, texte));
-    if (r) el.value = '';
-  }
-
-  protected commentaire(t: TacheVue, el: HTMLTextAreaElement): void {
-    void this.etat.saisir((id) => this.api.commentaire(id, t.uid, el.value, this.etat.versionTache(t.uid)), { siErreur: this.remettre(el, t.commentaire) });
-  }
-
   protected resteAFaire(t: TacheVue, el: HTMLInputElement): void {
     const ancien = t.rafSaisi == null ? '' : fJ(t.rafSaisi);
     const n = lireNombre(el.value);
@@ -1226,18 +1175,18 @@ export class PanneauTache {
     void this.etat.saisir((id) => this.api.dateInvitation(id, t.uid, el.value), { siErreur: this.remettre(el, ancien) });
   }
 
-  protected toucheDestinataire(e: KeyboardEvent, t: TacheVue, el: HTMLInputElement): void {
+  protected toucheParticipant(e: KeyboardEvent, t: TacheVue, el: HTMLInputElement): void {
     if (e.key === 'Enter' || e.key === ';' || e.key === ',') {
       e.preventDefault();
-      if (el.value.trim()) this.ajouterDestinataires(t, el);
+      if (el.value.trim()) this.ajouterParticipants(t, el);
     } else if (e.key === 'Backspace' && !el.value) {
       const d = this.dest(t);
       if (d.length) void this.etat.saisir((id) => this.api.destinataires(id, t.uid, d.slice(0, -1)));
     }
   }
 
-  /** Ajoute un ou plusieurs destinataires (séparés par ; , ou retour à la ligne), sans doublon. */
-  protected ajouterDestinataires(t: TacheVue, el: HTMLInputElement): void {
+  /** Ajoute un ou plusieurs participants (séparés par ; , ou retour à la ligne), sans doublon. */
+  protected ajouterParticipants(t: TacheVue, el: HTMLInputElement): void {
     const brut = el.value;
     if (!brut.trim()) return;
     el.value = ''; // vidé avant l'envoi : la perte de focus ne doit pas relancer l'ajout
@@ -1250,7 +1199,7 @@ export class PanneauTache {
       (x, i) => !actuels.some((y) => y.toLowerCase() === x.toLowerCase()) && tous.findIndex((z) => z.toLowerCase() === x.toLowerCase()) === i,
     );
     if (!nouveaux.length) {
-      this.etat.afficher(tous.length > 1 ? 'Ces destinataires sont déjà dans la liste.' : `« ${tous[0] ?? ''} » est déjà dans la liste.`, 'attention');
+      this.etat.afficher(tous.length > 1 ? 'Ces participants sont déjà dans la liste.' : `« ${tous[0] ?? ''} » est déjà dans la liste.`, 'attention');
       return;
     }
     const pasMail = nouveaux.filter((x) => !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(x.replace(/^.*<(.+)>$/, '$1')));
@@ -1258,7 +1207,7 @@ export class PanneauTache {
     void this.etat.saisir((id) => this.api.destinataires(id, t.uid, [...actuels, ...nouveaux]), { siErreur: () => (el.value = brut) }).then(() => el.focus());
   }
 
-  protected retirerDestinataire(t: TacheVue, i: number): void {
+  protected retirerParticipant(t: TacheVue, i: number): void {
     const d = [...this.dest(t)];
     d.splice(i, 1);
     void this.etat.saisir((id) => this.api.destinataires(id, t.uid, d));
@@ -1330,6 +1279,11 @@ export class PanneauTache {
     );
     if (choix !== 'ok') return;
     await this.etat.saisir((id2) => this.api.annulerReaffectation(id2, t.uid, id));
+  }
+
+  protected compteAxe(v: Vue, t: TacheVue): { n: number; valides: number } {
+    const axe = v.tasks.filter((x) => x.axe === t.axe && !x.annulee);
+    return { n: axe.length, valides: axe.filter((x) => x.statut === 'Validé').length };
   }
 
   protected async retablir(t: TacheVue): Promise<void> {

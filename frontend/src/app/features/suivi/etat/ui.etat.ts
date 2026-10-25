@@ -20,6 +20,8 @@ export interface EtatUi {
   /** Saisie du consommé : profil filtré (index du profil, '' = tous). Non mémorisé : propre au projet ouvert. */
   profF: string;
   folded: Record<string, boolean>;
+  /** Groupes repliés dans Workload et Ateliers & livrables, partagés entre écrans. Clé : dimension|groupe. */
+  groupesReplis: Record<string, boolean>;
   hideCols: Record<string, boolean>;
   colForce: Record<string, boolean>;
   taskW: number;
@@ -99,6 +101,7 @@ const DEFAUT: EtatUi = {
   hideDone: false,
   profF: '',
   folded: {},
+  groupesReplis: {},
   hideCols: {},
   colForce: {},
   taskW: 280,
@@ -151,6 +154,7 @@ const MEMORISEES: (keyof EtatUi)[] = [
   'typeF',
   'hideDone',
   'folded',
+  'groupesReplis',
   'hideCols',
   'colForce',
   'taskW',

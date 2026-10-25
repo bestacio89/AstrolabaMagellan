@@ -124,6 +124,7 @@ export function niveauRisque(crit: number): [string, string] {
                     <td class="c-ref">{{ a.ref }}</td>
                     <td class="c-txt">
                       <ng-container *ngTemplateOutlet="texte; context: { lib: a.libelle, com: a.commentaire, inst: a.origine, tache: t?.label }" />
+                      @if (v.projet.commentaires?.['act:' + a.id]?.[0]; as cm) { <small class="muted ad-last-comment" [title]="cm.texte">💬 {{ extrait(cm.texte, 110) }}</small> }
                     </td>
                     <td class="c-pers"><ng-container *ngTemplateOutlet="puces; context: { $implicit: a.porteur }" /></td>
                     <td class="c-date">
@@ -214,6 +215,7 @@ export function niveauRisque(crit: number): [string, string] {
                     </td>
                     <td class="c-txt">
                       <ng-container *ngTemplateOutlet="texte; context: { lib: x.libelle, com: x.commentaire, inst: x.instance, impact: x.impact }" />
+                      @if (v.projet.commentaires?.['dec:' + x.id]?.[0]; as cm) { <small class="muted ad-last-comment" [title]="cm.texte">💬 {{ extrait(cm.texte, 110) }}</small> }
                     </td>
                     <td class="c-pers"><ng-container *ngTemplateOutlet="puces; context: { $implicit: x.decideur }" /></td>
                     <td class="c-st">
@@ -310,6 +312,7 @@ export function niveauRisque(crit: number): [string, string] {
                             <i class="muted">Sans libellé</i>
                           }
                         </span>
+                        @if (v.projet.commentaires?.['rk:' + r.id]?.[0]; as cm) { <small class="muted ad-last-comment" [title]="cm.texte">💬 {{ extrait(cm.texte, 110) }}</small> }
                         <span class="rk-rub">
                           <ng-container *ngTemplateOutlet="rubrique; context: { lib: 'Cause', val: r.cause, adef: false }" />
                           <ng-container *ngTemplateOutlet="rubrique; context: { lib: 'Comment réduire', val: r.parade, adef: true }" />
@@ -526,7 +529,7 @@ export class Actions {
     const u = this.ui.ui();
     const A = v.projet.actions;
     const ouvertsR = new Set(v.risquesOuverts.map((r) => r.id));
-    const l = listesRegistres({ actions: A, decisions: v.projet.decisions, risques: v.projet.risques, risquesOuverts: ouvertsR }, u as FiltresRegistres, v.aujourdhui);
+    const l = listesRegistres({ actions: A, decisions: v.projet.decisions, risques: v.projet.risques, risquesOuverts: ouvertsR, commentaires: v.projet.commentaires }, u as FiltresRegistres, v.aujourdhui);
     const ouv = A.filter(ouverte);
     const lim = addDays(v.aujourdhui, v.alerteActions);
     const iDe = (liste: readonly string[], val: string, def: string) => Math.max(0, liste.indexOf(val || def));

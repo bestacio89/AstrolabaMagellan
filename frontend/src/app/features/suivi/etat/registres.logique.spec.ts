@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { avecPersonne, dateOk, echeanceOk, extrait, finDuMois, initiales, instancesDuProjet, norm, personnes, personnesDe, refCourte, relatif, trierActions } from './registres.logique';
+import { avecPersonne, dateOk, echeanceOk, extrait, finDuMois, initiales, instancesDuProjet, listesRegistres, norm, personnes, personnesDe, refCourte, relatif, trierActions } from './registres.logique';
 
 const J = '2026-10-19';
 
@@ -44,6 +44,16 @@ describe('Actions, décisions, risques', () => {
       { ref: 'A-003', statut: 'En cours', echeance: '2026-10-01' },
     ]);
     expect(l.map((x) => x.ref)).toEqual(['A-003', 'A-002', 'A-001']);
+  });
+
+  it('recherche dans les commentaires des registres', () => {
+    const action = { id: 'action-1', ref: 'A-1', libelle: 'Action', commentaire: '', porteur: '', origine: '', statut: 'À faire', echeance: null };
+    const resultat = listesRegistres(
+      { actions: [action], decisions: [], risques: [], risquesOuverts: new Set<string>(), commentaires: { 'act:action-1': [{ texte: 'relance distincte' }] } } as never,
+      { adq: 'relance distincte', adf: 'toutes', adp: '', adEch: '', adDu: '', adAu: '', adInst: '', adfd: 'toutes', adDPer: '', adpd: '', rkf: 'tous', rkty: '' } as never,
+      J,
+    );
+    expect(resultat.actions).toHaveLength(1);
   });
 
   it('instances par défaut, extrait, référence courte', () => {

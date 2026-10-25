@@ -4,7 +4,7 @@ import { Action, PointVigilance } from '../api/modeles';
 import { SuiviApi } from '../api/suivi.api';
 import { calculerAlertes } from '../etat/alertes';
 import { estFinancier } from '../etat/vigilance';
-import { fD, fJ, fP, fSigned, largeur, sgn } from '../etat/formats';
+import { fD, fE, fJ, fP, fSigned, largeur, sgn } from '../etat/formats';
 import { SuiviEtat } from '../etat/suivi.etat';
 import { EtatUi, UiEtat } from '../etat/ui.etat';
 import { atHoraire } from '../etat/vue';
@@ -15,8 +15,9 @@ import { Barre } from '../ui/petits';
 /** Un élément de la liste « À traiter », quelle que soit sa nature. */
 interface ElementATraiter {
   cle: string;
-  niveau: 'crit' | 'warn' | 'info' | 'ia';
+  niveau: 'crit' | 'warn' | 'info' | 'ia' | 'facturer';
   quand: string;
+  ordre?: number;
   genre: string;
   titre: string;
   sous: string;
@@ -28,7 +29,7 @@ interface ElementATraiter {
 }
 
 /** Ordre d'affichage : en retard, puis aujourd'hui, puis bilans IA, puis à venir. */
-const RANG: Record<ElementATraiter['niveau'], number> = { crit: 0, warn: 1, ia: 2, info: 3 };
+const RANG: Record<ElementATraiter['niveau'], number> = { crit: 0, facturer: 1, warn: 2, ia: 3, info: 4 };
 
 /**
  * Tableau de bord du projet (version de référence) : à traiter, période, charges, finances, évolutions du périmètre,
@@ -52,7 +53,7 @@ const RANG: Record<ElementATraiter['niveau'], number> = { crit: 0, warn: 1, ia: 
                 <rect x="3" y="4" width="18" height="13" rx="2" />
                 <path d="M8 21h8M12 17v4M7 13l3-3 2 2 4-4" />
               </svg>
-              Point hebdo (PowerPoint)
+              Revue bimensuelle (PowerPoint)
             </a>
           </span>
         }
@@ -159,7 +160,7 @@ const RANG: Record<ElementATraiter['niveau'], number> = { crit: 0, warn: 1, ia: 
         <div class="c-5 tdb-col">
           @let vg = vigilance();
           @let nCrit = nbCritiques();
-          <section class="tdb-carte tdb-vig" aria-labelledby="tdb-vig-t">
+          <section class="tdb-carte tdb-vig" aria-labelledby="tdb-vig-t" [style.display]="afficherPointsDeVigilance ? null : 'none'">
             <details class="vig-plie" [open]="ui.ui().vigOuverte" (toggle)="basculerVigilance($event)">
               <summary>
                 <span id="tdb-vig-t" class="vig-titre">Points de vigilance</span>
@@ -202,6 +203,48 @@ const RANG: Record<ElementATraiter['niveau'], number> = { crit: 0, warn: 1, ia: 
               }
             </details>
           </section>
+          @if (datesLimites().length) {
+            <section class="tdb-carte tdb-dl" aria-labelledby="tdb-dl-t">
+              <header>
+                <h2 id="tdb-dl-t">Dates limites des axes</h2>
+                <span class="tdb-resume">{{ nbDatesLimites() }} date(s) fixée(s)</span>
+              </header>
+              <div class="tdb-dl-list">
+                @for (x of datesLimites(); track x.code) {
+                  <button type="button" class="tdb-dl-line" (click)="etat.ouvrirAxe(x.code, 'nom')" [attr.aria-label]="'Ouvrir l’axe ' + x.code">
+                    <span class="tdb-dl-dot" [class]="'tdb-dl-dot lv-' + (x.niveau || 'neutre')" aria-hidden="true"></span>
+                    <span class="tdb-dl-main">
+                      <span class="tdb-dl-name">{{ x.nom }}</span>
+                      @if (x.date) {
+                        <span class="tdb-dl-date">{{ fD(x.date) }} · {{ x.jours > 0 ? 'dans ' + x.jours + ' j' : x.jours === 0 ? 'aujourd’hui' : 'dépassée de ' + (-x.jours) + ' j' }}</span>
+                      } @else {
+                        <span class="tdb-dl-date">Aucune date limite</span>
+                      }
+                      <span class="tdb-dl-progress"><span class="tdb-dl-bar" [style.width.%]="x.progression"></span></span>
+                      <span class="tdb-dl-count">{{ x.valides }} / {{ x.n }} validées</span>
+                    </span>
+                    @if (x.etat === 'tenue') {
+                      <span class="pill lv-ok">Tenue</span>
+                    } @else if (x.etat === 'tard') {
+                      <span class="pill lv-attention">Terminée tard</span>
+                    } @else if (x.etat === 'depassee') {
+                      <span class="pill lv-critique">Dépassée</span>
+                    } @else if (x.etat === 'risque') {
+                      <span class="pill lv-critique">Risque</span>
+                    } @else if (!x.date) {
+                      <span class="pill tdb-dl-neutre">+ Fixer</span>
+                    } @else {
+                      <span class="pill tdb-dl-neutre">À suivre</span>
+                    }
+                  </button>
+                }
+              </div>
+              <footer class="tdb-dl-foot">
+                <span>Fixées dans Workload, en cliquant sur le nom d’un axe.</span>
+                <button type="button" class="linkbtn" (click)="aller('planning', {})">Voir dans le Planning →</button>
+              </footer>
+            </section>
+          }
           <section class="tdb-carte" aria-labelledby="tdb-livrables">
             <header>
               <h2 id="tdb-livrables">Livrables et ateliers <app-fx cle="livrables" /></h2>
@@ -306,8 +349,11 @@ export class TableauDeBord {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   protected readonly vue = this.etat.vue;
+  /** Gardée calculée pour les exports, masquée dans le tableau de bord selon la revue du 21/10. */
+  protected readonly afficherPointsDeVigilance = false;
 
   protected readonly fD = fD;
+  protected readonly fE = fE;
   protected readonly fJ = fJ;
   protected readonly fP = fP;
   protected readonly fSigned = fSigned;
@@ -348,7 +394,7 @@ export class TableauDeBord {
     }
     for (const x of al.ateliers) {
       const t = x.tache;
-      const nDest = t.tr.atelier?.dest?.length ?? 0;
+      const nParticipants = t.tr.atelier?.dest?.length ?? 0;
       const h = atHoraire(t);
       liste.push({
         cle: 'at-' + t.uid,
@@ -357,7 +403,7 @@ export class TableauDeBord {
         genre: 'Atelier',
         titre: t.label,
         uid: t.uid,
-        sous: `${fD(t.tr.atelier?.date)}${h ? ' · ' + h : ''} · ${nDest ? nDest + ' destinataire(s)' : 'aucun destinataire'}`,
+        sous: `${fD(t.tr.atelier?.date)}${h ? ' · ' + h : ''} · ${nParticipants ? nParticipants + ' participant(s)' : 'aucun participant'}`,
         action: x.passe
           ? { libelle: 'Replanifier / valider', titre: 'Date passée : replanifiez l’atelier ou validez-le s’il a eu lieu', ouvrir: t.uid }
           : modif
@@ -380,15 +426,22 @@ export class TableauDeBord {
     if (v.droits.voitMontants) {
       for (const x of al.echeances) {
         const e = x.echeance;
+        const aFacturer = e.pret && !e.realiseLe;
+        const perimetre = e.axeCode
+          ? `Axe ${e.axeCode} terminé : ${e.nLiesValides} / ${e.nLies} tâches validées`
+          : e.phases.length
+            ? `Phase${e.phases.length > 1 ? 's' : ''} ${e.phases.join(', ')} terminée${e.phases.length > 1 ? 's' : ''} : ${e.nLiesValides} / ${e.nLies} tâches validées`
+            : `Tâches liées terminées : ${e.nLiesValides} / ${e.nLies} tâches validées`;
         liste.push({
           cle: 'e-' + e.n,
-          niveau: x.etat === 'crit' ? 'crit' : x.etat === 'warn' ? 'warn' : 'info',
-          quand: x.quand,
+          niveau: aFacturer ? 'facturer' : x.etat === 'crit' ? 'crit' : x.etat === 'warn' ? 'warn' : 'info',
+          ordre: aFacturer ? 1 : undefined,
+          quand: aFacturer ? 'À facturer' : x.quand,
           genre: 'Facturation',
-          titre: `Échéance n° ${e.n}`,
-          sous: `${e.nom} · prévue le ${fD(e.datePrevue)}`,
+          titre: `Échéance n° ${e.n} · ${fE(e.montant ?? 0)}`,
+          sous: aFacturer ? perimetre : `${e.nom} · prévue le ${fD(e.datePrevue)}`,
           onglet: ['facturation', {}],
-          action: modif ? { libelle: '✓ Facturée', titre: 'Indiquer que la facture est émise aujourd’hui', faire: () => this.echeanceFacturee(e.n) } : undefined,
+          action: modif ? { libelle: aFacturer ? '✓ Facture émise' : '✓ Facturée', titre: 'Indiquer que la facture est émise aujourd’hui', faire: () => this.echeanceFacturee(e.n) } : undefined,
         });
       }
     }
@@ -404,10 +457,35 @@ export class TableauDeBord {
         action: modif ? { libelle: 'Faire le bilan', titre: 'Expliquer l’écart sur l’enveloppe IA', faire: () => this.etat.fenetre.set({ type: 'bilan-ia', uid: t.uid }) } : undefined,
       });
     }
-    return liste.map((x, i) => ({ x, i })).sort((p, q) => RANG[p.x.niveau] - RANG[q.x.niveau] || p.i - q.i).map((p) => p.x);
+    return liste.map((x, i) => ({ x, i })).sort((p, q) => (p.x.ordre ?? RANG[p.x.niveau]) - (q.x.ordre ?? RANG[q.x.niveau]) || p.i - q.i).map((p) => p.x);
   });
   protected readonly aTraiterVisibles = computed(() => (this.todoOuvert() ? this.aTraiter() : this.aTraiter().slice(0, this.maxTodo)));
   protected readonly retardTotal = computed(() => this.aTraiter().filter((x) => x.niveau === 'crit').length);
+
+  protected readonly nbDatesLimites = computed(() => this.datesLimites().filter((x) => !!x.date).length);
+
+  protected readonly datesLimites = computed(() => {
+    const v = this.vue();
+    if (!v) return [];
+    const etats = new Map((v.m.datesLimitesAxes ?? []).map((x) => [x.code, x]));
+    return Object.entries(v.projet.axes ?? {}).map(([code, nom]) => {
+      const etat = etats.get(code) ?? null;
+      const taches = v.m.tasks.filter((t) => t.axe === code && !t.annulee);
+      const n = etat?.n ?? taches.length;
+      const valides = etat?.valides ?? taches.filter((t) => t.statut === 'Validé').length;
+      return {
+        code, nom: nom || code, date: etat?.date ?? null, etat: etat?.etat ?? 'ok',
+        niveau: etat?.niveau ?? '', jours: etat?.jours ?? 0, n, valides,
+        progression: n > 0 ? Math.max(0, Math.min(100, Math.round(valides / n * 100))) : 0,
+      };
+    }).sort((a, b) => {
+      if (!a.date && b.date) return 1;
+      if (a.date && !b.date) return -1;
+      const ca = a.niveau === 'critique' ? 0 : 1;
+      const cb = b.niveau === 'critique' ? 0 : 1;
+      return ca - cb || String(a.date ?? '').localeCompare(String(b.date ?? '')) || a.code.localeCompare(b.code, 'fr');
+    });
+  });
 
   protected readonly vigilance = computed(() => {
     // les points sur l'argent sont dans Rentabilité : le tableau de bord ne montre aucun montant

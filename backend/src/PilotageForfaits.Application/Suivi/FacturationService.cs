@@ -57,9 +57,13 @@ public sealed class FacturationService(SaisieOutils o)
     {
         var u = await o.ExigerChefAsync(projetId, a);
         var e = await EcheanceAsync(projetId, numero, a);
+        var axeCode = SaisieOutils.Nettoyer(c.AxeCode);
+        if (axeCode.Length > 50) throw new RegleMetierException("Code d’axe invalide.");
+        var axe = axeCode.Length == 0 ? null : await o.Db.Axes.FirstOrDefaultAsync(x => x.ProjetId == projetId && x.Code == axeCode, a)
+            ?? throw new IntrouvableException("Axe introuvable.");
+        await using var transaction = await o.Db.Database.BeginTransactionAsync(a);
         var selection = (c.Phases ?? new List<string>()).Select(SaisieOutils.Nettoyer).Where(x => x.Length > 0).Distinct().ToList();
         var tachesCochees = (c.Taches ?? new List<string>()).ToHashSet();
-
         var phases = await o.Db.Phases.Where(x => x.ProjetId == projetId).ToListAsync(a);
         var liens = await o.Db.LiensEcheancePhase.Where(x => x.ProjetId == projetId).ToListAsync(a);
         // liens de cette échéance qui ne sont plus voulus
@@ -83,15 +87,30 @@ public sealed class FacturationService(SaisieOutils o)
         }
 
         var taches = await o.Db.Taches.Where(t => t.ProjetId == projetId && !t.EstSection).ToListAsync(a);
+        if (axe is not null)
+        {
+            if (!string.IsNullOrEmpty(e.AxeCode) && e.AxeCode != axe.Code)
+                throw new RegleMetierException($"L’échéance n° {e.Numero} est déjà déclenchée par l’axe {e.AxeCode}.");
+            var autres = await o.Db.Echeances.Where(x => x.ProjetId == projetId && x.Id != e.Id && x.AxeCode == axe.Code).ToListAsync(a);
+            if (autres.Any(x => x.FactureeLe is not null))
+                throw new RegleMetierException("L’échéance actuellement liée à cet axe est déjà facturée.");
+            foreach (var autre in autres) autre.AxeCode = null;
+            if (autres.Count > 0) await o.Db.SaveChangesAsync(a); // libère l’index unique avant de déplacer le lien
+            e.AxeCode = axe.Code;
+            // Les phases gardent leur priorité ; les tâches de l’axe ne peuvent pas porter un lien individuel en plus.
+            foreach (var t in taches.Where(t => t.AxeId == axe.Id)) t.EcheanceId = null;
+        }
         foreach (var t in taches)
         {
+            if (axe is not null && t.AxeId == axe.Id) { t.EcheanceId = null; continue; } // via l’axe, sauf priorité d’une phase liée
             if (selection.Contains(PhaseDe(t, phases))) { t.EcheanceId = null; continue; } // suit la phase
             if (tachesCochees.Contains(t.Repere)) t.EcheanceId = e.Id;
             else if (t.EcheanceId == e.Id) t.EcheanceId = null;
         }
+        if (axe is null) e.AxeCode = null;
         o.Noter(projetId, u, "Échéance", e.Id, $"n° {numero} · périmètre lié", null,
-            string.Join(", ", selection.Select(p => "phase " + p).Concat(tachesCochees)));
-        return await o.TerminerAsync(projetId, new List<MessageDto>(), a, apres: m =>
+            string.Join(", ", (axe is null ? selection.Select(p => "phase " + p).Concat(tachesCochees) : new[] { "axe " + axe.Code })));
+        var resultat = await o.TerminerAsync(projetId, new List<MessageDto>(), a, apres: m =>
         {
             var ech = m.Echeancier.First(x => x.N == numero);
             return new[]
@@ -99,6 +118,68 @@ public sealed class FacturationService(SaisieOutils o)
                 new MessageDto($"Échéance n° {numero} : {ech.NLies} tâche(s) liée(s){(ech.Phases.Count > 0 ? $" (dont via {ech.Phases.Count} phase(s))" : "")}.", "succes"),
             };
         });
+        await transaction.CommitAsync(a);
+        return resultat;
+    }
+
+    /// <summary>
+    /// Lie une échéance à un axe sans retirer par défaut les liens de phase : la phase reste prioritaire.
+    /// Les phases explicitement demandées sont déliées, et les échéances individuelles des tâches de l'axe sont reprises.
+    /// </summary>
+    public async Task<ResultatSaisieDto> LierAxeAsync(Guid projetId, string code, LienAxeEcheanceCommande c, CancellationToken a)
+    {
+        var u = await o.ExigerChefAsync(projetId, a);
+        code = SaisieOutils.Nettoyer(code);
+        if (code.Length == 0 || code.Length > 50) throw new RegleMetierException("Code d’axe invalide.");
+        if (!string.Equals(SaisieOutils.Nettoyer(c.Axe), code, StringComparison.Ordinal))
+            throw new RegleMetierException("Le code d’axe du corps de la requête ne correspond pas à l’axe demandé.");
+        var axe = await o.Db.Axes.FirstOrDefaultAsync(x => x.ProjetId == projetId && x.Code == code, a)
+            ?? throw new IntrouvableException("Axe introuvable.");
+        var echeances = await o.Db.Echeances.Where(x => x.ProjetId == projetId).ToListAsync(a);
+        var actuelle = echeances.FirstOrDefault(x => x.AxeCode == code);
+        if (c.Numero is null)
+        {
+            if (actuelle is null)
+                return await o.TerminerAsync(projetId, new List<MessageDto> { new($"Axe {code} ne déclenche plus de facture.", "succes") }, a);
+            if (actuelle.FactureeLe is not null)
+                throw new RegleMetierException("Une échéance déjà facturée ne peut pas être déliée de son axe.");
+            actuelle.AxeCode = null;
+            o.Noter(projetId, u, "Axe", axe.Id, $"{code} · facturation", actuelle.Numero, null);
+            return await o.TerminerAsync(projetId, new List<MessageDto> { new($"Axe {code} ne déclenche plus de facture.", "succes") }, a);
+        }
+
+        var cible = echeances.FirstOrDefault(x => x.Numero == c.Numero.Value)
+            ?? throw new IntrouvableException("Échéance introuvable.");
+        if (cible.FactureeLe is not null && cible.AxeCode != code)
+            throw new RegleMetierException("Une échéance déjà facturée ne peut pas être affectée à un axe.");
+        if (!string.IsNullOrEmpty(cible.AxeCode) && cible.AxeCode != code)
+            throw new RegleMetierException($"L’échéance n° {cible.Numero} est déjà déclenchée par l’axe {cible.AxeCode}.");
+
+        var taches = await o.Db.Taches.Where(t => t.ProjetId == projetId && !t.EstSection).ToListAsync(a);
+        var phases = await o.Db.Phases.Where(x => x.ProjetId == projetId).ToListAsync(a);
+        var tachesAxe = taches.Where(t => t.AxeId == axe.Id).ToList();
+        var phasesAxe = tachesAxe.Select(t => PhaseDe(t, phases)).Where(x => x.Length > 0).ToHashSet(StringComparer.Ordinal);
+        var aDelier = (c.PhasesADelier ?? Array.Empty<string>()).Select(SaisieOutils.Nettoyer).Where(x => x.Length > 0).Distinct(StringComparer.Ordinal).ToHashSet(StringComparer.Ordinal);
+        if (aDelier.Any(x => !phasesAxe.Contains(x)))
+            throw new RegleMetierException("Une phase à délier ne contient aucune tâche de cet axe.");
+        var phasesSelectionnees = phases.Where(p => aDelier.Contains(p.Code)).Select(p => p.Id).ToHashSet();
+        var liens = await o.Db.LiensEcheancePhase.Where(x => x.ProjetId == projetId).ToListAsync(a);
+        o.Db.LiensEcheancePhase.RemoveRange(liens.Where(x => phasesSelectionnees.Contains(x.PhaseId)).ToList());
+
+        if (actuelle is not null && actuelle.Id != cible.Id)
+        {
+            if (actuelle.FactureeLe is not null)
+                throw new RegleMetierException("L’échéance actuelle est déjà facturée ; son axe ne peut pas être déplacé.");
+            actuelle.AxeCode = null;
+            await o.Db.SaveChangesAsync(a); // libère l'index unique avant de lier la nouvelle échéance
+        }
+        cible.AxeCode = code;
+        foreach (var t in tachesAxe) t.EcheanceId = null;
+        o.Noter(projetId, u, "Axe", axe.Id, $"{code} · facturation", actuelle?.Numero, cible.Numero);
+        return await o.TerminerAsync(projetId, new List<MessageDto>
+        {
+            new($"Axe {code} : déclenche l’échéance n° {cible.Numero}.", "succes"),
+        }, a);
     }
 
     /// <summary>

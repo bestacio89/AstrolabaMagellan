@@ -17,11 +17,11 @@ namespace PilotageForfaits.Application.Suivi;
 public sealed class PointsHebdoService(SaisieOutils o)
 {
     public const string CleReglages = "reglages";
-    public static readonly IReadOnlySet<string> Indicateurs = new HashSet<string> { "planning", "qualite", "perimetre", "budget", "ressources", "facturation" };
+    public static readonly IReadOnlySet<string> Indicateurs = new HashSet<string> { "planning", "qualite", "perimetre", "budget", "ressources", "facturation", "satisfaction", "esprit" };
     public static readonly IReadOnlySet<string> Niveaux = new HashSet<string> { "vert", "jaune", "rouge", "gris" };
     public static readonly IReadOnlySet<string> Meteos = new HashSet<string> { "soleil", "nuage", "orage" };
     public static readonly IReadOnlySet<string> Tendances = new HashSet<string> { "vert", "jaune", "rouge" };
-    public static readonly IReadOnlySet<string> Reglages = new HashSet<string> { "commercial", "avv", "pilote", "modeFacturation", "logoClient", "logoEntreprise" };
+    public static readonly IReadOnlySet<string> Reglages = new HashSet<string> { "commercial", "avv", "pilote", "modeFacturation", "logoClient", "logoEntreprise", "odt" };
     private const int MaxPoints = 15, MaxTexte = 300, MaxReglage = 200, MaxLogo = 1_000_000;
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private static readonly Regex Logo = new(@"^data:image/(png|jpeg);base64,[A-Za-z0-9+/]+=*$", RegexOptions.CultureInvariant);
@@ -40,6 +40,14 @@ public sealed class PointsHebdoService(SaisieOutils o)
         if (!DateOnly.TryParseExact(mois + "-01", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
             throw new RegleMetierException("Mois invalide (AAAA-MM).");
         return "M:" + mois;
+    }
+
+    /// <summary>Clé d'une revue bimensuelle : « Q:AAAA-MM-JJ », date de la séance.</summary>
+    public static string CleQuinzaine(string seance)
+    {
+        if (!DateOnly.TryParseExact(seance, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
+            throw new RegleMetierException("Date de séance invalide (AAAA-MM-JJ).");
+        return "Q:" + seance;
     }
 
     /// <summary>Enregistre la saisie d'une période (elle remplace la précédente).</summary>
@@ -70,6 +78,9 @@ public sealed class PointsHebdoService(SaisieOutils o)
             ["satisfaction"] = c.Satisfaction is null ? null : JsonSerializer.SerializeToNode(c.Satisfaction, Json),
             ["esprit"] = c.Esprit is null ? null : JsonSerializer.SerializeToNode(c.Esprit, Json),
             ["extension"] = c.Extension ?? "Non",
+            ["aEvoquer"] = c.AEvoquer,
+            ["difficulte"] = Texte(c.Difficulte, "Difficulté rencontrée"),
+            ["impact"] = Texte(c.Impact, "Impact"),
         };
         var ligne = await LigneAsync(projetId, cle, a);
         var maintenant = o.Horloge.Maintenant.UtcDateTime;
@@ -95,10 +106,24 @@ public sealed class PointsHebdoService(SaisieOutils o)
             if (valeur.Length > MaxLogo) throw new RegleMetierException("Logo trop lourd : choisissez une image plus petite.");
             if (valeur.Length > 0 && !Logo.IsMatch(valeur)) throw new RegleMetierException("Logo invalide : image PNG ou JPEG attendue.");
         }
+        else if (champ == "odt")
+        {
+            if (valeur.Length > 5000) throw new RegleMetierException("Les numéros ODT dépassent la taille autorisée.");
+            if (valeur.Length > 0)
+            {
+                JsonObject objet;
+                try { objet = JsonNode.Parse(valeur) as JsonObject ?? throw new JsonException(); }
+                catch (JsonException) { throw new RegleMetierException("Les numéros ODT doivent être un objet JSON phase → numéro."); }
+                if (objet.Any(x => x.Key.Length > 100 || x.Value is not JsonValue v || !v.TryGetValue<string>(out var n) || n.Length > 100))
+                    throw new RegleMetierException("Un numéro ODT ou un nom de phase est invalide.");
+            }
+        }
         else if (valeur.Length > MaxReglage) throw new RegleMetierException($"Texte trop long : {MaxReglage} caractères au maximum.");
         var ligne = await LigneAsync(projetId, CleReglages, a);
         var contenu = JsonNode.Parse(ligne.Contenu) as JsonObject ?? new JsonObject();
-        if (valeur.Length == 0) contenu.Remove(champ); else contenu[champ] = valeur;
+        if (valeur.Length == 0) contenu.Remove(champ);
+        else if (champ == "odt") contenu[champ] = JsonNode.Parse(valeur);
+        else contenu[champ] = valeur;
         ligne.Contenu = contenu.ToJsonString();
         ligne.MajLe = o.Horloge.Maintenant.UtcDateTime;
         ligne.ParId = u.Id;
@@ -133,6 +158,13 @@ public sealed class PointsHebdoService(SaisieOutils o)
         return ligne;
     }
 
+    private static string Texte(string? texte, string quoi)
+    {
+        var valeur = SaisieOutils.Nettoyer(texte);
+        if (valeur.Length > MaxTexte) throw new RegleMetierException($"{quoi} : {MaxTexte} caractères au maximum.");
+        return valeur;
+    }
+
     private static JsonArray Liste(List<string>? l, string quoi)
     {
         var points = (l ?? new()).Select(SaisieOutils.Nettoyer).Where(x => x.Length > 0).ToList();
@@ -141,5 +173,5 @@ public sealed class PointsHebdoService(SaisieOutils o)
         return new JsonArray(points.Select(x => (JsonNode?)JsonValue.Create(x)).ToArray());
     }
 
-    private static string Libelle(string cle) => cle.StartsWith("M:", StringComparison.Ordinal) ? $"point mensuel {cle[2..]}" : $"point hebdo du {cle[2..]}";
+    private static string Libelle(string cle) => cle.StartsWith("M:", StringComparison.Ordinal) ? $"point mensuel {cle[2..]}" : cle.StartsWith("Q:", StringComparison.Ordinal) ? $"revue bimensuelle du {cle[2..]}" : $"point hebdo du {cle[2..]}";
 }

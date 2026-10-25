@@ -611,9 +611,10 @@
 .suivi .dr-crumbs .dr-axe { background: color-mix(in srgb, var(--axc) 20%, var(--surface)); color: var(--ink); }
 .suivi .dr-title { font-size: 18px; margin-top: 8px; line-height: 1.3; }
 .suivi .dr-meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
-.suivi .dr-body { padding: 6px 18px 40px; display: flex; flex-direction: column; }
-.suivi .dr-body section { padding: 14px 0; border-bottom: 1px solid var(--line); }
-.suivi .dr-body section:last-child { border-bottom: 0; }
+.suivi .dr-body { padding: 12px 18px 40px; display: flex; flex-direction: column; gap: 10px; background: var(--surface-2); }
+.suivi .dr-body section { padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+.suivi .dr-body section:last-child { border-bottom: 1px solid var(--line); }
+.suivi .dr-kpis-head { margin-top: 10px; }
 .suivi .dr-body h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 8px; }
 .suivi .dr-choices { display: flex; gap: 6px; flex-wrap: wrap; }
 .suivi .dr-choices .pill { border: 2px solid transparent; cursor: pointer; padding: 5px 11px; font-size: 12.5px; opacity: .7; }
@@ -1121,6 +1122,7 @@
 .suivi .tdb-quand.warn { background: var(--c-statut-encours); color: var(--c-statut-encours-texte); }
 .suivi .tdb-quand.info { background: var(--c-primaire-clair); color: var(--ink); }
 .suivi .tdb-quand.ia { background: var(--c-statut-test); color: var(--c-statut-test-texte); }
+.suivi .tdb-quand.facturer { background: var(--c-statut-valide); color: var(--c-statut-valide-texte); font-weight: 600; }
 .suivi .tdb-texte { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .suivi .tdb-titre { font: 500 14px/20px var(--police-texte); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .suivi .tdb-titre .tlink { font: inherit; }
@@ -1420,7 +1422,74 @@
 .ph-diapo .ph-tb { border-collapse: collapse; table-layout: fixed; }
 .ph-diapo .ph-tb td { padding: 0 4pt; vertical-align: middle; overflow: hidden; line-height: 1.15; }
 .suivi .ph-apercu .auto { white-space: normal; }
+.suivi .ph-client { display: flex; align-items: center; gap: 10px; margin: 0; }
+.suivi .ph-client img { width: 56px; height: 40px; object-fit: contain; border: 1px solid var(--line); border-radius: 6px; background: white; padding: 4px; }
+.suivi .ph-subhead { margin: 12px 0 4px; font-size: 13px; font-weight: 650; color: var(--ink); }
+.suivi .ph-asset-warning { margin: 8px 0; padding: 10px 12px; border-left: 3px solid var(--c-attention); background: var(--surface-2); color: var(--ink); font-size: 12px; }
+.suivi .rv-slide { position: relative; width: 100%; max-width: 1280px; aspect-ratio: 16 / 9; height: auto; margin-bottom: 16px; overflow: hidden; container-type: inline-size; background-size: 100% 100%; background-color: #fff; }
+.suivi .rv-shape, .suivi .rv-cell { position: absolute; box-sizing: border-box; overflow: hidden; line-height: 1.12; white-space: normal; }
+.suivi .rv-logo { position:absolute; z-index:1; object-fit:contain; }
+.suivi .rv-cell { display: flex; align-items: center; padding-top: 1px; padding-bottom: 1px; color: #23232f; }
 
 /* Rentabilité : détail d'une colonne de la cascade ouvert dans le volet → les cartes passent sur toute la largeur, la cascade reste lisible à côté */
 .suivi.rt-volet .s-grille > [class*="c-"] { grid-column: 1 / -1; }
 .suivi.rt-volet .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* Dates limites des axes — carte de pilotage de la revue bimensuelle. */
+.suivi .tdb-dl-list { display:flex; flex-direction:column; gap:2px; }
+.suivi .tdb-dl-line { display:grid; grid-template-columns:8px minmax(0,1fr) auto; align-items:center; gap:10px; width:100%; padding:10px 0; text-align:left; border:0; border-bottom:1px solid var(--line); background:transparent; color:inherit; cursor:pointer; }
+.suivi .tdb-dl-line:last-child { border-bottom:0; }
+.suivi .tdb-dl-line:hover .tdb-dl-name { text-decoration:underline; }
+.suivi .tdb-dl-dot { width:8px; height:8px; border-radius:50%; background:#98a2b3; }
+.suivi .tdb-dl-dot.lv-critique { background:#d92d20; }
+.suivi .tdb-dl-dot.lv-attention { background:#dc8b14; }
+.suivi .tdb-dl-dot.lv-ok { background:#12b76a; }
+.suivi .tdb-dl-dot.lv-neutre { background:#98a2b3; }
+.suivi .tdb-dl-main { display:grid; grid-template-columns:minmax(0,1fr); gap:3px; min-width:0; }
+.suivi .tdb-dl-name { font-size:13px; font-weight:650; }
+.suivi .tdb-dl-date,.suivi .tdb-dl-count { color:var(--ink-2); font-size:11px; }
+.suivi .tdb-dl-progress { display:block; height:4px; overflow:hidden; border-radius:999px; background:var(--line); }
+.suivi .tdb-dl-bar { display:block; height:100%; border-radius:inherit; background:var(--accent); }
+.suivi .tdb-dl-neutre { background:var(--surface-2); color:var(--ink-2); }
+.suivi .tdb-dl-foot { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding-top:12px; color:var(--ink-2); font-size:11px; }
+
+/* Date limite d’axe sur la frise du Planning. */
+.suivi .pl-dl-line { position:absolute; z-index:5; top:0; bottom:0; border-left:1px dashed #98a2b3; pointer-events:none; }
+.suivi .pl-dl-line.lv-risque,.suivi .pl-dl-line.lv-depassee { border-left-color:#d92d20; }
+.suivi .pl-dl-line.lv-tard { border-left-color:#dc8b14; }
+.suivi .pl-dl-line.lv-tenue { border-left-color:#12b76a; }
+.suivi .pl-dl-fanion { position:absolute; z-index:6; top:0; transform:translateX(-50%); font-size:11px; line-height:12px; color:#667085; pointer-events:auto; }
+.suivi .pl-dl-fanion.lv-risque,.suivi .pl-dl-fanion.lv-depassee { color:#d92d20; }
+.suivi .pl-dl-fanion.lv-tard { color:#dc8b14; }
+.suivi .pl-dl-fanion.lv-tenue { color:#12b76a; }
+.suivi .pl-dl-date { position:absolute; z-index:6; bottom:0; transform:translateX(-50%); padding:1px 3px; border-radius:3px; background:var(--surface); color:#667085; font-size:9px; pointer-events:none; }
+.suivi .pl-dl-date.lv-risque,.suivi .pl-dl-date.lv-depassee { color:#d92d20; }
+.suivi .pl-dl-date.lv-tard { color:#dc8b14; }
+.suivi .pl-dl-date.lv-tenue { color:#12b76a; }
+.suivi .pl-fin-apres-limite { outline:2px solid #d92d20; outline-offset:-2px; border-radius:7px; }
+
+/* Date limite et facturation déclenchée par un axe : pastilles de l'en-tête commun. */
+.suivi .dl-badge,.suivi .eur-badge { display:inline-flex; align-items:center; gap:4px; max-width:100%; padding:4px 7px; border:1px solid var(--line); border-radius:6px; background:var(--surface); color:var(--ink-2); font-size:11px; line-height:1.2; cursor:pointer; text-align:left; }
+.suivi .dl-empty,.suivi .eur-empty { border-style:dashed; opacity:.35; }
+.suivi .grp-h:hover .dl-empty,.suivi .grp-h:focus-within .dl-empty,.suivi .grp-h:hover .eur-empty,.suivi .grp-h:focus-within .eur-empty { opacity:1; }
+.suivi .dl-risque,.suivi .dl-depassee { border-color:#d92d20; background:#fff1f0; color:#b42318; }
+.suivi .dl-tard { border-color:#dc8b14; background:#fff7e6; color:#92400e; }
+.suivi .dl-tenue { border-color:#12b76a; background:#ecfdf3; color:#067647; }
+.suivi .dl-ok { background:var(--surface-2); color:var(--ink-2); }
+.suivi .eur-cours { border-color:#84adff; background:#eff4ff; color:#1849a9; }
+.suivi .eur-prete { border-color:#6ce9a6; background:#ecfdf3; color:#067647; }
+.suivi .eur-facturee { background:var(--surface-2); color:var(--ink-2); }
+
+/* Identité du client : petite marque dans l'en-tête et aperçu dans les paramètres. */
+.suivi .s-logo-client { width: 32px; height: 32px; object-fit: contain; flex: 0 0 32px; border-radius: 4px; background: var(--surface); }
+.suivi .client-logo-setting { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.suivi .client-logo-preview { max-width:180px; max-height:64px; object-fit:contain; border:1px solid var(--line); border-radius:6px; padding:4px; background:var(--surface); }
+
+.suivi .tdb-dl-foot { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding-top:10px; border-top:1px solid var(--line); color:var(--muted); font-size:12px; }
+.suivi .tdb-dl-fix { border:1px dashed var(--line); border-radius:5px; padding:3px 6px; color:var(--muted); font-size:11px; }
+
+.suivi app-carte-commentaires.commentaires-cible { animation: commentaires-cible 1.5s ease-out; border-radius:10px; }
+@keyframes commentaires-cible { 0% { box-shadow:0 0 0 3px rgba(47,111,237,.5); } 100% { box-shadow:0 0 0 0 rgba(47,111,237,0); } }
+.suivi .cmt-cell { display:flex; align-items:center; gap:6px; min-width:0; }
+.suivi .cmt-extrait { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; border:0; padding:2px 0; background:transparent; color:var(--ink-2); text-align:left; cursor:pointer; }
+.suivi .cmt-open { flex:0 0 auto; }

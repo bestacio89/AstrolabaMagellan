@@ -72,8 +72,7 @@ export function dessiner(pres: Presentation, d: DonneesDiapo): void {
     else slide.addText(libelle, { ...o, fontFace: POLICE, fontSize: 8, color: '8A9AA8', align: 'center', valign: 'middle', margin: 0, isTextBox: true, fill: { color: 'F2F4F6' }, line: { color: 'C9D2D9', width: 0.75, dashType: 'dash' } });
   };
   // ---- en-tête : qui, quoi, quand ----
-  logo(d.logoClient, { x: M, y: 0.3, w: 0.95, h: 0.62 }, d.client || 'Logo client');
-  txt([{ text: d.client, options: { bold: true } }, { text: '  ·  ' + d.projet, options: { bold: false } }], { x: 1.45, y: 0.26, w: 7.2, h: 0.42, fontSize: 19, fit: 'shrink' });
+  txt([{ text: d.client, options: { bold: true } }, { text: '  ·  ' + d.projet, options: { bold: false } }], { x: M, y: 0.26, w: 8.2, h: 0.42, fontSize: 19, fit: 'shrink' });
   const pe = d.periode;
   txt(
     pe.type === 'mois'
@@ -81,7 +80,7 @@ export function dessiner(pres: Presentation, d: DonneesDiapo): void {
       : [{ text: `Point hebdomadaire · Semaine ${pe.numero}`, options: { bold: true, color: C.bleu } }, { text: `  ·  du ${fD(pe.debut).slice(0, 5)} au ${fD(pe.fin)}`, options: { color: C.doux } }],
     { x: 1.45, y: 0.68, w: 7.2, h: 0.26, fontSize: 10 },
   );
-  txt(`${d.typologie} · facturation ${d.modeFacturation} · du ${fD(d.debut)} au ${fD(d.fin)} · extension de périmètre : ${d.extension}`, { x: 1.45, y: 0.94, w: 7.2, h: 0.22, fontSize: 8, color: C.doux });
+  txt(`${d.typologie} · facturation ${d.modeFacturation} · du ${fD(d.debut)} au ${fD(d.fin)} · extension de périmètre : ${d.extension}`, { x: M, y: 0.94, w: 8.2, h: 0.22, fontSize: 8, color: C.doux });
   logo(d.logoEntreprise, { x: LARGEUR - M - 0.62, y: 0.3, w: 0.62, h: 0.62 }, 'Logo');
   const equipe = [['Commercial', d.commercial || '—'], ['AVV', d.avv || '—'], ['Pilote delivery', d.pilote || '—'], ['Consultants', d.consultants.join(', ') || '—']];
   equipe.forEach(([l, v], k) => {

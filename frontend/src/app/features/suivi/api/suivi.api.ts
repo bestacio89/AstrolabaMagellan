@@ -99,7 +99,7 @@ export class SuiviApi {
   }
   // ---- point hebdo ----
   pointHebdo(id: string, cle: string, saisie: SaisiePeriode, genere = false) {
-    const chemin = cle.startsWith('M:') ? `points-hebdo/mois/${cle.slice(2)}` : `points-hebdo/semaines/${cle.slice(2)}`;
+    const chemin = cle.startsWith('M:') ? `points-hebdo/mois/${cle.slice(2)}` : cle.startsWith('Q:') ? `points-hebdo/quinzaines/${cle.slice(2)}` : `points-hebdo/semaines/${cle.slice(2)}`;
     return this.put(id, chemin, { ...saisie, genere });
   }
   reglagePointHebdo(id: string, champ: keyof ReglagesPointHebdo, valeur: string) {
@@ -195,8 +195,15 @@ export class SuiviApi {
   dateEcheance(id: string, n: number, champ: 'datePrevue' | 'realiseLe' | 'payeeLe', valeur: string | null, version?: number) {
     return this.put(id, `echeances/${n}/dates`, { champ, valeur, version });
   }
-  perimetreEcheance(id: string, n: number, phases: string[], taches: string[]) {
-    return this.put(id, `echeances/${n}/perimetre`, { phases, taches });
+  /** Marque une échéance comme facturée à la date donnée. */
+  realiserEcheance(id: string, n: number, date: string) {
+    return this.dateEcheance(id, n, 'realiseLe', date);
+  }
+  perimetreEcheance(id: string, n: number, phases: string[], taches: string[], axeCode: string | null = null) {
+    return this.put(id, `echeances/${n}/perimetre`, { phases, taches, axeCode });
+  }
+  facturationAxe(id: string, axe: string, numero: number | null, phasesADelier: string[] = []) {
+    return this.put(id, `axes/${encodeURIComponent(axe)}/facturation`, { axe, numero, phasesADelier });
   }
   echeancePhase(id: string, phase: string, numero: number | null) {
     return this.put(id, `phases/${encodeURIComponent(phase)}/echeance`, { numero });
@@ -243,6 +250,21 @@ export class SuiviApi {
   }
   nomAxe(id: string, code: string, nom: string) {
     return this.put(id, `axes/${encodeURIComponent(code)}/nom`, { nom });
+  }
+  axe(id: string, code: string, nom: string, dateLimite: string | null) {
+    return this.put(id, `axes/${encodeURIComponent(code)}`, { nom, dateLimite });
+  }
+  nomLot(id: string, code: string, nom: string) {
+    return this.put(id, `lots/${encodeURIComponent(code)}`, { nom });
+  }
+  ajouterCommentaire(id: string, cibleType: 'Tache' | 'Action' | 'Decision' | 'Risque', cibleId: string, texte: string) {
+    return this.post(id, `commentaires/${cibleType}/${encodeURIComponent(cibleId)}`, { texte });
+  }
+  modifierCommentaire(id: string, commentaireId: string, texte: string) {
+    return this.put(id, `commentaires/${encodeURIComponent(commentaireId)}`, { texte });
+  }
+  supprimerCommentaire(id: string, commentaireId: string) {
+    return this.supprimer(id, `commentaires/${encodeURIComponent(commentaireId)}`);
   }
   fiche(id: string, champ: 'client' | 'projet' | 'reference', valeur: string, version?: number) {
     return this.put(id, 'fiche', { champ, valeur, version });
@@ -295,6 +317,10 @@ export interface NouvelleTache {
   motif: string;
   hypothese: string;
   apres: string | null;
+  atelierDate?: string | null;
+  atelierHeureDebut?: string | null;
+  atelierHeureFin?: string | null;
+  atelierParticipants?: string[];
 }
 
 export interface AjoutProfil {

@@ -1,7 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { SuiviApi } from '../api/suivi.api';
-import { fD, fJ, fP, stSlug } from '../etat/formats';
+import { fD, fE, fJ, fP, stSlug } from '../etat/formats';
 import { joursEntre } from '../etat/outils';
 import { avantPossible, cleTache, filtreDe, retardLigne, sansAccent, surligne, toutesLesLignes, trouve } from '../etat/planning.logique';
 import { SuiviEtat } from '../etat/suivi.etat';
@@ -63,7 +63,40 @@ const FILTRES: [string, string][] = [
                 >Nom de l’axe
                 <input class="in" maxlength="200" [value]="m.nomAxe" [placeholder]="defaultAxeName(m.id)" [disabled]="!m.modif" #na (change)="nommerAxe(m.id, na.value)" (keydown.enter)="na.blur()" />
               </label>
+              <label class="field pl-champ">Date limite
+                <input class="in" type="date" [value]="m.dateLimite ?? ''" [disabled]="!m.modif" #dl (change)="definirAxe(m.id, m.nomAxe, dl.value || null)" />
+              </label>
+
+              <label class="field pl-champ">Échéance de facturation
+                <select class="in" [value]="m.echeanceAxe?.n ?? ''" [disabled]="!m.modif" #ea (change)="lierEcheanceAxe(m.id, m.echeanceAxe?.n ?? null, ea.value)">
+                  <option value="">— Aucune —</option>
+                  @for (e of m.echeancier; track e.n) {
+                    <option [value]="e.n" [disabled]="!!e.realiseLe && m.echeanceAxe?.n !== e.n">n° {{ e.n }} · {{ e.nom }}</option>
+                  }
+                </select>
+              </label>
+              @if (m.echeanceAxe; as ea) {
+                <span class="auto">Lié à l’échéance n° {{ ea.n }} · {{ fE(ea.montant) }}. Toutes les tâches de l’axe, y compris les ajouts futurs, suivent cette échéance.</span>
+              }
+              @if (m.etatDateLimite; as edl) {
+                <span class="pill" [class]="'pill lv-' + (edl.niveau || 'neutre')">{{ edl.libelle }}</span>
+                @if (edl.auDela.length) {
+                  <div class="pl-dl-alert" role="status">
+                    {{ edl.auDela.length }} tâche(s) finissent après le {{ fD(edl.date) }} :
+                    @for (t of edl.auDela.slice(0, 4); track t.uid; let last = $last) {
+                      <button type="button" class="linkbtn" [attr.data-open]="t.uid">{{ t.libelle }}</button>{{ last ? '' : ' · ' }}
+                    }
+                  </div>
+                }
+              }
               <span class="auto">Utilisé partout (tableaux, Gantt, exports), comme dans les paramètres du projet.</span>
+            </section>
+          } @else if (m.dim === 'lot' && m.id) {
+            <section>
+              <label class="field pl-champ">Nom du lot
+                <input class="in" maxlength="200" [value]="m.nomLot" [placeholder]="'Lot ' + m.id" [disabled]="!m.modif" #nl (change)="nommerLot(m.id, nl.value)" (keydown.enter)="nl.blur()" />
+              </label>
+              <span class="auto">Code du TSP (colonne B) : {{ m.id }}. Le code ne change pas : seul le nom affiché change.</span>
             </section>
           }
 
@@ -289,6 +322,7 @@ export class PanneauPlanning {
   protected readonly ui = inject(UiEtat);
   private readonly api = inject(SuiviApi);
   protected readonly fD = fD;
+  protected readonly fE = fE;
   protected readonly fJ = fJ;
   protected readonly fP = fP;
   protected readonly stSlug = stSlug;
@@ -335,6 +369,11 @@ export class PanneauPlanning {
       masquee: !!v.projet.planning?.masque?.[this.cle()],
       nomTSP: sp?.nomTSP ?? '',
       nomAxe: groupe ? (v.projet.axes?.[groupe.id] ?? '') : '',
+      dateLimite: groupe && dim === 'id' ? (v.projet.datesLimitesAxes?.[groupe.id] ?? null) : null,
+      etatDateLimite: groupe && dim === 'id' ? (v.m.datesLimitesAxes?.find((x) => x.code === groupe.id) ?? null) : null,
+      echeancier: v.m.echeancier,
+      echeanceAxe: groupe && dim === 'id' ? (v.m.echeancier.find((e) => e.axeCode === groupe.id) ?? null) : null,
+      nomLot: groupe && dim === 'lot' ? (v.projet.lots?.[groupe.id] ?? '') : '',
       axeCalc: !l.sous && !!groupe?.planCalcule,
       planAncien: groupe?.planAncien ?? null,
       etatDates: g.planSaisi ? (g.planDebutSaisi && g.planFinSaisi ? 'Saisies' : g.planDebutSaisi ? 'Début saisi' : 'Fin saisie') : 'Calculées',
@@ -406,6 +445,28 @@ export class PanneauPlanning {
 
   protected nommerAxe(code: string, nom: string): void {
     void this.etat.saisir((id) => this.api.nomAxe(id, code, nom.trim()));
+  }
+
+  protected definirAxe(code: string, nom: string, dateLimite: string | null): void {
+    void this.etat.saisir((id) => this.api.axe(id, code, nom.trim(), dateLimite));
+  }
+
+  protected lierEcheanceAxe(code: string, ancienne: number | null, valeur: string): void {
+    const v = this.etat.vue();
+    if (!v) return;
+    const numero = valeur ? Number(valeur) : null;
+    if (numero === null) {
+      if (ancienne === null) return;
+      const ancienneEch = v.m.echeancier.find((e) => e.n === ancienne);
+      if (ancienneEch) void this.etat.saisir((id) => this.api.perimetreEcheance(id, ancienneEch.n, ancienneEch.phases ?? [], ancienneEch.lies ?? [], null));
+      return;
+    }
+    const cible = v.m.echeancier.find((e) => e.n === numero);
+    if (!cible || (cible.realiseLe && cible.n !== ancienne)) { this.etat.afficher('Une échéance déjà facturée ne peut pas être affectée à un autre axe.', 'attention'); return; }
+    void this.etat.saisir((id) => this.api.perimetreEcheance(id, cible.n, cible.phases ?? [], cible.lies ?? [], code));
+  }
+  protected nommerLot(code: string, nom: string): void {
+    void this.etat.saisir((id) => this.api.nomLot(id, code, nom.trim()));
   }
 
   protected masquer(masquer: boolean): void {

@@ -1,11 +1,15 @@
 import { afterRenderEffect, ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, signal } from '@angular/core';
 import { SuiviApi } from '../api/suivi.api';
 import { STATUTS } from '../etat/constantes';
-import { fD, fDi, fJ, stSlug } from '../etat/formats';
+import { fD, fDi, fE, fJ, fP, stSlug } from '../etat/formats';
 import { joursEntre, sum } from '../etat/outils';
 import { SuiviEtat } from '../etat/suivi.etat';
 import { UiEtat } from '../etat/ui.etat';
-import { atHoraire, atRealise, axeName, couleurGroupe, groupByAxe, isOver, lvLivre, lvPrevue, lvValide, TacheVue, Vue } from '../etat/vue';
+import { atHoraire, atRealise, axeName, couleurGroupe, defaultAxeName, groupByAxe, idName, isOver, lvLivre, lvPrevue, lvValide, TacheVue, Vue } from '../etat/vue';
+import { calculerJaugeGroupe, infoBulleDateLimite } from '../etat/entete-groupe.logique';
+import { libelleLot } from '../etat/lot.logique';
+import { EnteteGroupe } from '../ui/entete-groupe';
+import { initialesParticipant } from '../etat/participants.logique';
 import { BarreFiltres } from '../ui/barre-filtres';
 import { LienTache } from '../ui/tache';
 import { Triable } from '../ui/triable';
@@ -18,19 +22,24 @@ interface Colonne {
   n?: boolean;
 }
 
-/** Colonnes masquées par défaut : « Responsable principal » et « Commentaire ». */
-const MASQUEES_PAR_DEFAUT: Record<string, boolean> = { resp: true, com: true };
+/** Colonnes secondaires masquées au premier affichage ; la clé versionnée ignore les anciens réglages. */
+const MASQUEES_PAR_DEFAUT: Record<string, boolean> = { real: true, inv: true, charge: true, conso: true, raf: true, com: true };
+
+/** Versionne les préférences du registre pour que les anciens réglages ne changent pas les nouveaux défauts. */
+function cleRegistre(type: string): string {
+  return `${type}:v2`;
+}
 /** Charge, consommé et RAF : côte à côte, et une seule case « Charge, consommé, RAF » dans le menu Colonnes. */
 const CHIFFRES = ['charge', 'conso', 'raf'];
 
 /**
  * Ateliers & livrables : un registre par type de tâche (types gérés dans ⚙ Paramètres du projet), regroupé par axe, lot ou phase.
- * Atelier : date planifiée, réalisé, invitation, destinataires. Livrable : livraison, validation client. Autres : dates.
+ * Atelier : date planifiée, réalisé, invitation, participants. Livrable : livraison, validation client. Autres : dates.
  */
 import { Fx } from '../ui/fx';
 @Component({
   selector: 'app-ateliers',
-  imports: [BarreFiltres, LienTache, Fx, Triable],
+  imports: [BarreFiltres, LienTache, Fx, Triable, EnteteGroupe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (vm(); as m) {
@@ -73,6 +82,9 @@ import { Fx } from '../ui/fx';
           </label>
         }
         <span class="spacer"></span>
+        @if (v.droits.peutModifier) {
+          <button type="button" class="btn primary" (click)="nouvelleTache(m.cur)">{{ m.cur === 'Atelier' ? '+ Nouvel atelier' : m.cur === 'Livrable' ? '+ Nouveau livrable' : '+ Nouveau « ' + m.nomType + ' »' }}</button>
+        }
         <details class="dd push">
           <summary class="btn sm burger" [title]="'Colonnes' + (m.nbMasquees ? ' (' + m.nbMasquees + ' masquée' + (m.nbMasquees > 1 ? 's' : '') + ')' : '')" aria-label="Colonnes">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
@@ -114,13 +126,48 @@ import { Fx } from '../ui/fx';
             @for (g of m.groupes; track g.cle) {
               <tr class="grp axg" [style.--axc]="g.couleur">
                 <td [attr.colspan]="m.colonnes.length">
-                  <span class="grp-stk"
-                    >{{ g.nom }} <span class="muted">· {{ g.taches.length }}</span></span
+                  <app-entete-groupe
+                    classe="grp-stk"
+                    [nom]="g.nom"
+                    [nombreTaches]="g.taches.length"
+                    [charge]="g.charge"
+                    [jauge]="g.jauge"
+                    [replie]="!!ui.ui().groupesReplis[g.cleRepli]"
+                    (basculer)="basculerGroupe(g.cleRepli)"
                   >
+                    @if (v.m.dim.key === 'id') {
+                      <button type="button" class="grp-name" groupe-nom [title]="'Détails de l’axe ' + g.cle" (click)="etat.ouvrirAxe(g.cle, 'nom')">{{ g.nom }} <span aria-hidden="true">↗</span></button>
+                    } @else if (v.m.dim.key === 'lot' && v.droits.peutModifier) {
+                      <button type="button" class="grp-name" groupe-nom [title]="'Renommer le lot ' + g.cle" (click)="etat.fenetre.set({ type: 'lot', code: g.cle })">{{ g.nom }} <span aria-hidden="true">✎</span></button>
+                    } @else {
+                      <span groupe-nom>{{ g.nom }}</span>
+                    }
+                    <ng-container groupe-actions>
+                      @if (v.m.dim.key === 'id') {
+                        @let dl = v.m.datesLimitesAxes?.find((x) => x.code === g.cle);
+                        @let axeEch = v.m.echeancier.find((x) => x.axeCode === g.cle);
+                        @if (dl) {
+                          <button type="button" class="dl-badge" [class]="'dl-badge dl-' + dl.etat" [title]="infoBulleDateLimite(dl)" (click)="etat.ouvrirAxe(g.cle, 'nom')">⚑ {{ dl.libelle }}</button>
+                        } @else if (v.droits.peutModifier) {
+                          <button type="button" class="dl-badge dl-empty" title="Fixer une date limite pour cet axe" (click)="etat.ouvrirAxe(g.cle, 'nom')">+ Date limite</button>
+                        }
+                      }
+                      @if (v.m.dim.key === 'id' && v.m.echeancier.length) {
+                        @let axeEch = v.m.echeancier.find((x) => x.axeCode === g.cle);
+                        @if (axeEch) {
+                          <button type="button" class="eur-badge" [class]="'eur-badge eur-' + (axeEch.realiseLe ? 'facturee' : axeEch.pret ? 'prete' : 'cours')" [title]="'Facturation de l’axe ' + g.cle" (click)="etat.ouvrirAxe(g.cle, 'fact')">
+                            € Échéance n° {{ axeEch.n }}{{ axeEch.realiseLe ? ' · facturée le ' + fD(axeEch.realiseLe) + (axeEch.payeeLe ? ' · payée' : '') : axeEch.pret ? ' prête à facturer · ' + fE(axeEch.montant ?? 0) : ' · ' + fE(axeEch.montant ?? 0) + ' · ' + fP(axeEch?.avLie ?? 0) }}
+                          </button>
+                        } @else if (v.droits.peutModifier) {
+                          <button type="button" class="eur-badge eur-empty" title="Lier cet axe à une échéance de facturation" (click)="etat.ouvrirAxe(g.cle, 'fact')">€ Lier à une facture</button>
+                        }
+                      }
+                    </ng-container>
+                  </app-entete-groupe>
                 </td>
               </tr>
               @for (t of g.taches; track t.uid) {
-                <tr class="axr" [class.is-annul]="t.annulee" [class.is-sel]="etat.panneau() === t.uid" [style.--axc]="g.couleur">
+                <tr class="axr" [hidden]="ui.ui().groupesReplis[g.cleRepli]" [class.is-annul]="t.annulee" [class.is-sel]="etat.panneau() === t.uid" [style.--axc]="g.couleur">
                   @for (c of m.colonnes; track c.k) {
                     <td
                       [class.n]="c.n"
@@ -133,7 +180,13 @@ import { Fx } from '../ui/fx';
                     >
                       @switch (c.k) {
                         @case ('lot') {
-                          <span class="ell" [title]="t.lot">{{ t.lot }}</span>
+                          @if (v.m.dim.key === 'id') {
+                            <span class="ell" [title]="t.lot ? libelleLot(t.lot, v.projet.lots?.[t.lot]) : 'Sans lot'">{{ t.lot || '—' }}</span>
+                          } @else if (t.axe) {
+                            <span class="axp" [style.--axc]="couleurGroupe(v, t.axe)" [title]="idName(v, t.axe)">{{ t.axe === '0' ? 'Pilotage' : defaultAxeName(t.axe) }}</span>
+                          } @else {
+                            <span class="muted">—</span>
+                          }
                         }
                         @case ('lib') {
                           <app-lien-tache [t]="t" />
@@ -173,9 +226,16 @@ import { Fx } from '../ui/fx';
                           }
                         }
                         @case ('dest') {
-                          <button type="button" class="dest-n" [attr.data-open]="t.uid" [title]="destinataires(t) || (lecture() ? 'Aucun destinataire' : 'Aucun destinataire — cliquer pour en ajouter')">
+                          <button type="button" class="dest-n" [attr.data-open]="t.uid" [title]="participants(t) || (lecture() ? 'Aucun participant' : 'Aucun participant — cliquer pour en ajouter')">
                             @if (t.tr.atelier?.dest?.length) {
-                              👥 {{ t.tr.atelier?.dest?.length }}
+                              <span class="dest-pastilles" aria-label="Participants">
+                                @for (p of participantsVisibles(t); track p) {
+                                  <span class="dest-pastille" [title]="p">{{ initiales(p) }}</span>
+                                }
+                                @if ((t.tr.atelier?.dest?.length ?? 0) > 3) {
+                                  <span class="dest-plus">+{{ (t.tr.atelier?.dest?.length ?? 0) - 3 }}</span>
+                                }
+                              </span>
                             } @else if (lecture()) {
                               <span class="muted">—</span>
                             } @else {
@@ -246,10 +306,7 @@ import { Fx } from '../ui/fx';
                         @case ('fin') {
                           {{ fD(t.fin) }}
                         }
-                        @case ('resp') {
-                          {{ t.responsable }}
-                        }
-                        @case ('statut') {
+                                                @case ('statut') {
                           @if (t.annulee) {
                             <span class="pill st-annul" [title]="'Annulée le ' + fDi(t.annul?.at) + (t.annul?.motif ? ' — ' + t.annul?.motif : '')">Annulée</span>
                           } @else {
@@ -267,17 +324,14 @@ import { Fx } from '../ui/fx';
                           {{ fJ(t.raf) }}
                         }
                         @case ('com') {
-                          <textarea
-                            class="in cmt-auto"
-                            rows="1"
-                            placeholder="Commentaire"
-                            aria-label="Commentaire"
-                            [title]="t.commentaire"
-                            [value]="t.commentaire"
-                            [disabled]="lecture()"
-                            #cm
-                            (change)="commentaire(t, cm)"
-                          ></textarea>
+                          <div class="cmt-cell">
+                            @if (v.projet.commentaires?.[t.uid]?.[0]; as cm) {
+                              <button type="button" class="cmt-extrait" [title]="cm.texte" (click)="etat.ouvrirTacheCommentaires(t.uid)">{{ cm.texte }}</button>
+                            } @else {
+                              <span class="muted">—</span>
+                            }
+                            <button type="button" class="btn sm ghost cmt-open" [attr.aria-label]="'Ouvrir les commentaires de ' + t.label" title="Ouvrir les commentaires" (click)="etat.ouvrirTacheCommentaires(t.uid)">💬</button>
+                          </div>
                         }
                       }
                     </td>
@@ -295,12 +349,22 @@ import { Fx } from '../ui/fx';
     }
   `,
   styles: `
-    :host {
-      display: contents;
-    }
+    :host { display: contents; }
+    .grp-fold { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; margin-right: 4px; border: 0; background: transparent; color: inherit; cursor: pointer; }
+    .grp-fold svg { width: 14px; height: 14px; transition: transform 120ms ease; }
+    .grp-fold[aria-expanded="false"] svg { transform: rotate(-90deg); }
+    .grp-jauge { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; font-size: 11px; color: var(--c-texte-2, #667085); white-space: nowrap; }
+    .grp-jauge-bar { display: inline-block; width: 42px; height: 5px; border-radius: 5px; overflow: hidden; background: var(--c-neutre-fond, #e4e8f0); }
+    .grp-jauge-bar i { display: block; height: 100%; background: var(--c-ok, #3fb97c); }
+    .grp-jauge-ok { display: inline-grid; place-items: center; width: 15px; height: 15px; border-radius: 50%; color: #147d4b; background: #d9f5e5; font-weight: 700; }
+    .dest-pastilles { display: inline-flex; align-items: center; gap: 3px; }
+    .dest-pastille, .dest-plus { display: inline-grid; place-items: center; min-width: 23px; height: 23px; padding: 0 4px; border-radius: 50%; color: var(--c-texte, #243044); background: var(--c-neutre-fond, #e4e8f0); font-size: 10px; font-weight: 700; }
+    .dest-plus { border-radius: 12px; width: auto; background: var(--c-primaire-fond, #e7efff); }
   `,
 })
 export class Ateliers {
+  protected readonly libelleLot = libelleLot;
+  protected readonly infoBulleDateLimite = infoBulleDateLimite;
   protected readonly etat = inject(SuiviEtat);
   protected readonly ui = inject(UiEtat);
   private readonly api = inject(SuiviApi);
@@ -308,9 +372,14 @@ export class Ateliers {
 
   protected readonly statuts = STATUTS;
   protected readonly fD = fD;
+  protected readonly fE = fE;
+  protected readonly fP = fP;
   protected readonly fDi = fDi;
   protected readonly fJ = fJ;
   protected readonly stSlug = stSlug;
+  protected readonly couleurGroupe = couleurGroupe;
+  protected readonly idName = idName;
+  protected readonly defaultAxeName = defaultAxeName;
   protected readonly isOver = isOver;
   protected readonly atRealise = atRealise;
   protected readonly lvLivre = lvLivre;
@@ -349,11 +418,10 @@ export class Ateliers {
     const liste = source.filter((t) => (!u.axe || (u.axe === '__none' ? !t.grp : t.grp === u.axe)) && (!q || t.label.toLowerCase().includes(q)) && garder(t));
 
     const debut: Colonne[] = [
-      { k: 'lot', l: 'Lot', w: 110 },
+      { k: 'lot', l: v.m.dim.key === 'id' ? 'Rattachement · Lot' : 'Rattachement · Axe', w: 150 },
       { k: 'lib', l: 'Intitulé', w: 250 },
     ];
     const fin: Colonne[] = [
-      { k: 'resp', l: 'Responsable principal', w: 180 },
       { k: 'statut', l: 'Statut', w: 150 },
       { k: 'charge', l: 'Charge', w: 64, n: true },
       { k: 'conso', l: 'Consommé', w: 88, n: true },
@@ -368,7 +436,7 @@ export class Ateliers {
         { k: 'date', l: 'Date planifiée', w: 160 },
         { k: 'real', l: 'Réalisé le', w: 120 },
         { k: 'inv', l: 'Invitation', w: 100 },
-        { k: 'dest', l: 'Destinataires', w: 100 },
+        { k: 'dest', l: 'Participants', w: 120 },
       ];
       filtres = [
         ['', 'Tout'],
@@ -394,7 +462,8 @@ export class Ateliers {
       ];
     }
     const toutes = [...debut, ...milieu, ...fin];
-    const masquees = { ...(u.regHide[cur] ?? MASQUEES_PAR_DEFAUT) };
+    const clePrefs = cleRegistre(cur);
+    const masquees = { ...(u.regHide[clePrefs] ?? MASQUEES_PAR_DEFAUT) };
     const visibles = toutes.filter((c) => c.k === 'lib' || !(masquees[c.k] || (masquees['chiffres'] && CHIFFRES.includes(c.k))));
     const total = sum(visibles.map((c) => c.w));
     return {
@@ -411,7 +480,15 @@ export class Ateliers {
       colonnes: visibles.map((c) => ({ ...c, pct: +((c.w / total) * 100).toFixed(2) })),
       lotVisible: visibles.some((c) => c.k === 'lot'),
       largeurMin: Math.round(total * 0.8),
-      groupes: groupByAxe(v, liste).map(([cle, taches]) => ({ cle, nom: axeName(v, cle), couleur: couleurGroupe(v, cle), taches })),
+      groupes: groupByAxe(v, liste).map(([cle, taches]) => ({
+        cle,
+        cleRepli: `${v.m.dim.key}|${cle}`,
+        nom: axeName(v, cle),
+        couleur: couleurGroupe(v, cle),
+        taches,
+        jauge: calculerJaugeGroupe(taches, cur === 'Atelier' ? 'réalisés' : cur === 'Livrable' ? 'livrés' : 'validées'),
+        charge: sum(taches.map((t) => t.charge)),
+      })),
     };
   });
 
@@ -449,6 +526,19 @@ export class Ateliers {
     return null;
   }
 
+  protected nouvelleTache(typeImpose: string): void {
+    const filtre = this.ui.ui().axe;
+    const groupe = filtre && filtre !== '__none' ? filtre : null;
+    this.etat.fenetre.set({ type: 'nouvelle-tache', groupe, typeImpose });
+  }
+
+  protected basculerGroupe(cle: string): void {
+    const groupesReplis = { ...this.ui.ui().groupesReplis };
+    if (groupesReplis[cle]) delete groupesReplis[cle];
+    else groupesReplis[cle] = true;
+    this.ui.maj({ groupesReplis });
+  }
+
   protected changerType(id: string): void {
     this.gardees.set(new Map());
     this.ui.maj({ alType: id });
@@ -456,25 +546,32 @@ export class Ateliers {
 
   protected masquer(type: string, k: string, oui: boolean): void {
     const u = this.ui.ui();
-    const h = { ...(u.regHide[type] ?? MASQUEES_PAR_DEFAUT) };
+    const cle = cleRegistre(type);
+    const h = { ...(u.regHide[cle] ?? MASQUEES_PAR_DEFAUT) };
     if (oui) h[k] = true;
     else {
       delete h[k];
       if (k === 'chiffres') for (const x of CHIFFRES) delete h[x]; // réafficher aussi d'anciens choix colonne par colonne
     }
-    this.ui.maj({ regHide: { ...u.regHide, [type]: h } });
+    this.ui.maj({ regHide: { ...u.regHide, [cle]: h } });
   }
 
   protected reinitialiser(type: string): void {
     const regHide = { ...this.ui.ui().regHide };
-    delete regHide[type];
+    delete regHide[cleRegistre(type)];
     this.ui.maj({ regHide });
     this.etat.afficher('Affichage du registre réinitialisé.', 'succes');
   }
 
-  protected destinataires(t: TacheVue): string {
+  protected participants(t: TacheVue): string {
     return (t.tr.atelier?.dest ?? []).join('\n');
   }
+
+  protected participantsVisibles(t: TacheVue): string[] {
+    return (t.tr.atelier?.dest ?? []).slice(0, 3);
+  }
+
+  protected readonly initiales = initialesParticipant;
 
   protected enRetard(v: Vue, t: TacheVue): boolean {
     const pv = lvPrevue(t);

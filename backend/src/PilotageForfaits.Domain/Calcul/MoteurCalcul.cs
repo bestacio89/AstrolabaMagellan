@@ -401,9 +401,11 @@ public static class MoteurCalcul
         }
         else ordre = tasks.Select(t => t.Grp).Where(g => !string.IsNullOrEmpty(g)).ToList();
         ordre = Distinct(ordre);
+        string NomLot(string k) => p.Lots.TryGetValue(k, out var nomLot) && !string.IsNullOrWhiteSpace(nomLot)
+            ? $"Lot {k} – {nomLot}" : k == "0" ? "Lot 0 – Pilotage" : $"Lot {k}";
         string NomGroupe(string k) => dimKey == "id" ? NomAxe(k)
             : dimKey == "phase" ? (string.IsNullOrEmpty(k) ? k : k[..1] + k[1..].ToLowerInvariant())
-            : k == "0" ? "Lot 0 – Pilotage" : $"Lot {k}";
+            : NomLot(k);
         var axes = ordre
             .Select(id => new GroupeCalcule(Statistiques(tasks.Where(t => t.Grp == id).ToList())) { Id = id, Nom = NomGroupe(id) })
             .Where(a => a.N > 0).ToList();
@@ -514,7 +516,7 @@ public static class MoteurCalcul
                     Id = a.Id, Nom = a.Nom,
                     Sous = parties.Select(x => new SousGroupeAvancement
                     {
-                        Id = x.Cle, Nom = cleSous == "lot" ? (x.Cle.Length > 0 ? $"Lot {x.Cle}" : "Sans lot") : (x.Cle.Length > 0 ? x.Cle : "Sans phase"),
+                        Id = x.Cle, Nom = cleSous == "lot" ? (x.Cle.Length > 0 ? NomLot(x.Cle) : "Sans lot") : (x.Cle.Length > 0 ? x.Cle : "Sans phase"),
                         Stat = Statistiques(x.Taches), Taches = x.Taches.Select(t => t.Uid).ToList(),
                     }).ToList(),
                 };
@@ -718,14 +720,18 @@ public static class MoteurCalcul
 
         // ---- ÉCHÉANCIER ----
         // Une phase est liée à une seule échéance ; ce lien prime sur celui des tâches de la phase.
+        var axeEch = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var e in p.Echeancier)
+            if (!string.IsNullOrWhiteSpace(e.AxeCode)) axeEch.TryAdd(e.AxeCode, e.N);
         var phaseEch = new Dictionary<string, int>();
         foreach (var e in p.Echeancier)
             foreach (var ph in p.EchTrack.GetValueOrDefault(e.N)?.Phases ?? new())
                 phaseEch.TryAdd(ph, e.N);
         foreach (var t in tasks)
         {
-            t.EchViaPhase = phaseEch.ContainsKey(t.Phase);
-            t.EchN = t.EchViaPhase ? phaseEch[t.Phase] : suivis[t.Uid].Ech is > 0 ? suivis[t.Uid].Ech : null;
+            t.EchViaAxe = axeEch.ContainsKey(t.Axe);
+            t.EchViaPhase = !t.EchViaAxe && phaseEch.ContainsKey(t.Phase);
+            t.EchN = t.EchViaAxe ? axeEch[t.Axe] : t.EchViaPhase ? phaseEch[t.Phase] : suivis[t.Uid].Ech is > 0 ? suivis[t.Uid].Ech : null;
         }
         // Montants : une échéance facturée garde son montant ; un avenant de réduction est réparti sur les échéances
         // non encore facturées, au prorata de leur pourcentage (le total facturé reste égal au CA du forfait).
@@ -758,7 +764,7 @@ public static class MoteurCalcul
                 N = e.N, Nom = e.Nom, Pct = e.Pct, Montant = montant, MontantInit = montantInit, AjustAvenant = montant - montantInit,
                 Mois = datePrevue is not null ? Calendrier.Mois(datePrevue.Value) : e.Mois, MoisTSP = e.Mois,
                 DatePrevue = datePrevue, DatePrevueAuto = et.DatePrevue is null, RealiseLe = et.RealiseLe, PayeeLe = et.PayeeLe,
-                Commentaire = et.Commentaire ?? "", Phases = et.Phases ?? new(), Lies = lies.Select(t => t.Uid).ToList(),
+                Commentaire = et.Commentaire ?? "", AxeCode = e.AxeCode, Phases = et.Phases ?? new(), Lies = lies.Select(t => t.Uid).ToList(),
                 NLies = lies.Count, NLiesValides = lies.Count(t => t.Statut == StatutValide),
                 AvLie = chL != 0 ? AvancementValide(lies) : null,
                 Pret = lies.Count > 0 && lies.All(t => t.Statut == StatutValide), Jours = jours, Statut = statut,
@@ -858,6 +864,38 @@ public static class MoteurCalcul
         var nbReestimer = tasks.Count(t => t.RafAReestimer);
         var nbIncoherent = tasks.Count(t => t.RafIncoherent);
         var nbSansConso = tasks.Count(t => t.Statut == StatutValide && !(t.ConsoTotal > 0));
+        var datesLimitesAxes = p.DatesLimitesAxes
+            .Where(x => x.Value is not null)
+            .Select(x =>
+            {
+                var date = x.Value!.Value;
+                var axeTasks = tasks.Where(t => !t.Annulee && string.Equals(t.Axe, x.Key, StringComparison.OrdinalIgnoreCase)).ToList();
+                var auDela = axeTasks.Where(t => t.Fin is { } fin && fin > date).OrderBy(t => t.Fin).Select(t => new TacheAuDelaDateLimite(t.Uid, t.Label, t.Fin, t.Statut)).ToList();
+                var valides = axeTasks.Count(t => t.Statut == ReferentielsMetier.StatutValide);
+                var ouvertes = axeTasks.Count - valides;
+                var finMax = axeTasks.Where(t => t.Fin is not null).Select(t => t.Fin).Max();
+                var jours = date.DayNumber - aujourdhui.DayNumber;
+                var etat = axeTasks.Count > 0 && valides == axeTasks.Count && auDela.Count == 0 ? "tenue"
+                    : axeTasks.Count > 0 && valides == axeTasks.Count && auDela.Count > 0 ? "tard"
+                    : date < aujourdhui && ouvertes > 0 ? "depassee"
+                    : date >= aujourdhui && auDela.Count > 0 ? "risque" : "ok";
+                var libelle = etat switch
+                {
+                    "tenue" => $"Date limite tenue · {Calendrier.Fr(date)}",
+                    "tard" => $"Terminé après la date limite du {Calendrier.Fr(date)}",
+                    "depassee" => $"Date limite dépassée · {ouvertes} tâche(s) ouverte(s)",
+                    "risque" => $"Date limite {Calendrier.Fr(date)} · {auDela.Count} tâche(s) au-delà",
+                    _ => $"Date limite {Calendrier.Fr(date)} · dans {Math.Max(0, jours)} j",
+                };
+                return new DateLimiteAxeCalculee
+                {
+                    Code = x.Key, Date = date, Etat = etat, Libelle = libelle,
+                    Niveau = etat is "risque" or "depassee" ? "critique" : etat == "tard" ? "attention" : etat == "tenue" ? "ok" : "",
+                    Jours = jours, Ecart = finMax is { } fm ? fm.DayNumber - date.DayNumber : null, FinMax = finMax,
+                    N = axeTasks.Count, Valides = valides, Ouvertes = ouvertes, AuDela = auDela,
+                };
+            }).OrderBy(x => x.Date).ThenBy(x => x.Code, StringComparer.Ordinal).ToList();
+
         var vigilance = new List<PointVigilance>
         {
             new() { Cle = "sansAxe", Label = "Tâches sans axe", Valeur = sansAxe.Count, Niveau = Niveau(sansAxe.Count > 0, "critique"),
@@ -874,6 +912,14 @@ public static class MoteurCalcul
             new() { Cle = "ecart", Label = "Écart d'atterrissage", Valeur = Texte.Arrondir(total.Ecart), Unite = "JH", Niveau = Niveau(total.Ecart > 0.001m, "critique") },
             new() { Cle = "cout", Label = "Écart coût / initial", Valeur = Texte.Arrondir(financier.EcartCout), Unite = "€", Niveau = Niveau(financier.EcartCout > 0.5m, "attention") },
         };
+        var axesNonTenus = datesLimitesAxes.Where(x => x.Etat is "risque" or "depassee").ToList();
+        if (axesNonTenus.Count > 0)
+            vigilance.Add(new()
+            {
+                Cle = "echaxes", Label = axesNonTenus.Count == 1 ? $"Axe {axesNonTenus[0].Code} : date limite du {Calendrier.Fr(axesNonTenus[0].Date)} non tenue" : "Dates limites d'axe non tenues",
+                Valeur = axesNonTenus.Count, Niveau = "critique",
+                Detail = string.Join(" · ", axesNonTenus.Select(x => $"Axe {x.Code} : {string.Join(", ", x.AuDela.Select(t => t.Libelle).Take(4))}{(x.Ecart is { } e ? $" · écart {e} j" : "")}")),
+            });
         if (achats.Depasse > 0.5m && achats.ImpactNet < -0.5m)
             vigilance.Add(new()
             {
@@ -1022,7 +1068,7 @@ public static class MoteurCalcul
             P = P, Months = months, MoisDebut = moisDebut, MoisFin = moisFin, Cal = cal, Dim = dim, Tasks = tasks, Profils = profils, Synthese = synthese, Ventilation = ventilation,
             Metrique = metrique, Axes = axes, Total = total, Mensuel = mensuel, RefTotal = refTotal, TspTotal = tspTotal, Replanifie = replanifie,
             Jalons = jalons, AxeIdsActifs = axeIds.Where(id => tasks.Any(t => t.Axe == id)).ToList(), Avancement = arbre,
-            Financier = financier, Perimetre = perimetre,
+            Financier = financier, Perimetre = perimetre, DatesLimitesAxes = datesLimitesAxes,
             SurJours = surJours, Echeancier = echeancier, EchSynth = echSynth, Risques = risques,
             Ateliers = new AteliersEtLivrables { Ateliers = Compter(TypeAtelier), Livrables = Compter(TypeLivrable), ParType = parType },
             Ia = indicateursIa, Vigilance = vigilance, NonDatees = nonDatees.Select(t => t.Uid).ToList(),

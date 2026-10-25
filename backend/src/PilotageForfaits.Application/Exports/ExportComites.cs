@@ -254,7 +254,7 @@ public static class ExportComites
         var ateliers = new List<List<object?>>
         {
             L(T("Registre des ateliers & livrables")), Vide(),
-            L(H(m.Dim.Label), H("Lot"), H("Type"), H("Intitulé"), H("Prévu (JH)"), H("Date planifiée"), H("Invitation"), H("Destinataires"), H("Réalisé / livré le"),
+            L(H(m.Dim.Label), H("Lot"), H("Type"), H("Intitulé"), H("Prévu (JH)"), H("Date planifiée"), H("Invitation"), H("Participants"), H("Réalisé / livré le"),
                 H("Validé client le"), H("Début prévu"), H("Fin prévue"), H("Profil principal"), H("Statut"), H("Avancement"), H("Consommé"), H("RAF"), H("Commentaire")),
         };
         foreach (var t in m.Tasks.Where(x => x.Type.Length > 0))
@@ -658,7 +658,7 @@ public static class ExportComites
         {
             L(T("Ateliers & livrables — réalisés sur la période et à venir")), Vide(),
             L(H(""), H("Type"), H(m.Dim.Label), H("Intitulé"), H("Profil principal"), H("Statut"), H("Date / début"), H("Fin"), H("Invitation / livraison"),
-                H("Destinataires / validation client"), H("Validé le")),
+                H("Participants / validation client"), H("Validé le")),
         };
         if (lignesAl.Count > 0) ateliers.AddRange(lignesAl);
         else ateliers.Add(L("Aucun atelier ni livrable réalisé sur la période, en retard ou à venir."));

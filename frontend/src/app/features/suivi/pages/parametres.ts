@@ -8,6 +8,7 @@ import { NotificationsService } from '../../../core/notifications/notifications'
 import { SuiviApi } from '../api/suivi.api';
 import { ALERT_OPTS } from '../etat/constantes';
 import { fDh, fDi } from '../etat/formats';
+import { reduireLogo } from '../etat/point-hebdo.chargement';
 import { SuiviEtat } from '../etat/suivi.etat';
 import { UiEtat } from '../etat/ui.etat';
 import { ecrireTypesParDefaut } from '../etat/types-par-defaut';
@@ -38,27 +39,32 @@ type CleAlerte = 'alerteActionsJours' | 'alerteAtelierJours' | 'alerteLivrableJo
       @let S = v.projet.settings;
       <div class="grid2">
         <app-carte
-          titre="Noms des axes (colonne A du TSP)"
-          sousTitre="Le TSP ne contient que des codes (AXE1, 1, 2…). Donnez-leur un nom lisible : il est utilisé partout (tableaux, Gantt, exports) quand le reporting est regroupé par axe."
+          titre="Client"
+          sousTitre="Nom et identité visuelle du client pour les en-têtes et les supports de revue. Le logo est partagé par l’équipe et n’est pas placé dans la diapositive PowerPoint."
         >
           <div class="kv">
-            @for (id of v.axeIds; track id) {
-              <div>{{ id === '0' ? '0 (pilotage)' : id }}</div>
-              <div>
-                <input
-                  class="in w-txt"
-                  [value]="nomSaisi(v, id)"
-                  [placeholder]="defaultAxeName(id)"
-                  [attr.aria-label]="'Nom de l’axe ' + id"
-                  [disabled]="lecture"
-                  #ax
-                  (change)="nomAxe(v, id, ax)"
-                />
-              </div>
-            }
+            <div>Nom du client</div>
+            <div><input class="in w-txt" [value]="v.projet.fiche.client" [disabled]="lecture" aria-label="Nom du client" #client (change)="nomClient(v, client)" /></div>
+            <div>Logo du client</div>
+            <div class="client-logo-setting">
+              @if (logoClient(v); as logo) {
+                <img [src]="logo" alt="Logo du client" class="client-logo-preview" />
+              } @else {
+                <span class="muted">Aucun logo enregistré</span>
+              }
+              @if (!lecture) {
+                <label class="btn sm">
+                  Choisir une image
+                  <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden #logoInput (change)="choisirLogoClient(logoInput)" />
+                </label>
+                @if (logoClient(v)) { <button type="button" class="btn sm ghost" (click)="retirerLogoClient()">Retirer</button> }
+              }
+              <small class="muted">PNG, JPEG, WebP ou SVG · 5 Mo maximum avant réduction.</small>
+            </div>
           </div>
         </app-carte>
-        <app-carte
+
+<app-carte
           titre="Dates du projet"
           sousTitre="Elles fixent les mois affichés partout (consommé, Gantt, plannings, graphiques, export). Pré-remplies depuis la période indiquée dans le TSP."
         >
@@ -355,6 +361,42 @@ export class Parametres {
   /** Nom choisi pour un code d'axe (vide : nom par défaut). */
   protected nomSaisi(v: Vue, code: string): string {
     return v.projet.axes[code] || '';
+  }
+
+  protected logoClient(v: Vue): string | null {
+    return v.projet.pointsHebdo?.reglages.logoClient || null;
+  }
+
+  protected nomClient(v: Vue, el: HTMLInputElement): void {
+    const ancien = v.projet.fiche.client ?? '';
+    const valeur = el.value.trim();
+    if (valeur === ancien) return;
+    if (!valeur) {
+      el.value = ancien;
+      this.etat.afficher('Le nom du client ne peut pas être vide.', 'erreur');
+      return;
+    }
+    void this.etat.saisir((id) => this.api.fiche(id, 'client', valeur, this.etat.versionProjet()), { siErreur: () => (el.value = ancien) });
+  }
+
+  protected async choisirLogoClient(champ: HTMLInputElement): Promise<void> {
+    const f = champ.files?.[0];
+    champ.value = '';
+    if (!f) return;
+    if (f.size > 5 * 1024 * 1024) {
+      this.etat.afficher('Image trop lourde (5 Mo au plus).', 'erreur');
+      return;
+    }
+    try {
+      const valeur = await reduireLogo(f);
+      await this.etat.saisir((id) => this.api.reglagePointHebdo(id, 'logoClient', valeur));
+    } catch {
+      this.etat.afficher('Cette image n’a pas pu être lue.', 'erreur');
+    }
+  }
+
+  protected retirerLogoClient(): void {
+    void this.etat.saisir((id) => this.api.reglagePointHebdo(id, 'logoClient', ''));
   }
 
   protected nomAxe(v: Vue, code: string, el: HTMLInputElement): void {

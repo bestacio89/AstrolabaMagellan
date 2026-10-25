@@ -80,16 +80,7 @@ import { SyntheseTsp } from '../ui/synthese-tsp';
             </div>
           </app-carte>
         }
-        <app-carte titre="Noms des axes" sousTitre="Le TSP ne contient que des codes (AXE1, 1, 2…). Le nom choisi est utilisé partout : tableaux, Gantt, exports.">
-          <a extra class="btn sm" routerLink="../parametres">Modifier dans ⚙ Paramètres du projet</a>
-          <div class="kv">
-            @for (id of v.axeIds; track id) {
-              <div>{{ id === '0' ? '0 (pilotage)' : id }}</div>
-              <div>{{ nomAxe(v, id) }}</div>
-            }
-          </div>
-        </app-carte>
-      </div>
+</div>
     }
   `,
   styles: `

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using PilotageForfaits.Application.Commun;
 using PilotageForfaits.Domain.Calcul;
@@ -92,6 +93,12 @@ public sealed class PerimetreService(SaisieOutils o)
         var u = await o.ExigerChefAsync(projetId, a);
         var label = string.Join(' ', (c.Label ?? "").Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
         if (label.Length == 0) throw new RegleMetierException("Saisissez l’intitulé de la tâche.");
+        var typeCode = SaisieOutils.Nettoyer(c.Type);
+        var typeEffectif = typeCode.Length > 0 ? typeCode : ReferentielsMetier.DetecterType(label, "");
+        var estAtelier = typeEffectif == ReferentielsMetier.TypeAtelier;
+        var dateAtelier = estAtelier ? c.AtelierDate ?? c.Debut : null;
+        var debutPrevu = estAtelier ? dateAtelier : c.Debut;
+        var finPrevue = estAtelier ? dateAtelier : c.Fin;
         var profils = await o.Db.Profils.Where(p => p.ProjetId == projetId).OrderBy(p => p.Rang).ToListAsync(a);
         var charges = new List<(ProfilProjet Profil, decimal Jh)>();
         foreach (var ch in c.Charges ?? new List<ChargeNouvelleTacheCommande>())
@@ -109,8 +116,8 @@ public sealed class PerimetreService(SaisieOutils o)
             if (!(c.NouveauProfilJh > 0)) throw new RegleMetierException("Saisissez la charge du nouveau profil.");
             charges.Add((nouveau, c.NouveauProfilJh!.Value));
         }
-        if (!(charges.Sum(x => x.Jh) > 0)) throw new RegleMetierException("Indiquez la charge prévue d’au moins un profil.");
-        if (c.Debut is not null && c.Fin is not null && c.Fin < c.Debut) throw new RegleMetierException("La fin prévue doit être postérieure au début.");
+        if (!(charges.Sum(x => x.Jh) > 0) && !estAtelier) throw new RegleMetierException("Indiquez la charge prévue d’au moins un profil.");
+        if (debutPrevu is not null && finPrevue is not null && finPrevue < debutPrevu) throw new RegleMetierException("La fin prévue doit être postérieure au début.");
         if (motif.Length == 0) throw new RegleMetierException("Indiquez le motif : il apparaît dans le tableau de bord et l’export COPIL.");
 
         // nouveau profil : créé seulement une fois tout vérifié
@@ -135,12 +142,11 @@ public sealed class PerimetreService(SaisieOutils o)
         {
             ProjetId = projetId, Repere = $"a{numero}", Origine = OrigineElement.Ajout, LigneTsp = null,
             CodeAxeTsp = axe, LotTsp = lot, PhaseTsp = phase, EtapeTsp = SaisieOutils.Nettoyer(c.Etape), LibelleTsp = label,
-            Hypothese = SaisieOutils.Nettoyer(c.Hypothese), DebutPrevu = c.Debut, FinPrevue = c.Fin,
+            Hypothese = SaisieOutils.Nettoyer(c.Hypothese), DebutPrevu = debutPrevu, FinPrevue = finPrevue,
         };
         tache.Position = await PositionAsync(projetId, toutes, c.Apres, axe, phase, lot, a);
         if (axe.Length > 0) tache.AxeId = (await o.Db.Axes.FirstOrDefaultAsync(x => x.ProjetId == projetId && x.Code == axe, a))?.Id;
         if (phase.Length > 0) tache.PhaseId = (await o.Db.Phases.FirstOrDefaultAsync(x => x.ProjetId == projetId && x.Code == phase, a))?.Id;
-        var typeCode = SaisieOutils.Nettoyer(c.Type);
         if (typeCode.Length > 0)
         {
             var type = await o.Db.TypesTache.FirstOrDefaultAsync(x => x.ProjetId == projetId && x.Code == typeCode, a)
@@ -160,10 +166,37 @@ public sealed class PerimetreService(SaisieOutils o)
             ProjetId = projetId, TacheId = tache.Id, Nature = NatureEvolution.NouvelleTache, Le = maintenant, ParId = u.Id, Motif = motif,
             JoursHomme = charges.Sum(x => x.Jh),
         });
-        // la date saisie devient la date planifiée de l'atelier (type choisi ou détecté d'après l'intitulé)
-        var typeEffectif = typeCode.Length > 0 ? typeCode : ReferentielsMetier.DetecterType(label, "");
-        if (typeEffectif == ReferentielsMetier.TypeAtelier && c.Debut is not null)
-            o.Db.Ateliers.Add(new Atelier { ProjetId = projetId, TacheId = tache.Id, DatePlanifiee = c.Debut });
+        // Un atelier accepte 0 JH et conserve ses informations de rendez-vous dès sa création.
+        if (estAtelier)
+        {
+            var atelier = new Atelier { ProjetId = projetId, TacheId = tache.Id };
+            atelier.DefinirDate(dateAtelier);
+            TimeOnly? heureDebut = null;
+            TimeOnly? heureFin = null;
+            if (!string.IsNullOrWhiteSpace(c.AtelierHeureDebut))
+            {
+                if (!TimeOnly.TryParseExact(c.AtelierHeureDebut.Trim(), "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var h))
+                    throw new RegleMetierException("Heure de début invalide : utilisez HH:mm.");
+                heureDebut = h;
+            }
+            if (!string.IsNullOrWhiteSpace(c.AtelierHeureFin))
+            {
+                if (!TimeOnly.TryParseExact(c.AtelierHeureFin.Trim(), "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var h))
+                    throw new RegleMetierException("Heure de fin invalide : utilisez HH:mm.");
+                heureFin = h;
+            }
+            if (heureDebut.HasValue != heureFin.HasValue)
+                throw new RegleMetierException("Renseignez les deux heures de l’atelier.");
+            atelier.DefinirHoraire(heureDebut, heureFin);
+            var participants = (c.AtelierParticipants ?? new List<string>())
+                .Select(SaisieOutils.Nettoyer)
+                .Where(x => x.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            for (var i = 0; i < participants.Count; i++)
+                atelier.Destinataires.Add(new Destinataire { ProjetId = projetId, AtelierId = atelier.Id, NomOuEmail = participants[i], Ordre = i });
+            o.Db.Ateliers.Add(atelier);
+        }
 
         o.Noter(projetId, u, "Tâche", tache.Id, "nouvelle tâche", null, label);
         var message = $"Tâche « {label} » créée ({Formats.Jh(charges.Sum(x => x.Jh))} JH non facturés).";
@@ -188,7 +221,7 @@ public sealed class PerimetreService(SaisieOutils o)
         }
         o.Db.Livrables.RemoveRange(await o.Db.Livrables.Where(x => x.TacheId == t.Id).ToListAsync(a));
         o.Db.LignesPlanReference.RemoveRange(await o.Db.LignesPlanReference.Where(x => x.TacheId == t.Id).ToListAsync(a));
-        o.Db.MisesAJour.RemoveRange(await o.Db.MisesAJour.Where(x => x.TacheId == t.Id).ToListAsync(a));
+        o.Db.Commentaires.RemoveRange(await o.Db.Commentaires.Where(x => x.ProjetId == projetId && x.CibleType == "Tache" && x.CibleId == t.Id).ToListAsync(a));
         foreach (var action in await o.Db.Actions.Where(x => x.TacheId == t.Id).ToListAsync(a)) action.TacheId = null;
         o.Db.Taches.Remove(t);
         o.Noter(projetId, u, "Tâche", t.Id, "suppression d’une tâche ajoutée", SaisiesTachesService.Libelle(t), null);

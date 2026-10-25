@@ -136,6 +136,45 @@ public sealed class ParametresService(SaisieOutils o, UniciteProjet unicite)
         return await o.TerminerAsync(projetId, new List<MessageDto>(), a);
     }
 
+    /// <summary>Enregistre le nom et la date limite facultative d'un axe.</summary>
+    public async Task<ResultatSaisieDto> DefinirAxeAsync(Guid projetId, string code, AxeCommande c, CancellationToken a)
+    {
+        var u = await o.ExigerChefAsync(projetId, a);
+        code = SaisieOutils.Nettoyer(code);
+        if (code.Length == 0 || code.Length > 50) throw new RegleMetierException("Code d’axe invalide.");
+        var axe = await o.Db.Axes.FirstOrDefaultAsync(x => x.ProjetId == projetId && x.Code == code, a);
+        if (axe is null)
+        {
+            var ordre = await o.Db.Axes.Where(x => x.ProjetId == projetId).Select(x => (int?)x.Ordre).MaxAsync(a) ?? -1;
+            axe = new Axe { ProjetId = projetId, Code = code, Ordre = ordre + 1 };
+            o.Db.Axes.Add(axe);
+        }
+        var ancienNom = axe.Nom;
+        var ancienneDate = axe.DateLimite;
+        axe.Nom = SaisieOutils.Nettoyer(c.Nom);
+        axe.DateLimite = c.DateLimite;
+        o.Noter(projetId, u, "Axe", axe.Id, $"axe {code}", $"{ancienNom}|{ancienneDate?.ToString("yyyy-MM-dd")}", $"{axe.Nom}|{axe.DateLimite?.ToString("yyyy-MM-dd")}");
+        return await o.TerminerAsync(projetId, new List<MessageDto>(), a);
+    }
+
+    /// <summary>Enregistre ou retire le nom d'un lot sans modifier le code des tâches.</summary>
+    public async Task<ResultatSaisieDto> NommerLotAsync(Guid projetId, string code, NomLotCommande c, CancellationToken a)
+    {
+        var u = await o.ExigerChefAsync(projetId, a);
+        code = SaisieOutils.Nettoyer(code);
+        if (code.Length == 0 || code.Length > 50) throw new RegleMetierException("Code de lot invalide.");
+        var nom = SaisieOutils.Nettoyer(c.Nom);
+        var lot = await o.Db.Lots.FirstOrDefaultAsync(x => x.ProjetId == projetId && x.Code == code, a);
+        var ancien = lot?.Nom;
+        if (nom.Length == 0)
+        {
+            if (lot is not null) o.Db.Lots.Remove(lot);
+        }
+        else if (lot is null) o.Db.Lots.Add(new Lot { ProjetId = projetId, Code = code, Nom = nom });
+        else lot.Nom = nom;
+        o.Noter(projetId, u, "Lot", lot?.Id ?? projetId, $"nom du lot {code}", ancien, nom.Length == 0 ? null : nom);
+        return await o.TerminerAsync(projetId, new List<MessageDto>(), a);
+    }
     /// <summary>Client, projet ou référence (fiche du projet).</summary>
     public async Task<ResultatSaisieDto> DefinirFicheAsync(Guid projetId, FicheCommande c, CancellationToken a)
     {

@@ -35,7 +35,8 @@ public sealed record NouvelleTacheCommande(
     List<ChargeNouvelleTacheCommande>? Charges, NouveauProfilCommande? NouveauProfil, decimal? NouveauProfilJh,
     string? Motif, string? Hypothese,
     // Repère de la tâche après laquelle insérer la nouvelle (sinon : après la dernière tâche du même groupe).
-    string? Apres);
+    string? Apres,
+    DateOnly? AtelierDate = null, string? AtelierHeureDebut = null, string? AtelierHeureFin = null, List<string>? AtelierParticipants = null);
 
 // ---- ateliers et livrables ----
 public sealed record AtelierDateCommande(DateOnly? Date);
@@ -48,13 +49,15 @@ public sealed record ValidationClientCommande(DateOnly? ValideLe);
 public sealed record LienLivrableCommande(string? Lien);
 /// <summary>Message ajouté au fil de mises à jour d'une tâche.</summary>
 public sealed record MiseAJourCommande(string? Texte);
+public sealed record NouveauCommentaireCommande(string? Texte);
+public sealed record ModifierCommentaireCommande(string? Texte);
 /// <summary>Point hebdo : niveau d'un indicateur pour la période (S ou M) et la suivante (S+1 ou M+1).</summary>
 public sealed record IndicateurPointHebdo(string? S, string? S1);
 public sealed record MeteoPointHebdo(string? Meteo, string? Tendance);
 /// <summary>Saisie d'une période du point hebdo (remplace la précédente).</summary>
 public sealed record PointHebdoCommande(
     List<string>? Actualites, List<string>? Attention, Dictionary<string, IndicateurPointHebdo>? Indicateurs,
-    MeteoPointHebdo? Satisfaction, MeteoPointHebdo? Esprit, string? Extension, bool Genere);
+    MeteoPointHebdo? Satisfaction, MeteoPointHebdo? Esprit, string? Extension, bool Genere, bool AEvoquer = false, string? Difficulte = null, string? Impact = null);
 /// <summary>Réglage du point hebdo (commercial, AVV, pilote, mode de facturation, logos) ; vide : retiré.</summary>
 public sealed record ReglagePointHebdoCommande(string? Valeur);
 
@@ -67,7 +70,8 @@ public sealed record DeriveCommande(string? Cause, string? Motif, int? Version);
 // ---- facturation ----
 /// <summary>Champ : datePrevue, realiseLe (facturée le) ou payeeLe.</summary>
 public sealed record EcheanceDateCommande(string Champ, DateOnly? Valeur, int? Version);
-public sealed record PerimetreEcheanceCommande(List<string>? Phases, List<string>? Taches);
+public sealed record PerimetreEcheanceCommande(List<string>? Phases, List<string>? Taches, string? AxeCode = null);
+public sealed record LienAxeEcheanceCommande(string Axe, int? Numero, string[] PhasesADelier);
 public sealed record EcheancePhaseCommande(int? Numero);
 
 // ---- registres (actions, décisions, risques) et dépenses ----
@@ -86,6 +90,8 @@ public sealed record AlerteCommande(string Champ, int Jours);
 public sealed record ProfilIaCommande(Guid? ProfilId);
 public sealed record ListeIaCommande(List<string>? Valeurs);
 public sealed record NomAxeCommande(string? Nom);
+public sealed record AxeCommande(string? Nom, DateOnly? DateLimite);
+public sealed record NomLotCommande(string? Nom);
 /// <summary>Champ : client, projet ou reference.</summary>
 public sealed record FicheCommande(string Champ, string? Valeur, int? Version);
 public sealed record TypeCommande(string? Nom);
