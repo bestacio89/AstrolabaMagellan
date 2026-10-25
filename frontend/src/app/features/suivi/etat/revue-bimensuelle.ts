@@ -78,19 +78,51 @@ function setCellFill(cell: Element, color: string): void {
   const fill = doc.createElementNS(A_NS, 'a:solidFill');
   const rgb = doc.createElementNS(A_NS, 'a:srgbClr'); rgb.setAttribute('val', color); fill.appendChild(rgb); tcPr.insertBefore(fill, tcPr.firstChild);
 }
-function setTable(doc: XMLDocument, name: string, rows: string[][], fills: Record<string, string> = {}): void {
-  const tbl = table(doc, name);
-  if (!tbl) return;
-  const trs = Array.from(tbl.getElementsByTagNameNS(A_NS, 'tr'));
-  for (let ri = 1; ri < trs.length; ri++) {
-    const cells = Array.from(trs[ri].getElementsByTagNameNS(A_NS, 'tc'));
+function setTable(doc: XMLDocument, name: string, rows: string[][], fills: Record<string, string> = {}, minimumDataRows = 0): void {
+  const frame = named(doc, 'graphicFrame', name);
+  const tbl = frame?.getElementsByTagNameNS(A_NS, 'tbl')[0];
+  if (!frame || !tbl) return;
+  const trParent = tbl.getElementsByTagNameNS(A_NS, 'tr')[0]?.parentElement;
+  if (!trParent) return;
+  let trs = Array.from(tbl.getElementsByTagNameNS(A_NS, 'tr'));
+  const originalDataRows = trs.length - 1;
+  const targetDataRows = Math.max(originalDataRows, rows.length, minimumDataRows);
+  if (targetDataRows > originalDataRows) {
+    const prototype = trs[trs.length - 1];
+    for (let i = originalDataRows; i < targetDataRows; i++) {
+      const clone = prototype.cloneNode(true) as Element;
+      trParent.appendChild(clone);
+    }
+    trs = Array.from(tbl.getElementsByTagNameNS(A_NS, 'tr'));
+    // The model reserves six rows. Additional rows grow the table modestly while compressing
+    // row heights, so the invoice schedule can move down without colliding with the footer.
+    const headerHeight = Number.parseInt(trs[0].getAttribute('h') ?? '0', 10);
+    const originalRowHeight = Number.parseInt(prototype.getAttribute('h') ?? '329184', 10);
+    const originalDataHeight = originalRowHeight * originalDataRows;
+    const targetDataHeight = originalDataHeight + (targetDataRows - originalDataRows) * 65000;
+    const rowHeight = Math.floor(targetDataHeight / targetDataRows);
+    for (const row of trs.slice(1)) row.setAttribute('h', String(rowHeight));
+    const ext = frame.getElementsByTagNameNS(A_NS, 'ext')[0];
+    if (ext) ext.setAttribute('cy', String(headerHeight + targetDataHeight));
+  }
+  trs.forEach((tr, ri) => {
+    if (ri === 0) return;
+    const cells = Array.from(tr.getElementsByTagNameNS(A_NS, 'tc'));
     const values = rows[ri - 1] ?? [];
     cells.forEach((cell, ci) => {
       setCellText(cell, values[ci] ?? '');
       const fill = fills[`${ri - 1}:${ci}`];
       if (fill) setCellFill(cell, fill);
     });
-  }
+  });
+}
+function deplacerFormeY(doc: XMLDocument, name: string, delta: number): void {
+  if (!delta) return;
+  const shape = named(doc, 'sp', name);
+  const off = shape?.getElementsByTagNameNS(A_NS, 'off')[0];
+  if (!off) return;
+  const y = Number.parseInt(off.getAttribute('y') ?? '0', 10);
+  off.setAttribute('y', String(y + delta));
 }
 function xml(doc: XMLDocument): string {
   return new XMLSerializer().serializeToString(doc).replace(/xmlns(:\w+)?=""/g, '');
@@ -212,9 +244,17 @@ export async function genererRevueBimensuelle(d: DonneesDiapo, fetcher: typeof f
       setShapeText(doc, 'TextBox 26', fJ(d.raf));
       setShapeText(doc, 'TextBox 29', money(d.facture));
       const phases = avecAutresPhases(d.phases);
-      setTable(doc, 'Table 35', phases.map((x) => [d.odt[x.phase] || '—', x.phase, fJ(x.vendu), fJ(x.conso), NIV[x.tend]]), Object.fromEntries(phases.map((x, i) => [`${i}:4`, statusColor(x.tend)])));
       const profils = avecAutresProfils(d.profils);
-      setTable(doc, 'Table 41', profils.map((x) => [x.profil, fJ(x.vendu), fJ(x.conso), fJ(x.raf), fJ(x.m1), NIV[x.tend]]), Object.fromEntries(profils.map((x, i) => [`${i}:5`, statusColor(x.tend)])));
+      const lignesBudget = Math.max(6, phases.length, profils.length);
+      const deplacementEcheancier = Math.max(0, lignesBudget - 6) * 65000;
+      setTable(doc, 'Table 35', phases.map((x) => [d.odt[x.phase] || '—', x.phase, fJ(x.vendu), fJ(x.conso), NIV[x.tend]]), Object.fromEntries(phases.map((x, i) => [`${i}:4`, statusColor(x.tend)])), lignesBudget);
+      setTable(doc, 'Table 41', profils.map((x) => [x.profil, fJ(x.vendu), fJ(x.conso), fJ(x.raf), fJ(x.m1), NIV[x.tend]]), Object.fromEntries(profils.map((x, i) => [`${i}:5`, statusColor(x.tend)])), lignesBudget);
+      if (deplacementEcheancier > 0) {
+        for (const name of ['TextBox 48', 'TextBox 50', 'TextBox 52', 'TextBox 54', 'TextBox 56', 'TextBox 58', 'TextBox 60',
+          'Oval 47', 'Oval 49', 'Oval 51', 'Oval 53', 'Oval 55', 'Oval 57', 'Oval 59', 'Connector 46']) {
+          deplacerFormeY(doc, name, deplacementEcheancier);
+        }
+      }
       const invoices = fenetreEcheances(d.echeances, 7);
       for (let i = 0; i < 7; i++) {
         const e = invoices[i];
