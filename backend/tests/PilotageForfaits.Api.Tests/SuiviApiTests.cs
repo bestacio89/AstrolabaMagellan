@@ -661,11 +661,11 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
         Assert.Equal("Conception", r["suivi"]!["projet"]!["axes"]!["AXE1"]!.GetValue<string>());
         Assert.Equal("2026-10-30", r["suivi"]!["projet"]!["datesLimitesAxes"]!["AXE1"]!.GetValue<string>());
 
-        r = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/suivi/lots/1.1", new { nom = "Cadrage et conception" });
+        r = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/lots/1.1", new { nom = "Cadrage et conception" });
         Assert.Equal("Cadrage et conception", r["suivi"]!["projet"]!["lots"]!["1.1"]!.GetValue<string>());
         Assert.Contains(r["suivi"]!["projet"]!["tasks"]!.AsArray(), t => t?["lot"]?.GetValue<string>() == "1.1");
 
-        r = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/suivi/lots/1.1", new { nom = "" });
+        r = await Saisir(client, HttpMethod.Put, $"/api/projets/{id}/lots/1.1", new { nom = "" });
         Assert.False(r["suivi"]!["projet"]!["lots"]!.AsObject().ContainsKey("1.1"));
         r = await Saisir(client, HttpMethod.Put, urlAxe, new { nom = "Conception", dateLimite = (string?)null });
         Assert.Null(r["suivi"]!["projet"]!["datesLimitesAxes"]!["AXE1"]);
