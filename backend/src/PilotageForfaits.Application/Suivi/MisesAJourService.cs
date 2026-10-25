@@ -86,7 +86,8 @@ public sealed class MisesAJourService(SaisieOutils o)
 
     private async Task<string> LibelleCibleAsync(Guid projetId, string type, Guid id, CancellationToken a) => type switch
     {
-        "Tache" => await o.Db.Taches.Where(x => x.ProjetId == projetId && x.Id == id).Select(x => x.Libelle).FirstOrDefaultAsync(a)
+        "Tache" => await o.Db.Taches.Where(x => x.ProjetId == projetId && x.Id == id)
+            .Select(x => x.Libelle ?? x.LibelleTsp).FirstOrDefaultAsync(a)
             ?? throw new IntrouvableException("Tâche introuvable."),
         "Action" => await o.Db.Actions.Where(x => x.ProjetId == projetId && x.Id == id).Select(x => x.Reference + " " + x.Libelle).FirstOrDefaultAsync(a)
             ?? throw new IntrouvableException("Action introuvable."),
