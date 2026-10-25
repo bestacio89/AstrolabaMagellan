@@ -118,7 +118,7 @@ function setTable(doc: XMLDocument, name: string, rows: string[][], fills: Recor
 }
 function deplacerFormeY(doc: XMLDocument, name: string, delta: number): void {
   if (!delta) return;
-  const shape = named(doc, 'sp', name);
+  const shape = named(doc, 'sp', name) ?? named(doc, 'cxnSp', name);
   const off = shape?.getElementsByTagNameNS(A_NS, 'off')[0];
   if (!off) return;
   const y = Number.parseInt(off.getAttribute('y') ?? '0', 10);
