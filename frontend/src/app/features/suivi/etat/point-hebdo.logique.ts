@@ -74,7 +74,7 @@ export interface EntreePointHebdo {
   chargeAjout: number;
   chargeAnnulee: number;
   echeancier: { n: number; nom: string; pct: number; mois: string | null; montant?: number; datePrevue: string | null; realiseLe: string | null; payeeLe: string | null }[];
-  risques: { libelle: string; parade: string; crit: number }[];
+  risques: { libelle: string; parade: string; crit: number; type?: string }[];
   actions: { libelle: string; porteur: string; statut: string; echeance: string | null; commentaire: string; faitLe: string | null }[];
   fiche: { client: string; projet: string; typeContrat: string; champs: { key: string; value: string }[] };
   dates: { debut: string | null; finContrat: string | null; finPrevue: string | null };
@@ -98,7 +98,7 @@ export interface DonneesDiapo {
   aEvoquer: boolean; difficulte: string; impact: string;
   meteoProjet: 'Soleil' | 'Nuageux' | 'Pluie' | 'Hors période';
   indicateurs: { cle: CleIndicateur; libelle: string; s: Niveau; s1: Niveau; propose: Niveau; raison: string }[];
-  risques: { libelle: string; parade: string; niveau: Niveau }[];
+  risques: { libelle: string; parade: string; niveau: Niveau; type: string }[];
   actions: { libelle: string; pilote: string; echeance: string; statut: string; commentaire: string; retard: boolean }[];
   satisfaction: MeteoSaisie; esprit: MeteoSaisie;
   genereLe: string; logoClient: string | null; logoEntreprise: string | null;
@@ -287,11 +287,11 @@ export function donneesDiapo(e: EntreePointHebdo, o: {
   const gravite = indicateurs.some((x) => x.s === 'rouge') ? 'Pluie' : indicateurs.some((x) => x.s === 'jaune') ? 'Nuageux' : indicateurs.every((x) => x.s === 'gris') ? 'Hors période' : 'Soleil';
   // ---- risques et actions ----
   const crit = (c: number): Niveau => ({ fort: 'rouge', moyen: 'jaune', faible: 'vert' } as const)[riskNiveau(c)];
-  const risques = [...e.risques].sort((a, b) => b.crit - a.crit).slice(0, 3).map((x) => ({ libelle: x.libelle || '', parade: x.parade || '', niveau: crit(x.crit) }));
+  const risques = [...e.risques].sort((a, b) => b.crit - a.crit).slice(0, 3).map((x) => ({ libelle: x.libelle || '', parade: x.parade || '', type: x.type || '', niveau: crit(x.crit) }));
   const fermee = (st: string): boolean => st === 'Fait' || st === 'Annulée';
   const ouvertes = e.actions.filter((a) => a.libelle.trim() && !fermee(a.statut)).sort((a, b) => (a.echeance ?? '9999').localeCompare(b.echeance ?? '9999'));
   const faites = e.actions.filter((a) => a.libelle.trim() && a.statut === 'Fait' && a.faitLe && a.faitLe >= debut && a.faitLe <= fin);
-  const actions = [...ouvertes, ...faites].slice(0, 5).map((a) => ({
+  const actions = [...ouvertes, ...faites].slice(0, 4).map((a) => ({
     libelle: a.libelle, pilote: a.porteur || '', echeance: a.echeance ?? '', statut: a.statut || '', commentaire: a.commentaire || '',
     retard: !!(a.echeance && a.echeance < debut && !fermee(a.statut)),
   }));

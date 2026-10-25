@@ -211,7 +211,7 @@ export class PointHebdo {
     if (!v) return null;
     return {
       P: v.P, taches: v.tasks, caTSP: v.m.financier?.caTSP ?? null, chargeAjout: v.m.perimetre.chargeAjout, chargeAnnulee: v.m.perimetre.chargeAnnulee,
-      echeancier: v.m.echeancier, risques: v.risquesOuverts, actions: v.projet.actions, fiche: v.projet.fiche, dates: v.projet.dates, iaProfile: v.projet.settings.iaProfile,
+      echeancier: v.m.echeancier, risques: v.risquesOuverts, actions: v.projet.actions.map((a) => ({ ...a, commentaire: v.projet.commentaires?.['act:' + a.id]?.[0]?.texte ?? a.commentaire })), fiche: v.projet.fiche, dates: v.projet.dates, iaProfile: v.projet.settings.iaProfile,
     };
   });
   protected readonly d = computed(() => {
@@ -228,7 +228,7 @@ export class PointHebdo {
   private readonly cadre = viewChild<ElementRef<HTMLElement>>('cadre');
   private readonly largeur = signal(0);
   protected readonly echelle = computed(() => this.largeur() / (13.333 * 96) || 0.5);
-  protected readonly hauteur = computed(() => (this.type() === 'quinzaine' ? 3 * 720 + 32 : 7.5 * 96) * this.echelle());
+  protected readonly hauteur = computed(() => (this.type() === 'quinzaine' ? 3 * 720 + 48 : 7.5 * 96) * this.echelle());
 
   constructor() {
     void chargerGabaritRevue().then((g) => this.gabaritRevue.set(g));

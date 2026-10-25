@@ -99,6 +99,24 @@ function pire(a: Niveau, b: Niveau): Niveau {
   const rank: Record<Niveau, number> = { rouge: 0, jaune: 1, vert: 2, gris: 3 };
   return rank[a] <= rank[b] ? a : b;
 }
+function fenetreEcheances<T extends { statut: string }>(items: T[], maximum = 7): T[] {
+  if (items.length <= maximum) return items;
+  const i = Math.max(0, items.findIndex((e) => !['Payée', 'Facturée'].includes(e.statut)));
+  const debut = Math.max(0, Math.min(items.length - maximum, i - 2));
+  return items.slice(debut, debut + maximum);
+}
+function avecAutresPhases(items: DonneesDiapo['phases'], maximum = 6): DonneesDiapo['phases'] {
+  if (items.length <= maximum) return items;
+  const keep = items.slice(0, maximum - 1), rest = items.slice(maximum - 1);
+  const tend = rest.reduce((n, x) => pire(n, x.tend), 'vert' as Niveau);
+  return [...keep, { ...rest[0], phase: 'Autres', vendu: rest.reduce((n, x) => n + x.vendu, 0), conso: rest.reduce((n, x) => n + x.conso, 0), v: 0, c: 0, raf: rest.reduce((n, x) => n + x.raf, 0), m1: rest.reduce((n, x) => n + x.m1, 0), prevu: rest.reduce((n, x) => n + x.prevu, 0), atter: rest.reduce((n, x) => n + x.atter, 0), valoAtter: rest.reduce((n, x) => n + x.valoAtter, 0), tend }];
+}
+function avecAutresProfils(items: DonneesDiapo['profils'], maximum = 6): DonneesDiapo['profils'] {
+  if (items.length <= maximum) return items;
+  const keep = items.slice(0, maximum - 1), rest = items.slice(maximum - 1);
+  const tend = rest.reduce((n, x) => pire(n, x.tend), 'vert' as Niveau);
+  return [...keep, { profil: 'Autres', vendu: rest.reduce((n, x) => n + x.vendu, 0), conso: rest.reduce((n, x) => n + x.conso, 0), raf: rest.reduce((n, x) => n + x.raf, 0), m1: rest.reduce((n, x) => n + x.m1, 0), tend }];
+}
 function lines(values: string[], maximum: number): string[] {
   const clean = values.map((x) => x.trim()).filter(Boolean);
   return clean.length <= maximum ? clean : [...clean.slice(0, maximum - 1), `Autres (${clean.length - maximum + 1}) : ${clean.slice(maximum - 1).join('; ')}`];
@@ -174,9 +192,8 @@ export async function genererRevueBimensuelle(d: DonneesDiapo, fetcher: typeof f
       setShapeRuns(doc, 'TextBox 28', ['COMMERCIAL  ', d.commercial || '—', '   |   ', 'AVV  ', d.avv || '—', '   |   ', 'PILOTE DELIVERY  ', d.pilote || '—', '   |   ', 'CONSULTANTS  ', d.consultants[0] || '—', d.consultants.slice(1).join(', ')]);
       setShapeText(doc, 'TextBox 39', lines(d.actualites, 3));
       setShapeText(doc, 'TextBox 44', lines([d.difficulte, ...d.attention], 3));
-      setShapeText(doc, 'TextBox 48', d.aEvoquer ? 'À évoquer en séance' : 'Pas de point à évoquer');
       setTable(doc, 'Table 33', d.indicateurs.map((x) => [x.libelle, NIV[x.s], NIV[x.s1]]), Object.fromEntries(d.indicateurs.flatMap((x, i) => [[`${i}:1`, statusColor(x.s)], [`${i}:2`, statusColor(x.s1)]])));
-      setTable(doc, 'Table 50', d.risques.map((x) => [severity(x.niveau), x.niveau === 'rouge' ? 'Fort' : x.niveau === 'jaune' ? 'Moyen' : 'Faible', short(x.libelle, 70), short(x.parade, 70)]), Object.fromEntries(d.risques.map((x, i) => [`${i}:0`, statusColor(x.niveau)])));
+      setTable(doc, 'Table 50', d.risques.map((x) => [severity(x.niveau), short(x.type || '—', 30), short(x.libelle, 70), short(x.parade, 70)]), Object.fromEntries(d.risques.map((x, i) => [`${i}:0`, statusColor(x.niveau)])));
       setTable(doc, 'Table 55', d.actions.map((x) => [short(x.libelle, 65), x.pilote, date(x.echeance), x.retard ? 'En retard' : x.statut, short(x.commentaire, 60)]), Object.fromEntries(d.actions.map((x, i) => [`${i}:3`, x.retard ? 'EE6B57' : x.statut === 'Fait' ? '3FB97C' : x.statut === 'En cours' ? 'A9C4FF' : 'E4E8F0'])));
       setShapeText(doc, 'TextBox 104', 'Cellule de tableau : trame de fond selon le statut.');
     },
@@ -189,9 +206,11 @@ export async function genererRevueBimensuelle(d: DonneesDiapo, fetcher: typeof f
       setShapeText(doc, 'TextBox 23', fJ(d.conso));
       setShapeText(doc, 'TextBox 26', fJ(d.raf));
       setShapeText(doc, 'TextBox 29', money(d.facture));
-      setTable(doc, 'Table 35', d.phases.map((x) => [d.odt[x.phase] || '—', x.phase, fJ(x.vendu), fJ(x.conso), NIV[x.tend]]), Object.fromEntries(d.phases.map((x, i) => [`${i}:4`, statusColor(x.tend)])));
-      setTable(doc, 'Table 41', d.profils.map((x) => [x.profil, fJ(x.vendu), fJ(x.conso), fJ(x.raf), fJ(x.m1), NIV[x.tend]]), Object.fromEntries(d.profils.map((x, i) => [`${i}:5`, statusColor(x.tend)])));
-      const invoices = d.echeances.slice(0, 7);
+      const phases = avecAutresPhases(d.phases);
+      setTable(doc, 'Table 35', phases.map((x) => [d.odt[x.phase] || '—', x.phase, fJ(x.vendu), fJ(x.conso), NIV[x.tend]]), Object.fromEntries(phases.map((x, i) => [`${i}:4`, statusColor(x.tend)])));
+      const profils = avecAutresProfils(d.profils);
+      setTable(doc, 'Table 41', profils.map((x) => [x.profil, fJ(x.vendu), fJ(x.conso), fJ(x.raf), fJ(x.m1), NIV[x.tend]]), Object.fromEntries(profils.map((x, i) => [`${i}:5`, statusColor(x.tend)])));
+      const invoices = fenetreEcheances(d.echeances, 7);
       for (let i = 0; i < 7; i++) {
         const e = invoices[i];
         setShapeText(doc, `TextBox ${48 + i * 2}`, e ? `N° ${e.n} · ${Math.round(e.pct * 100)} % · ${e.nom} · ${e.mois || 'Sans date'} · ${money(e.montant)} · ${e.statut}` : '');
@@ -293,12 +312,12 @@ export function apercuRevueBimensuelle(d: DonneesDiapo, g: GabaritRevue): string
     1: [{ name: 'Table 12', rows: [[date(d.periode.fin), projet, d.pilote || '—', money(d.budgetInitial), money(d.budgetConsomme), fJ(d.prevu), fJ(d.conso), `${Math.round(d.avancement * 100)} %`, NIV[sat], d.meteoProjet, short(d.difficulte), short(d.impact)]], fills: { '0:8': statusColor(sat), '0:9': METEO_COLOR[d.meteoProjet] ?? METEO_COLOR['Hors période'], '0:0': d.aEvoquer ? 'A9C4FF' : 'E4E8F0' } }],
     2: [
       { name: 'Table 33', rows: d.indicateurs.map((x) => [x.libelle, NIV[x.s], NIV[x.s1]]), fills: Object.fromEntries(d.indicateurs.flatMap((x, i) => [[`${i}:1`, statusColor(x.s)], [`${i}:2`, statusColor(x.s1)]])), skipColumns: [0] },
-      { name: 'Table 50', rows: d.risques.map((x) => [severity(x.niveau), x.niveau === 'rouge' ? 'Fort' : x.niveau === 'jaune' ? 'Moyen' : 'Faible', short(x.libelle, 70), short(x.parade, 70)]), fills: Object.fromEntries(d.risques.map((x, i) => [`${i}:0`, statusColor(x.niveau)])) },
+      { name: 'Table 50', rows: d.risques.map((x) => [severity(x.niveau), short(x.type || '—', 30), short(x.libelle, 70), short(x.parade, 70)]), fills: Object.fromEntries(d.risques.map((x, i) => [`${i}:0`, statusColor(x.niveau)])) },
       { name: 'Table 55', rows: d.actions.map((x) => [short(x.libelle, 65), x.pilote, date(x.echeance), x.retard ? 'En retard' : x.statut, short(x.commentaire, 60)]), fills: Object.fromEntries(d.actions.map((x, i) => [`${i}:3`, x.retard ? 'EE6B57' : x.statut === 'Fait' ? '3FB97C' : x.statut === 'En cours' ? 'A9C4FF' : 'E4E8F0'])) },
     ],
     3: [
-      { name: 'Table 35', rows: d.phases.slice(0, 6).map((x) => [d.odt[x.phase] || '—', x.phase, fJ(x.vendu), fJ(x.conso), NIV[x.tend]]), fills: Object.fromEntries(d.phases.slice(0, 6).map((x, i) => [`${i}:4`, statusColor(x.tend)])) },
-      { name: 'Table 41', rows: d.profils.slice(0, 6).map((x) => [x.profil, fJ(x.vendu), fJ(x.conso), fJ(x.raf), fJ(x.m1), NIV[x.tend]]), fills: Object.fromEntries(d.profils.slice(0, 6).map((x, i) => [`${i}:5`, statusColor(x.tend)])) },
+      { name: 'Table 35', rows: avecAutresPhases(d.phases).map((x) => [d.odt[x.phase] || '—', x.phase, fJ(x.vendu), fJ(x.conso), NIV[x.tend]]), fills: Object.fromEntries(avecAutresPhases(d.phases).map((x, i) => [`${i}:4`, statusColor(x.tend)])) },
+      { name: 'Table 41', rows: avecAutresProfils(d.profils).map((x) => [x.profil, fJ(x.vendu), fJ(x.conso), fJ(x.raf), fJ(x.m1), NIV[x.tend]]), fills: Object.fromEntries(avecAutresProfils(d.profils).map((x, i) => [`${i}:5`, statusColor(x.tend)])) },
     ],
   };
   return g.slides.map((slide, i) => {
