@@ -50,7 +50,7 @@ public sealed class HabilitationsService(
 
     public async Task DefinirActifAsync(Guid utilisateurId, bool actif, CancellationToken annulation = default)
     {
-        if (!courant.Capacites.Contains(CapacitesApplication.UtilisateursAdministrer, StringComparer.Ordinal))
+        if (!courant.Capacites.Contains(CapacitesAcces.UtilisateursAdministrer, StringComparer.Ordinal))
             throw new AccesRefuseException("Seul un administrateur de l'application peut activer ou désactiver un compte.");
 
         var cible = await db.Utilisateurs.FirstOrDefaultAsync(utilisateur => utilisateur.Id == utilisateurId, annulation)
@@ -168,13 +168,13 @@ public sealed class HabilitationsService(
 
     private void ExigerLectureUtilisateurs()
     {
-        if (!courant.Capacites.Contains(CapacitesApplication.UtilisateursLire, StringComparer.Ordinal))
+        if (!courant.Capacites.Contains(CapacitesAcces.UtilisateursLire, StringComparer.Ordinal))
             throw new AccesRefuseException("La consultation des utilisateurs est réservée aux responsables habilités.");
     }
 
     private void ExigerAffectation()
     {
-        if (!courant.Capacites.Contains(CapacitesApplication.ProjetsAffecterUtilisateurs, StringComparer.Ordinal))
+        if (!courant.Capacites.Contains(CapacitesAcces.ProjetsAffecterUtilisateurs, StringComparer.Ordinal))
             throw new AccesRefuseException("La gestion des affectations est réservée aux responsables habilités.");
     }
 
