@@ -15,7 +15,7 @@ Supply AzureAd:Instance, AzureAd:TenantId, AzureAd:ClientId, AzureAd:Audience, a
 After JWT validation, TransformationRolesEntra removes any capability claims carried by the token and derives application capabilities from the token's roles claim. Exact role values are Manager and Admin; unknown values do not grant global privileges.
 
 - Manager: portfolio-wide project reads, project creation, project assignment, and financial exports.
-- Admin: portfolio-wide project reads, project assignment, and application-user/access administration; no implicit financial export or project-edit capability.
+- Admin: portfolio-wide project reads, project assignment, and application-user/access administration; no implicit financial export or project creation; project-level editing still requires the relevant PostgreSQL assignment.
 - Project Manager and Contributor remain project-level roles stored in PostgreSQL, not global Entra app roles.
 
 The API still checks the effective capability together with the user's PostgreSQL project assignment and project role. The frontend cannot grant access by hiding or showing controls. Capability identifiers and policy names are documented in the app-role authorization contract.
