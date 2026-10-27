@@ -58,6 +58,11 @@ export interface ElementTravail {
 
 /** Profils du projet tenus par la personne (index des profils). */
 export function mesProfils(s: Suivi, moi: Personne): number[] {
+  if (s.droits.role === 'Consultant') {
+    const utilisateurId = s.droits.utilisateurId;
+    if (!utilisateurId) return [];
+    return s.projet.profiles.flatMap((profil, index) => profil.utilisateurId === utilisateurId ? [index] : []);
+  }
   return s.modele.p.filter((p) => designe(p.collaborateur, moi)).map((p) => p.i);
 }
 

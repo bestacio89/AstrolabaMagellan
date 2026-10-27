@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { ProjetsApi } from '../../../api/projets.api';
+import { HabilitationProjet, ProjetsApi, RoleProjetApi, UtilisateurAffectation } from '../../../api/projets.api';
 import { messageErreur } from '../../../core/http/erreurs.interceptor';
 import { NavigationService } from '../../../core/layout/navigation';
 import { NotificationsService } from '../../../core/notifications/notifications';
+import { SessionService } from '../../../core/session/session.service';
 import { SuiviApi } from '../api/suivi.api';
 import { ALERT_OPTS } from '../etat/constantes';
 import { fDh, fDi } from '../etat/formats';
@@ -37,6 +38,77 @@ type CleAlerte = 'alerteActionsJours' | 'alerteAtelierJours' | 'alerteLivrableJo
     @if (etat.vue(); as v) {
       @let lecture = !v.droits.peutModifier;
       @let S = v.projet.settings;
+      @if (session.aLeRole('Manager', 'Admin')) {
+        <h3 class="kgrp">Affectations et accès</h3>
+        <app-carte
+          titre="Utilisateurs du projet"
+          sousTitre="Les rôles sont propres à ce projet. Le Manager et l’Admin peuvent affecter des chefs de projet, contributeurs et lecteurs. Le lien profil ↔ compte utilise l’identité locale créée à la première connexion Entra."
+        >
+          @if (!affectationsChargees()) {
+            <button type="button" class="btn" [disabled]="chargementAffectations()" (click)="chargerAffectations(v)">
+              {{ chargementAffectations() ? 'Chargement…' : 'Charger les affectations' }}
+            </button>
+          } @else {
+            <div class="kv">
+              <div>Utilisateur actif</div>
+              <div>
+                <select class="in" #utilisateur (change)="choisirNouvelUtilisateur(utilisateur)">
+                  <option value="">Choisir un utilisateur</option>
+                  @for (u of utilisateursAffectables(); track u.id) {
+                    <option [value]="u.id" [selected]="u.id === nouvelUtilisateur()">{{ u.prenom }} {{ u.nom }} · {{ u.email }}</option>
+                  }
+                </select>
+              </div>
+              <div>Rôle sur ce projet</div>
+              <div>
+                <select class="in" #role (change)="choisirRole(role)">
+                  <option value="ChefDeProjet" [selected]="roleAffectation() === 'ChefDeProjet'">Project Manager</option>
+                  <option value="Consultant" [selected]="roleAffectation() === 'Consultant'">Contributor</option>
+                  <option value="Lecteur" [selected]="roleAffectation() === 'Lecteur'">Reader</option>
+                </select>
+              </div>
+              <div></div>
+              <div><button type="button" class="btn" [disabled]="actionAffectation()" (click)="affecterUtilisateur(v)">Affecter / mettre à jour</button></div>
+            </div>
+            <div class="toolbar" style="margin-top: 12px; display: block">
+              @for (a of affectations(); track a.utilisateurId) {
+                <div class="toolbar" style="justify-content: space-between; margin: 6px 0">
+                  <span><b>{{ a.prenom }} {{ a.nom }}</b> · {{ libelleRoleProjet(a.role) }} <small class="muted">{{ a.email }}</small></span>
+                  <button type="button" class="btn sm ghost" [disabled]="actionAffectation()" (click)="retirerAffectation(v, a)">Retirer</button>
+                </div>
+              } @empty {
+                <p class="muted">Aucune affectation de projet.</p>
+              }
+            </div>
+            <h4 style="margin-top: 20px">Profil du TSP ↔ compte</h4>
+            <p class="muted">Un Contributor ne voit que les tâches dont son profil porte une charge. Affectez d’abord l’utilisateur au projet comme Project Manager ou Contributor.</p>
+            <div class="kv">
+              <div>Profil</div>
+              <div>
+                <select class="in" #profil (change)="choisirProfil(v, profil)">
+                  <option value="">Choisir un profil</option>
+                  @for (p of v.projet.profiles; track p.id) {
+                    <option [value]="p.id" [selected]="p.id === profilSelectionne()">{{ p.nom }} · {{ p.collaborateur }}</option>
+                  }
+                </select>
+              </div>
+              <div>Compte attribué</div>
+              <div>
+                <select class="in" #compteProfil (change)="choisirUtilisateurProfil(compteProfil)">
+                  <option value="">Aucun</option>
+                  @for (u of utilisateursProfils(); track u.id) {
+                    <option [value]="u.id" [selected]="u.id === utilisateurProfilSelectionne()">{{ u.prenom }} {{ u.nom }} · {{ libelleRoleProjet(roleUtilisateur(u.id)) }}</option>
+                  }
+                </select>
+              </div>
+              <div></div>
+              <div><button type="button" class="btn" [disabled]="actionAffectation() || !profilSelectionne()" (click)="affecterProfil(v)">Enregistrer le lien</button></div>
+            </div>
+          }
+        </app-carte>
+      }
+
+
       <div class="grid2">
         <app-carte
           titre="Client"
@@ -316,6 +388,7 @@ type CleAlerte = 'alerteActionsJours' | 'alerteAtelierJours' | 'alerteLivrableJo
 export class Parametres {
   protected readonly etat = inject(SuiviEtat);
   protected readonly ui = inject(UiEtat);
+  protected readonly session = inject(SessionService);
   private readonly api = inject(SuiviApi);
   private readonly projetsApi = inject(ProjetsApi);
   private readonly router = inject(Router);
@@ -324,6 +397,19 @@ export class Parametres {
   /** Nom du projet retapé pour confirmer la suppression. */
   protected readonly confirmation = signal('');
   protected readonly action = signal(false);
+  protected readonly affectations = signal<HabilitationProjet[]>([]);
+  protected readonly utilisateursAffectables = signal<UtilisateurAffectation[]>([]);
+  protected readonly affectationsChargees = signal(false);
+  protected readonly chargementAffectations = signal(false);
+  protected readonly actionAffectation = signal(false);
+  protected readonly nouvelUtilisateur = signal('');
+  protected readonly roleAffectation = signal<RoleProjetApi>('Consultant');
+  protected readonly profilSelectionne = signal('');
+  protected readonly utilisateurProfilSelectionne = signal('');
+  protected readonly utilisateursProfils = computed(() => {
+    const autorises = new Set(this.affectations().filter(a => a.role === 'ChefDeProjet' || a.role === 'Consultant').map(a => a.utilisateurId));
+    return this.utilisateursAffectables().filter(u => autorises.has(u.id));
+  });
   protected readonly fDi = fDi;
   protected readonly fDh = fDh;
   protected readonly defaultAxeName = defaultAxeName;
@@ -339,6 +425,115 @@ export class Parametres {
     for (const t of this.etat.vue()?.tasks ?? []) if (t.type) n.set(t.type, (n.get(t.type) ?? 0) + 1);
     return n;
   });
+
+  protected async chargerAffectations(v: Vue): Promise<void> {
+    this.chargementAffectations.set(true);
+    try {
+      const [utilisateurs, affectations] = await Promise.all([
+        firstValueFrom(this.projetsApi.utilisateursAffectables()),
+        firstValueFrom(this.projetsApi.habilitations(v.projet.id)),
+      ]);
+      this.utilisateursAffectables.set(utilisateurs);
+      this.affectations.set(affectations);
+      this.affectationsChargees.set(true);
+      if (!this.profilSelectionne() && v.projet.profiles.length)
+        this.profilSelectionne.set(v.projet.profiles[0].id);
+      this.actualiserUtilisateurProfil(v);
+    } catch (e) {
+      this.etat.afficher(messageErreur(e), 'erreur');
+    } finally {
+      this.chargementAffectations.set(false);
+    }
+  }
+
+  protected choisirNouvelUtilisateur(el: HTMLSelectElement): void {
+    this.nouvelUtilisateur.set(el.value);
+  }
+
+  protected choisirRole(el: HTMLSelectElement): void {
+    if (el.value === 'ChefDeProjet' || el.value === 'Consultant' || el.value === 'Lecteur')
+      this.roleAffectation.set(el.value);
+  }
+
+  protected choisirProfil(v: Vue, el: HTMLSelectElement): void {
+    this.profilSelectionne.set(el.value);
+    this.actualiserUtilisateurProfil(v);
+  }
+
+  protected choisirUtilisateurProfil(el: HTMLSelectElement): void {
+    this.utilisateurProfilSelectionne.set(el.value);
+  }
+
+  protected roleUtilisateur(utilisateurId: string): RoleProjetApi {
+    return this.affectations().find(a => a.utilisateurId === utilisateurId)?.role ?? 'Lecteur';
+  }
+
+  protected libelleRoleProjet(role: RoleProjetApi): string {
+    switch (role) {
+      case 'ChefDeProjet': return 'Project Manager';
+      case 'Consultant': return 'Contributor';
+      case 'Lecteur': return 'Reader';
+    }
+  }
+
+  private actualiserUtilisateurProfil(v: Vue): void {
+    const profil = v.projet.profiles.find(p => p.id === this.profilSelectionne());
+    this.utilisateurProfilSelectionne.set(profil?.utilisateurId ?? '');
+  }
+
+  protected async affecterUtilisateur(v: Vue): Promise<void> {
+    const utilisateurId = this.nouvelUtilisateur();
+    if (!utilisateurId) {
+      this.etat.afficher('Choisissez un utilisateur.', 'attention');
+      return;
+    }
+    this.actionAffectation.set(true);
+    try {
+      await firstValueFrom(this.projetsApi.affecterUtilisateur(v.projet.id, utilisateurId, this.roleAffectation()));
+      await this.chargerAffectations(v);
+      await this.etat.recharger();
+      this.etat.afficher('Affectation enregistrée.', 'succes');
+    } catch (e) {
+      this.etat.afficher(messageErreur(e), 'erreur');
+    } finally {
+      this.actionAffectation.set(false);
+    }
+  }
+
+  protected async retirerAffectation(v: Vue, affectation: HabilitationProjet): Promise<void> {
+    const confirme = await this.etat.confirmer(
+      'Retirer l’accès au projet',
+      [affectation.prenom + ' ' + affectation.nom, 'La personne ne pourra plus accéder à ce projet.'],
+      'Retirer',
+    );
+    if (!confirme) return;
+    this.actionAffectation.set(true);
+    try {
+      await firstValueFrom(this.projetsApi.retirerUtilisateur(v.projet.id, affectation.utilisateurId));
+      await this.chargerAffectations(v);
+      await this.etat.recharger();
+      this.etat.afficher('Affectation retirée.', 'succes');
+    } catch (e) {
+      this.etat.afficher(messageErreur(e), 'erreur');
+    } finally {
+      this.actionAffectation.set(false);
+    }
+  }
+
+  protected async affecterProfil(v: Vue): Promise<void> {
+    const profilId = this.profilSelectionne();
+    if (!profilId) return;
+    this.actionAffectation.set(true);
+    try {
+      await firstValueFrom(this.projetsApi.affecterProfil(v.projet.id, profilId, this.utilisateurProfilSelectionne() || null));
+      await this.etat.recharger();
+      this.etat.afficher('Lien profil ↔ compte enregistré.', 'succes');
+    } catch (e) {
+      this.etat.afficher(messageErreur(e), 'erreur');
+    } finally {
+      this.actionAffectation.set(false);
+    }
+  }
 
   /** Une valeur par ligne (zone de texte). */
   protected nbTaches(_v: Vue, type: string): number {

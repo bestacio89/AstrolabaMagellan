@@ -8,7 +8,7 @@ namespace PilotageForfaits.Application.Securite;
 
 /// <summary>
 /// Central enforcement of effective capabilities and project assignments.
-/// A group-derived capability is necessary but does not replace project membership;
+/// A server-derived capability is necessary but does not replace project membership;
 /// project membership is necessary but does not grant capabilities by itself.
 /// </summary>
 public sealed class ServiceAcces(IContexteDonnees db, IUtilisateurCourant courant, IHorloge horloge)
@@ -32,7 +32,7 @@ public sealed class ServiceAcces(IContexteDonnees db, IUtilisateurCourant couran
         u.Nom = courant.Nom;
         u.Email = courant.Email;
         // Conservé pour l'administration locale du compte ; ce drapeau ne donne pas à lui seul accès aux projets.
-        u.Administrateur = courant.Roles.Contains(RolesGlobaux.Administrateur);
+        u.Administrateur = courant.Roles.Contains(RolesGlobaux.Admin);
         if (u.DerniereConnexion is null || horloge.Maintenant - u.DerniereConnexion > TimeSpan.FromHours(1))
             u.DerniereConnexion = horloge.Maintenant;
         await db.SaveChangesAsync(annulation);
@@ -118,13 +118,22 @@ public sealed class ServiceAcces(IContexteDonnees db, IUtilisateurCourant couran
     public async Task<RoleProjet> ExigerExportAsync(Guid projetId, CancellationToken annulation = default)
     {
         var role = await ExigerAccesAsync(projetId, annulation);
-        if (!PeutVoirMontants(role))
-            throw new AccesRefuseException("La capacité d'export financier et un rôle de chef de projet ou pilotage sont requis.");
+        if (!PeutExporter(role))
+            throw new AccesRefuseException("L'export financier est réservé au pilotage global habilité.");
         return role;
     }
 
+    /// <summary>
+    /// Project Managers see financial data for projects they manage. Manager's global financial capability
+    /// applies across the portfolio, even when they also have a narrower project assignment.
+    /// </summary>
     public bool PeutVoirMontants(RoleProjet role) =>
-        A(CapacitesAcces.ExportsFinanciers) && VoitMontants(role);
+        role == RoleProjet.ChefDeProjet ||
+        (A(CapacitesAcces.ExportsFinanciers) && (VoitTousLesProjets || VoitMontants(role)));
+
+    /// <summary>Portfolio exports require the explicit global financial capability; Admin does not receive it by default.</summary>
+    public bool PeutExporter(RoleProjet role) =>
+        A(CapacitesAcces.ExportsFinanciers) && (VoitTousLesProjets || VoitMontants(role));
 
     public bool PeutModifierSurProjet(RoleProjet role) =>
         A(CapacitesAcces.ProjetsModifier) && PeutModifier(role);

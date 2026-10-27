@@ -175,6 +175,7 @@ public sealed class ProfilVueDto
     public decimal? Prcs { get; init; }
     public decimal Frais { get; init; }
     public string Collaborateur { get; init; } = "";
+    public Guid? UtilisateurId { get; init; }
     public AjoutCalcul? Ajout { get; init; }
 }
 

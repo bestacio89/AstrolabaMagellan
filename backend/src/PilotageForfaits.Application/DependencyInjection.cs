@@ -16,6 +16,7 @@ public static class DependencyInjection
     public static IServiceCollection AjouterApplication(this IServiceCollection services)
     {
         services.AddScoped<ServiceAcces>();
+        services.AddScoped<HabilitationsService>();
         services.AddScoped<ServiceJournal>();
         services.AddScoped<ConstructeurProjetCalcul>();
         services.AddScoped<ProjetsService>();

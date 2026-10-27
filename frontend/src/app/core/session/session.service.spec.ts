@@ -21,22 +21,22 @@ describe('SessionService', () => {
     const chargement = session.charger();
     const request = http.expectOne(`${environment.api}/moi`);
     expect(request.request.method).toBe('GET');
-    request.flush({ prenom: 'Camille', nom: 'Martin', roles: ['ChefDeProjet', 'Pilotage'] });
+    request.flush({ prenom: 'Camille', nom: 'Martin', roles: ['Manager', 'Admin'] });
     await chargement;
 
     expect(session.nomComplet()).toBe('Camille Martin');
-    expect(session.libelleRole()).toBe('Pilotage');
-    expect(session.aLeRole('Pilotage')).toBe(true);
-    expect(session.aLeRole('Administrateur')).toBe(false);
+    expect(session.libelleRole()).toBe('Administrateur');
+    expect(session.aLeRole('Admin')).toBe(true);
+    expect(session.aLeRole('Manager')).toBe(true);
   });
 
-  it('uses consultant as the fallback role when the user has no known global role', async () => {
+  it('uses collaborator as the fallback role when the user has no known global role', async () => {
     const chargement = session.charger();
     http.expectOne(`${environment.api}/moi`).flush({ prenom: 'Sam', nom: 'Petit', roles: [] });
     await chargement;
 
-    expect(session.libelleRole()).toBe('Consultant');
-    expect(session.aLeRole('ChefDeProjet', 'Administrateur')).toBe(false);
+    expect(session.libelleRole()).toBe('Collaborateur');
+    expect(session.aLeRole('Manager', 'Admin')).toBe(false);
   });
 
   it('clears the session if loading the current user fails', async () => {
@@ -46,6 +46,6 @@ describe('SessionService', () => {
 
     expect(session.moi()).toBeNull();
     expect(session.nomComplet()).toBe('');
-    expect(session.libelleRole()).toBe('Consultant');
+    expect(session.libelleRole()).toBe('Collaborateur');
   });
 });

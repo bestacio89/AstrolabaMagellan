@@ -185,6 +185,7 @@ export interface Profil {
   prcs?: number | null;
   frais?: number;
   collaborateur: string;
+  utilisateurId?: string | null;
   ajout: Ajout | null;
 }
 

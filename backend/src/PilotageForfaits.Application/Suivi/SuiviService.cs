@@ -66,12 +66,14 @@ public sealed class SuiviService(IContexteDonnees db, ServiceAcces acces, Constr
                 Role = role.ToString(), RoleLibelle = Libelles.De(role), PeutModifier = acces.PeutModifierSurProjet(role) && !archive,
                 PeutSaisirConsomme = acces.PeutSaisirConsommeSurProjet(role) && !archive, VoitMontants = acces.PeutVoirMontants(role),
                 Archive = archive, EstChefDeProjet = acces.PeutModifierSurProjet(role),
-                PeutExporter = acces.PeutVoirMontants(role), Utilisateur = utilisateur.NomComplet, UtilisateurId = utilisateur.Id,
+                PeutExporter = acces.PeutExporter(role), Utilisateur = utilisateur.NomComplet, UtilisateurId = utilisateur.Id,
             },
             Aujourdhui = horloge.Aujourdhui,
         };
         suivi.Projet.PointsHebdo = PointsHebdoService.Vue(pointsHebdo, nomsPh);
         var json = JsonSerializer.SerializeToNode(suivi, OptionsJson)!.AsObject();
+        if (role == RoleProjet.Consultant && !acces.VoitTousLesProjets)
+            FiltreVueContributeur.Appliquer(json, donnees.Profils, utilisateur.Id);
         if (!acces.PeutVoirMontants(role)) FiltreMontants.Appliquer(json);
         return (json, modele);
     }

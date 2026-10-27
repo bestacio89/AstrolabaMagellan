@@ -16,7 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 // ---------- Couches de l'application ----------
 builder.Services.AjouterApplication();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddTransient<IClaimsTransformation, TransformationGroupesEntra>();
+builder.Services.AddTransient<IClaimsTransformation, TransformationRolesEntra>();
 builder.Services.AddScoped<IUtilisateurCourant, UtilisateurCourantHttp>();
 
 // ---------- Authentification : compte d'entreprise (Entra ID), ou utilisateurs fictifs en développement ----------
@@ -44,10 +44,10 @@ if (mode == "Dev")
     {
         if (!o.Utilisateurs.Any())
         {
-            o.Utilisateurs.Add(new UtilisateurDev { Cle = "chef", TenantId = "tenant-tests", Oid = "oid-chef", Prenom = "Camille", Nom = "Martin", Email = "chef@exemple.fr", Roles = new List<string> { "ChefDeProjet" }, Capacites = new List<string> { "projets.lire", "projets.creer", "projets.modifier", "consomme.saisir", "exports.financiers" } });
-            o.Utilisateurs.Add(new UtilisateurDev { Cle = "chef2", TenantId = "tenant-tests", Oid = "oid-chef-2", Prenom = "Alex", Nom = "Durand", Email = "chef2@exemple.fr", Roles = new List<string> { "ChefDeProjet" }, Capacites = new List<string> { "projets.lire", "projets.creer", "projets.modifier", "consomme.saisir", "exports.financiers" } });
+            o.Utilisateurs.Add(new UtilisateurDev { Cle = "chef", TenantId = "tenant-tests", Oid = "oid-chef", Prenom = "Camille", Nom = "Martin", Email = "chef@exemple.fr", Roles = new List<string> { "Manager" }, Capacites = new List<string> { "projets.lire", "projets.lire-tous", "projets.creer", "projets.modifier", "projets.affecter-utilisateurs", "utilisateurs.lire", "consomme.saisir", "exports.financiers" } });
+            o.Utilisateurs.Add(new UtilisateurDev { Cle = "chef2", TenantId = "tenant-tests", Oid = "oid-chef-2", Prenom = "Alex", Nom = "Durand", Email = "chef2@exemple.fr", Roles = new List<string> { "Manager" }, Capacites = new List<string> { "projets.lire", "projets.lire-tous", "projets.creer", "projets.modifier", "projets.affecter-utilisateurs", "utilisateurs.lire", "consomme.saisir", "exports.financiers" } });
             o.Utilisateurs.Add(new UtilisateurDev { Cle = "consultant", TenantId = "tenant-tests", Oid = "oid-consultant", Prenom = "Sam", Nom = "Petit", Email = "consultant@exemple.fr", Capacites = new List<string> { "projets.lire", "consomme.saisir" } });
-            o.Utilisateurs.Add(new UtilisateurDev { Cle = "pilotage", TenantId = "tenant-tests", Oid = "oid-pilotage", Prenom = "Lou", Nom = "Bernard", Email = "pilotage@exemple.fr", Roles = new List<string> { "Pilotage" }, Capacites = new List<string> { "projets.lire", "projets.lire-tous", "exports.financiers" } });
+            o.Utilisateurs.Add(new UtilisateurDev { Cle = "pilotage", TenantId = "tenant-tests", Oid = "oid-pilotage", Prenom = "Lou", Nom = "Bernard", Email = "pilotage@exemple.fr", Roles = new List<string> { "Manager" }, Capacites = new List<string> { "projets.lire", "projets.lire-tous", "projets.creer", "projets.modifier", "projets.affecter-utilisateurs", "utilisateurs.lire", "consomme.saisir", "exports.financiers" } });
             o.Utilisateurs.Add(new UtilisateurDev { Cle = "sans-capacite", TenantId = "tenant-tests", Oid = "oid-sans-capacite", Prenom = "Noa", Nom = "Test", Email = "sans-capacite@exemple.fr" });
         }
     });
@@ -55,7 +55,6 @@ if (mode == "Dev")
 else
 {
     ValiderConfigurationEntraId(builder.Configuration);
-    TransformationGroupesEntra.ValiderConfiguration(builder.Configuration);
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 }
@@ -68,14 +67,36 @@ builder.Services.AjouterInfrastructure(builder.Configuration);
 // pour être publique (par exemple /api/sante).
 builder.Services.AddAuthorization(options =>
 {
-    options.FallbackPolicy = new AuthorizationPolicyBuilder()
-        .RequireAuthenticatedUser()
-        .Build();
+    var scopeRequis = mode == "EntraId" ? builder.Configuration["AzureAd:RequiredScope"]! : "";
+    var fallback = new AuthorizationPolicyBuilder().RequireAuthenticatedUser();
+    if (mode == "EntraId")
+    {
+        fallback.RequireAssertion(context =>
+            context.User.FindAll("scp")
+                .Concat(context.User.FindAll("http://schemas.microsoft.com/identity/claims/scope"))
+                .SelectMany(claim => claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                .Contains(scopeRequis, StringComparer.Ordinal));
+    }
+
+    var policyParDefaut = fallback.Build();
+    options.DefaultPolicy = policyParDefaut;
+    options.FallbackPolicy = policyParDefaut;
 
     foreach (var capacite in CapacitesApplication.Toutes)
     {
         options.AddPolicy(CapacitesApplication.Politique(capacite), policy =>
-            policy.RequireAuthenticatedUser().RequireClaim(CapacitesApplication.TypeClaim, capacite));
+        {
+            policy.RequireAuthenticatedUser();
+            if (mode == "EntraId")
+            {
+                policy.RequireAssertion(context =>
+                    context.User.FindAll("scp")
+                        .Concat(context.User.FindAll("http://schemas.microsoft.com/identity/claims/scope"))
+                        .SelectMany(claim => claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                        .Contains(scopeRequis, StringComparer.Ordinal));
+            }
+            policy.RequireClaim(CapacitesApplication.TypeClaim, capacite);
+        });
     }
 });
 
@@ -144,6 +165,7 @@ static void ValiderConfigurationEntraId(IConfiguration configuration)
     var tenantId = configuration["AzureAd:TenantId"];
     var clientId = configuration["AzureAd:ClientId"];
     var audience = configuration["AzureAd:Audience"];
+    var scopeRequis = configuration["AzureAd:RequiredScope"];
 
     // EntraId is a production-capable mode: placeholders must fail fast rather than
     // allowing the identity middleware to start with an unusable tenant configuration.
@@ -162,6 +184,9 @@ static void ValiderConfigurationEntraId(IConfiguration configuration)
         || (!Guid.TryParse(audience, out _) && (!Uri.TryCreate(audience, UriKind.Absolute, out var audienceUri)
             || string.IsNullOrWhiteSpace(audienceUri.Host))))
         throw new InvalidOperationException("AzureAd:Audience doit contenir l'identifiant réel de l'audience de l'API (GUID ou URI absolue), sans valeur de remplacement.");
+
+    if (scopeRequis is null || !EstValeurConfiguree(scopeRequis) || scopeRequis.Contains(" ", StringComparison.Ordinal))
+        throw new InvalidOperationException("AzureAd:RequiredScope doit contenir le nom exact d'une portée déléguée de l'API, sans espace ni valeur de remplacement.");
 }
 
 static bool EstValeurConfiguree(string? value) =>

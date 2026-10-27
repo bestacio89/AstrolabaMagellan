@@ -77,6 +77,54 @@ public sealed class SaisieOutils(
         await db.Profils.FirstOrDefaultAsync(p => p.ProjetId == projetId && p.Id == profilId, annulation)
         ?? throw new IntrouvableException("Profil introuvable.");
 
+
+    /// <summary>
+    /// Ensures a Contributor may only access a task that carries positive workload for one of their linked profiles.
+    /// The check is made against persisted profile ownership and task charges, never against client-supplied profile IDs.
+    /// </summary>
+    public async Task ExigerTacheAccessibleAuContributeurAsync(
+        Guid projetId, string repere, Guid utilisateurId, CancellationToken annulation)
+    {
+        var accessible = await (
+            from charge in db.ChargesTache
+            join tache in db.Taches on charge.TacheId equals tache.Id
+            join profil in db.Profils on charge.ProfilProjetId equals profil.Id
+            where tache.ProjetId == projetId
+                && tache.Repere == repere
+                && !tache.EstSection
+                && profil.ProjetId == projetId
+                && profil.UtilisateurId == utilisateurId
+                && charge.ChargeVendue + charge.ChargeAjoutee > 0
+            select charge.Id).AnyAsync(annulation);
+
+        if (!accessible)
+            throw new IntrouvableException("Tâche introuvable.");
+    }
+
+    /// <summary>
+    /// Validates both ownership of a profile and its positive assignment to a task before a Contributor
+    /// can create, change, or remove consumption for that profile.
+    /// </summary>
+    public async Task ExigerTacheAffecteeAuProfilAsync(
+        Guid projetId, string repere, Guid profilId, Guid utilisateurId, CancellationToken annulation)
+    {
+        var accessible = await (
+            from charge in db.ChargesTache
+            join tache in db.Taches on charge.TacheId equals tache.Id
+            join profil in db.Profils on charge.ProfilProjetId equals profil.Id
+            where tache.ProjetId == projetId
+                && tache.Repere == repere
+                && !tache.EstSection
+                && profil.ProjetId == projetId
+                && profil.Id == profilId
+                && profil.UtilisateurId == utilisateurId
+                && charge.ChargeVendue + charge.ChargeAjoutee > 0
+            select charge.Id).AnyAsync(annulation);
+
+        if (!accessible)
+            throw new AccesRefuseException("Vous ne pouvez saisir du consommé que sur une tâche affectée à votre profil.");
+    }
+
     /// <summary>Nom de l'utilisateur, tel qu'il apparaît dans les registres (« Par »).</summary>
     public static string Nom(Utilisateur u) => u.NomComplet;
 
