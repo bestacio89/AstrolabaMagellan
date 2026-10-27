@@ -45,8 +45,12 @@ Capabilities included in a token are not trusted. The API removes incoming capab
 - Configure the actual API Application ID URI, scope value, tenant, and app registration identifiers with the Entra administrator; do not infer them from the SPA client ID.
 - Do not add Microsoft Graph permissions merely to read claims from an access token. Graph is needed only for separate Graph-backed features, with explicit permissions and consent.
 
-## Known implementation boundary
+## Implemented authorization boundary
 
-The API now exposes an authorized user directory, project-role assignment endpoints, and project-profile-to-user assignment. A corresponding Angular management workflow is still required before this can be operated from the UI. Contributor task-level read filtering remains incomplete and is a release blocker.
+The API exposes an authorized user directory, Manager/Admin-only project-role assignment endpoints, and project-profile-to-user assignment. The Angular project settings screen uses these endpoints to assign Project Manager, Contributor, and Reader roles and link a project profile to a known application user.
 
-Contributor task-level filtering also depends on linking the contributor's Entra identity to a project profile and consistently applying that link to every task/planning response and write. A display name or email match is not an authorization key. Until that data path is implemented and tested, do not claim that task-level isolation is complete.
+Contributor task filtering is performed server-side on the serialized project follow-up: only tasks with positive workload for a profile linked to the authenticated local user are returned. Profile indices and dependent task, track, comment, reference, and planning data are filtered/remapped together. Financial ledgers and project-wide registers are removed from the Contributor view.
+
+Writes are independently authorized. Contributor consumed-time entries must target a task/profile pair assigned to the caller's linked profile. Contributor task comments are restricted to accessible tasks; editing and deleting comments require the original author. Shared project planning and project-configuration writes remain restricted to Project Managers. Personal absences remain under the current-user API.
+
+These guarantees require PostgreSQL-backed integration tests and a green CI run before merge. A real tenant is still required to verify app-role assignments, the required delegated scope, enterprise-application assignment restrictions, and the resulting access token claims.
