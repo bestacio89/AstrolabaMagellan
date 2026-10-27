@@ -14,4 +14,18 @@ public sealed class UtilisateursController(HabilitationsService habilitations) :
     [ProducesResponseType(StatusCodes.Status200OK)]
     public Task<IReadOnlyList<UtilisateurAffectationDto>> Lister(CancellationToken annulation) =>
         habilitations.ListerUtilisateursAsync(annulation);
+
+    [HttpPut("{utilisateurId:guid}/activation")]
+    [Authorize(Policy = "capacite:utilisateurs.administrer")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DefinirActif(
+        Guid utilisateurId,
+        [FromBody] ActivationUtilisateurRequete requete,
+        CancellationToken annulation)
+    {
+        await habilitations.DefinirActifAsync(utilisateurId, requete.Actif, annulation);
+        return NoContent();
+    }
 }
+
+public sealed record ActivationUtilisateurRequete(bool Actif);
