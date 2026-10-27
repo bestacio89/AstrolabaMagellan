@@ -1,56 +1,60 @@
 # Security and release-readiness checklist
 
-This checklist complements the staged implementation roadmap. It is not a claim that a deployment has been configured or that CI has passed.
+This checklist complements the implementation roadmap. It is not a claim that a deployment has been configured or CI has passed.
 
 ## Microsoft Entra ID
 
-- [ ] Register the API in the intended tenant and configure its Application ID URI and exposed scopes.
-- [ ] Configure the client to request an access token for this API; do not send an ID token as a bearer token.
-- [ ] Set `AzureAd:Instance`, `AzureAd:TenantId`, `AzureAd:ClientId`, and `AzureAd:Audience` using deployment configuration or a secret store.
-- [ ] Confirm the token issuer, tenant, audience, lifetime, and signing key are validated.
-- [ ] Configure the required group claims. Test a normal group list and group overage; overage must not grant capabilities.
-- [ ] Map Entra group object IDs to only the approved capability identifiers. Review mapping changes as security-sensitive configuration.
-- [ ] Confirm development authentication is not enabled in staging or production. The API should fail startup if it is.
-- [ ] Confirm a valid identity without an application capability receives no privileged capability.
+- [ ] Register the API in the intended tenant and expose the required delegated scope.
+- [ ] Declare API app roles with exact values Manager and Admin; assign them only to approved users/groups.
+- [ ] Configure the SPA to request an access token for this API; never send an ID token as a bearer token.
+- [ ] Set AzureAd:Instance, AzureAd:TenantId, AzureAd:ClientId, and AzureAd:Audience through deployment configuration.
+- [ ] Validate issuer, tenant, audience, signature, lifetime, and required scope independently from role authorization.
+- [ ] Verify Manager receives operational portfolio permissions and Admin receives user/access administration without implicit financial privileges.
+- [ ] Verify unknown/missing roles grant no global privileges and token-supplied capability claims are ignored.
+- [ ] Confirm development authentication is rejected outside Development/Tests.
 
-## Project authorization
+## Project and task authorization
 
-- [ ] Verify identity is keyed by Entra tenant ID plus object ID, not email or display name.
-- [ ] Migrate existing bare object-ID user keys to `{tenantId}:{objectId}` using `docs/entra-identity-key-migration.md` before rollout; verify existing project assignments remain attached.
-- [ ] Verify a mapped read capability without project assignment cannot read a project.
-- [ ] Verify project assignment without the required capability cannot read or change it.
-- [ ] Verify project writes require both the relevant capability and an appropriate project role.
-- [ ] Verify financial exports require both the financial capability and a role permitted to view financial amounts.
-- [ ] Verify lists, details, nested resources, imports, drafts, and exports are scoped before returning data.
-- [ ] Verify restricted projects are not disclosed through DTOs, error text, logs, or exports.
-- [ ] Treat `GET /api/moi/capacites` as a presentation contract only; re-evaluate authorization on every resource operation.
+- [ ] Verify identity is keyed by tenant ID plus object ID, not email or display name.
+- [ ] Migrate existing bare object-ID user keys to {tenantId}:{objectId} using docs/entra-identity-key-migration.md; verify assignments remain attached.
+- [ ] Verify a project-read capability without project assignment cannot read the project.
+- [ ] Verify project assignment without the required capability cannot read/change the resource.
+- [ ] Verify project writes require both the relevant capability and the appropriate project role.
+- [ ] Verify Manager and Admin can discover all projects but do not share every mutation/financial permission.
+- [ ] Verify financial exports require the financial capability and an eligible project role.
+- [ ] Implement and test authorized assignment workflows for project users and project profiles before enabling those capabilities in UI.
+- [ ] Link Contributor identities to project profiles using stable identity, then filter task/planning reads and writes by that link.
+- [ ] Verify comments can only be edited by their author, including by project managers and administrators.
+- [ ] Scope lists, details, nested resources, imports, drafts, and exports before returning data.
+- [ ] Verify restricted projects are not disclosed through DTOs, errors, logs, or exports.
+- [ ] Treat GET /api/moi/capacites as presentation data only; re-check authorization on every operation.
 
 ## PostgreSQL and migrations
 
-- [ ] Configure PostgreSQL connection settings through the deployment secret/configuration system.
-- [ ] Apply migrations as an explicit deployment step with a reviewed backup and rollback plan.
-- [ ] Test migration from a fresh database and upgrade from the previous supported schema.
-- [ ] Review the migration diff before release; do not use `EnsureCreated`, database deletion, or destructive reset scripts in deployment.
-- [ ] Run the PostgreSQL-backed authorization integration test with `POSTGRES_TEST_CONNECTION` pointing to a disposable test database.
-- [ ] Confirm database access uses least-privilege credentials and TLS requirements appropriate to the hosting environment.
+- [ ] Configure PostgreSQL connection settings through deployment configuration/secret storage.
+- [ ] Apply migrations as an explicit deployment step with reviewed backup and rollback plans.
+- [ ] Test a fresh database and upgrade from the previous supported schema.
+- [ ] Review migration diffs; never use EnsureCreated, database deletion, or destructive reset scripts in deployment.
+- [ ] Run PostgreSQL-backed authorization integration tests against a disposable database.
+- [ ] Confirm least-privilege database credentials and appropriate TLS settings.
 
 ## CI and operational checks
 
-- [ ] GitHub Actions jobs for .NET build/tests, Angular production build/tests, and reference scenarios have completed successfully.
-- [ ] Review uploaded test results and resolve all failed or skipped security-critical tests.
-- [ ] Confirm 401 and 403 behavior is consistent and inaccessible project IDs do not leak project existence.
-- [ ] Confirm authorization failures are logged without bearer tokens, secrets, or sensitive project data.
-- [ ] Confirm readiness/health endpoints expose only operational status and do not return configuration details.
+- [ ] GitHub Actions .NET build/tests and Angular production build/tests have completed successfully.
+- [ ] Review test results and resolve failed/skipped security-critical tests.
+- [ ] Verify 401/403 behavior and non-disclosure of inaccessible project IDs.
+- [ ] Ensure logs never contain bearer tokens, secrets, or sensitive project data.
+- [ ] Confirm health endpoints expose operational status only.
 - [ ] Record the deployed commit, migration version, configuration change, and rollback decision.
 
 ## Rollback
 
 1. Stop rollout if migration or authorization verification fails.
-2. Restore the previous application release only if it remains compatible with the current schema.
-3. Use a reviewed forward-fix or database restore for incompatible schema changes; do not automatically drop tables or delete customer data.
-4. Revoke or correct the relevant Entra app/group configuration if access was granted incorrectly.
+2. Restore the previous release only if it remains compatible with the current schema.
+3. Use a reviewed forward-fix or database restore for incompatible schema changes; never automatically drop customer data.
+4. Revoke or correct Entra app-role assignments if access was granted incorrectly.
 5. Preserve sanitized logs and test evidence for incident review.
 
 ## Release decision
 
-A release is ready only after the full CI pipeline is green, PostgreSQL migration checks pass, and the authorization matrix has been reviewed against the final screen-permission matrix. A queued CI run is not a pass.
+Release only after CI is green, PostgreSQL migration checks pass, and the role/permission matrix has been reviewed against the final screen-permission matrix. A queued CI run is not a pass.
