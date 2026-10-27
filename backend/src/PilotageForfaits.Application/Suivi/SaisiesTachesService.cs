@@ -228,6 +228,13 @@ public sealed class SaisiesTachesService(SaisieOutils o)
         var t = await o.TacheAsync(projetId, uid, a);
         t.VerifierModifiable();
         var profil = await o.ProfilAsync(projetId, c.ProfilId, a);
+        var estContributeur = await o.Db.Habilitations.AnyAsync(habilitation =>
+            habilitation.ProjetId == projetId &&
+            habilitation.UtilisateurId == u.Id &&
+            habilitation.Role == RoleProjet.Consultant, a);
+        if (estContributeur && profil.UtilisateurId != u.Id)
+            throw new AccesRefuseException("Un contributeur ne peut saisir que le consommé du profil qui lui est attribué.");
+
         decimal? v = c.Jh;
         if (v is < 0) throw new RegleMetierException("Saisissez un nombre de jours positif, par exemple 0,5 : saisie annulée.");
         if (v is not null) v = Math.Round(v.Value, 2, MidpointRounding.AwayFromZero);
