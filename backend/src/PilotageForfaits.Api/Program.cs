@@ -67,13 +67,10 @@ builder.Services.AjouterInfrastructure(builder.Configuration);
 // pour être publique (par exemple /api/sante).
 builder.Services.AddAuthorization(options =>
 {
+    var scopeRequis = mode == "EntraId" ? builder.Configuration["AzureAd:RequiredScope"]! : "";
     var fallback = new AuthorizationPolicyBuilder().RequireAuthenticatedUser();
     if (mode == "EntraId")
     {
-        var scopeRequis = builder.Configuration["AzureAd:RequiredScope"] ?? "";
-        if (!EstValeurConfiguree(scopeRequis))
-            throw new InvalidOperationException("AzureAd:RequiredScope doit contenir le nom exact de la portée déléguée de l'API exposée par Entra ID.");
-
         fallback.RequireAssertion(context =>
             context.User.FindAll("scp")
                 .Concat(context.User.FindAll("http://schemas.microsoft.com/identity/claims/scope"))
@@ -81,12 +78,25 @@ builder.Services.AddAuthorization(options =>
                 .Contains(scopeRequis, StringComparer.Ordinal));
     }
 
-    options.FallbackPolicy = fallback.Build();
+    var policyParDefaut = fallback.Build();
+    options.DefaultPolicy = policyParDefaut;
+    options.FallbackPolicy = policyParDefaut;
 
     foreach (var capacite in CapacitesApplication.Toutes)
     {
         options.AddPolicy(CapacitesApplication.Politique(capacite), policy =>
-            policy.RequireAuthenticatedUser().RequireClaim(CapacitesApplication.TypeClaim, capacite));
+        {
+            policy.RequireAuthenticatedUser();
+            if (mode == "EntraId")
+            {
+                policy.RequireAssertion(context =>
+                    context.User.FindAll("scp")
+                        .Concat(context.User.FindAll("http://schemas.microsoft.com/identity/claims/scope"))
+                        .SelectMany(claim => claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                        .Contains(scopeRequis, StringComparer.Ordinal));
+            }
+            policy.RequireClaim(CapacitesApplication.TypeClaim, capacite);
+        });
     }
 });
 
