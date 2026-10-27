@@ -67,9 +67,21 @@ builder.Services.AjouterInfrastructure(builder.Configuration);
 // pour être publique (par exemple /api/sante).
 builder.Services.AddAuthorization(options =>
 {
-    options.FallbackPolicy = new AuthorizationPolicyBuilder()
-        .RequireAuthenticatedUser()
-        .Build();
+    var fallback = new AuthorizationPolicyBuilder().RequireAuthenticatedUser();
+    if (mode == "EntraId")
+    {
+        var scopeRequis = builder.Configuration["AzureAd:RequiredScope"];
+        if (!EstValeurConfiguree(scopeRequis))
+            throw new InvalidOperationException("AzureAd:RequiredScope doit contenir le nom exact de la portée déléguée de l'API exposée par Entra ID.");
+
+        fallback.RequireAssertion(context =>
+            context.User.FindAll("scp")
+                .Concat(context.User.FindAll("http://schemas.microsoft.com/identity/claims/scope"))
+                .SelectMany(claim => claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                .Contains(scopeRequis, StringComparer.Ordinal));
+    }
+
+    options.FallbackPolicy = fallback.Build();
 
     foreach (var capacite in CapacitesApplication.Toutes)
     {
@@ -143,6 +155,7 @@ static void ValiderConfigurationEntraId(IConfiguration configuration)
     var tenantId = configuration["AzureAd:TenantId"];
     var clientId = configuration["AzureAd:ClientId"];
     var audience = configuration["AzureAd:Audience"];
+    var scopeRequis = configuration["AzureAd:RequiredScope"];
 
     // EntraId is a production-capable mode: placeholders must fail fast rather than
     // allowing the identity middleware to start with an unusable tenant configuration.
@@ -161,6 +174,9 @@ static void ValiderConfigurationEntraId(IConfiguration configuration)
         || (!Guid.TryParse(audience, out _) && (!Uri.TryCreate(audience, UriKind.Absolute, out var audienceUri)
             || string.IsNullOrWhiteSpace(audienceUri.Host))))
         throw new InvalidOperationException("AzureAd:Audience doit contenir l'identifiant réel de l'audience de l'API (GUID ou URI absolue), sans valeur de remplacement.");
+
+    if (!EstValeurConfiguree(scopeRequis) || scopeRequis.Contains(' ', StringComparison.Ordinal))
+        throw new InvalidOperationException("AzureAd:RequiredScope doit contenir le nom exact d'une portée déléguée de l'API, sans espace ni valeur de remplacement.");
 }
 
 static bool EstValeurConfiguree(string? value) =>
