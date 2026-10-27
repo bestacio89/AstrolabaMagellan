@@ -55,8 +55,7 @@ if (mode == "Dev")
 else
 {
     ValiderConfigurationEntraId(builder.Configuration);
-    TransformationGroupesEntra.ValiderConfiguration(builder.Configuration);
-    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 }
 
