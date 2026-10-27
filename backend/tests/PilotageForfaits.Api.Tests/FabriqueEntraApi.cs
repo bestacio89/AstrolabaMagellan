@@ -34,7 +34,8 @@ public sealed class FabriqueEntraApi : WebApplicationFactory<Program>
             ["AzureAd:Instance"] = "https://login.microsoftonline.com/",
             ["AzureAd:TenantId"] = TenantId,
             ["AzureAd:ClientId"] = ClientId,
-            ["AzureAd:Audience"] = Audience
+            ["AzureAd:Audience"] = Audience,
+            ["AzureAd:RequiredScope"] = "acces"
         };
         foreach (var pair in testConfiguration)
             builder.UseSetting(pair.Key, pair.Value ?? string.Empty);
