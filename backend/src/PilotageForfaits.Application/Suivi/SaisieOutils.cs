@@ -86,7 +86,7 @@ public sealed class SaisieOutils(
         Guid projetId, string repere, Guid utilisateurId, CancellationToken annulation)
     {
         var accessible = await (
-            from charge in db.ChargesTaches
+            from charge in db.ChargesTache
             join tache in db.Taches on charge.TacheId equals tache.Id
             join profil in db.Profils on charge.ProfilProjetId equals profil.Id
             where tache.ProjetId == projetId
@@ -109,7 +109,7 @@ public sealed class SaisieOutils(
         Guid projetId, string repere, Guid profilId, Guid utilisateurId, CancellationToken annulation)
     {
         var accessible = await (
-            from charge in db.ChargesTaches
+            from charge in db.ChargesTache
             join tache in db.Taches on charge.TacheId equals tache.Id
             join profil in db.Profils on charge.ProfilProjetId equals profil.Id
             where tache.ProjetId == projetId
