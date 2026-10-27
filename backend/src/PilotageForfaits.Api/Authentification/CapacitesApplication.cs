@@ -21,6 +21,7 @@ public static class CapacitesApplication
         ProjetsCreer,
         ProjetsModifier,
         ProjetsAffecterUtilisateurs,
+        UtilisateursLire,
         UtilisateursAdministrer,
         ConsommeSaisir,
         ExportsFinanciers
