@@ -84,6 +84,11 @@ public sealed class MisesAJourService(SaisieOutils o)
         Guid projetId, Commentaire commentaire, Guid utilisateurId, CancellationToken a)
     {
         if (commentaire.CibleType != "Tache") return;
+
+        // Task ownership is a data-minimization rule for Contributors, not a restriction on a Project Manager
+        // who may legitimately manage the project and their own comments across its tasks.
+        if (!await EstContributeurAsync(projetId, utilisateurId, a)) return;
+
         var uid = await o.Db.Taches.Where(tache => tache.ProjetId == projetId && tache.Id == commentaire.CibleId)
             .Select(tache => tache.Repere).FirstOrDefaultAsync(a)
             ?? throw new IntrouvableException("Tâche introuvable.");
