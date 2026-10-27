@@ -193,6 +193,55 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
 
 
     [Fact]
+    public async Task Manager_peut_affecter_un_contributeur_a_un_projet_via_l_api()
+    {
+        var objectIdManager = Guid.NewGuid().ToString();
+        using var manager = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
+            objectIdManager,
+            FabriquePostgreSqlApi.RoleManager));
+
+        var reference = "ASSIGN-" + Guid.NewGuid().ToString("N")[..8];
+        var creation = await manager.PostAsJsonAsync("/api/projets", new
+        {
+            client = "Client affectation",
+            nom = "Projet affectation " + reference,
+            reference,
+            debut = "2026-11-02",
+            finContractuelle = "2027-02-26",
+            typeContrat = "Forfait"
+        });
+        Assert.Equal(HttpStatusCode.Created, creation.StatusCode);
+        var projetId = (await creation.Content.ReadFromJsonAsync<JsonObject>())!["id"]!.GetValue<Guid>();
+
+        var objectIdContributor = Guid.NewGuid().ToString();
+        using var contributor = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
+            objectIdContributor,
+            FabriquePostgreSqlApi.RoleContributeur));
+        Assert.Equal(HttpStatusCode.OK, (await contributor.GetAsync("/api/moi/capacites")).StatusCode);
+
+        Guid utilisateurId;
+        using (var scope = _fixture.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<PilotageDbContext>();
+            utilisateurId = (await db.Utilisateurs.SingleAsync(
+                utilisateur => utilisateur.IdentifiantExterne == $"{FabriquePostgreSqlApi.TenantId}:{objectIdContributor}")).Id;
+        }
+
+        var affectation = await manager.PutAsJsonAsync(
+            $"/api/projets/{projetId}/habilitations/{utilisateurId}",
+            new { role = "Consultant" });
+        Assert.Equal(HttpStatusCode.NoContent, affectation.StatusCode);
+
+        var habilitations = await manager.GetFromJsonAsync<JsonArray>(
+            $"/api/projets/{projetId}/habilitations");
+        Assert.Contains(habilitations!, item =>
+            item!["utilisateurId"]!.GetValue<Guid>() == utilisateurId &&
+            item["role"]!.GetValue<string>() == "Consultant");
+
+        Assert.Equal(HttpStatusCode.OK, (await contributor.GetAsync($"/api/projets/{projetId}")).StatusCode);
+    }
+
+    [Fact]
     public async Task Absences_personnelles_sont_authentifiees_et_limitees_a_la_personne_connectee()
     {
         using var utilisateur = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
