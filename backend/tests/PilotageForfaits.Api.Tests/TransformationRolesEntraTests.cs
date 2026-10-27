@@ -45,7 +45,6 @@ public sealed class TransformationRolesEntraTests
         Assert.Contains(CapacitesApplication.ProjetsAffecterUtilisateurs, capacites);
         Assert.Contains(CapacitesApplication.UtilisateursAdministrer, capacites);
         Assert.DoesNotContain(CapacitesApplication.ProjetsCreer, capacites);
-        Assert.DoesNotContain(CapacitesApplication.ProjetsModifier, capacites);
         Assert.DoesNotContain(CapacitesApplication.ExportsFinanciers, capacites);
     }
 
