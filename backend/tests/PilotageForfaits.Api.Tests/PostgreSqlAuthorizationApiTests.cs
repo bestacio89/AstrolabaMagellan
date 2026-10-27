@@ -274,8 +274,10 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
         Assert.Equal(HttpStatusCode.NoContent, reactivation.StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await cible.GetAsync("/api/moi/capacites")).StatusCode);
 
+        var adminMoi = await admin.GetFromJsonAsync<JsonObject>("/api/moi");
+        var adminId = adminMoi!["id"]!.GetValue<Guid>();
         var selfDesactivation = await admin.PutAsJsonAsync(
-            $"/api/utilisateurs/{(await admin.GetFromJsonAsync<JsonObject>("/api/moi"))!["id"]!.GetValue<Guid>()}/activation",
+            $"/api/utilisateurs/{adminId}/activation",
             new { actif = false });
         Assert.Equal(HttpStatusCode.BadRequest, selfDesactivation.StatusCode);
     }
