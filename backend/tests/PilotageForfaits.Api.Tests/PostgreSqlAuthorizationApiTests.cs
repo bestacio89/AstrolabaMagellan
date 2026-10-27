@@ -37,7 +37,7 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
     {
         var chef = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
             "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-            FabriquePostgreSqlApi.GroupeChef));
+            FabriquePostgreSqlApi.RoleManager));
         var reference = "SEC-" + Guid.NewGuid().ToString("N")[..8];
         var creation = await chef.PostAsJsonAsync("/api/projets", new
         {
@@ -53,7 +53,7 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
 
         var lecteur = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
             "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-            FabriquePostgreSqlApi.GroupeLecteur));
+            FabriquePostgreSqlApi.RoleContributeur));
         var contrat = await lecteur.GetFromJsonAsync<JsonObject>("/api/moi/capacites");
         Assert.Contains("projets.lire", contrat!["capacites"]!.AsArray().Select(c => c!.GetValue<string>()));
         Assert.Empty(contrat["projetsAccessibles"]!.AsArray());
@@ -70,7 +70,7 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
         var objectIdChef = Guid.NewGuid().ToString();
         using var chef = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
             objectIdChef,
-            FabriquePostgreSqlApi.GroupeChef));
+            FabriquePostgreSqlApi.RoleManager));
 
         var reference = "SEC-" + Guid.NewGuid().ToString("N")[..8];
         var creation = await chef.PostAsJsonAsync("/api/projets", new
@@ -88,7 +88,7 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
         var objectIdLecteurAffecte = Guid.NewGuid().ToString();
         using var lecteurAffecte = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
             objectIdLecteurAffecte,
-            FabriquePostgreSqlApi.GroupeLecteur));
+            FabriquePostgreSqlApi.RoleContributeur));
 
         // Creates the local user record from the validated Entra identity before assigning the project.
         var contrat = await lecteurAffecte.GetFromJsonAsync<JsonObject>("/api/moi/capacites");
@@ -124,7 +124,7 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
         var objectIdLecteurSansAffectation = Guid.NewGuid().ToString();
         using var lecteurSansAffectation = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
             objectIdLecteurSansAffectation,
-            FabriquePostgreSqlApi.GroupeLecteur));
+            FabriquePostgreSqlApi.RoleContributeur));
         var contratSansAffectation = await lecteurSansAffectation.GetFromJsonAsync<JsonObject>("/api/moi/capacites");
         Assert.Contains("projets.lire", contratSansAffectation!["capacites"]!.AsArray().Select(c => c!.GetValue<string>()));
         Assert.Empty(contratSansAffectation["projetsAccessibles"]!.AsArray());
@@ -136,7 +136,7 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
     {
         using var chef = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
             Guid.NewGuid().ToString(),
-            FabriquePostgreSqlApi.GroupeChef));
+            FabriquePostgreSqlApi.RoleManager));
         var reference = "API-" + Guid.NewGuid().ToString("N")[..8];
         var creation = await chef.PostAsJsonAsync("/api/projets", new
         {
@@ -184,7 +184,7 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
 
         using var lecteur = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
             Guid.NewGuid().ToString(),
-            FabriquePostgreSqlApi.GroupeLecteur));
+            FabriquePostgreSqlApi.RoleContributeur));
         Assert.Equal(HttpStatusCode.NotFound, (await lecteur.PutAsJsonAsync($"{baseProjet}/planning/dates", new
         {
             cle = "id|AXE1", cote = "fin", valeur = "2026-12-01"
@@ -197,7 +197,7 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
     {
         using var utilisateur = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
             Guid.NewGuid().ToString(),
-            FabriquePostgreSqlApi.GroupeChef));
+            FabriquePostgreSqlApi.RoleManager));
 
         var avant = await utilisateur.GetAsync("/api/moi/absences?du=2026-11-01&au=2026-11-30");
         Assert.Equal(HttpStatusCode.OK, avant.StatusCode);
@@ -230,8 +230,8 @@ public sealed class FabriquePostgreSqlApi : IAsyncLifetime
     public const string ClientId = "22222222-2222-4222-8222-222222222222";
     public const string Audience = "api://22222222-2222-4222-8222-222222222222";
     public const string Issuer = "https://login.microsoftonline.com/" + TenantId + "/v2.0";
-    public const string GroupeChef = "Manager";
-    public const string GroupeLecteur = "Contributor";
+    public const string RoleManager = "Manager";
+    public const string RoleContributeur = "Contributor";
     private const string CleTest = "only-for-tests-signing-key-never-use-in-production-2026";
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:18")
         .WithDatabase("pilotage_forfaits_tests")
