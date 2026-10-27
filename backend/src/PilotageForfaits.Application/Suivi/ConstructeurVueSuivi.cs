@@ -116,7 +116,7 @@ public static class ConstructeurVueSuivi
             Profiles = d.Profils.Select((x, i) => new ProfilVueDto
             {
                 Id = x.Id, Version = x.Version, Nom = x.Nom, Entite = x.Entite, Tjm = x.Tjm, Cjm = x.Cjm, Prcs = x.Prcs, Frais = x.Frais,
-                Collaborateur = x.Collaborateur, Ajout = c.Profiles[i].Ajout,
+                Collaborateur = x.Collaborateur, UtilisateurId = x.UtilisateurId, Ajout = c.Profiles[i].Ajout,
             }).ToList(),
             Grille = d.Grille.Select(g => new GrilleVueDto(g.Profil, g.TjmParis, g.CjmParis, g.TjmRegion, g.CjmRegion)).ToList(),
             Tasks = c.Tasks.Select((t, k) => new TacheVueDto
