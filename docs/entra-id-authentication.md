@@ -8,7 +8,7 @@ The development identity handler is separate. It is selected only when Authentif
 
 ## API configuration
 
-Supply AzureAd:Instance, AzureAd:TenantId, AzureAd:ClientId, and AzureAd:Audience through deployment configuration or a secret store. The API client ID is the API registration, not the Angular SPA registration. Startup rejects placeholder tenant/client/audience values. The API does not need a client secret merely to validate bearer tokens.
+Supply AzureAd:Instance, AzureAd:TenantId, AzureAd:ClientId, AzureAd:Audience, and AzureAd:RequiredScope through deployment configuration or a secret store. RequiredScope is the exact delegated scope name (not the full api:// URI); its value remains A_RENSEIGNER until the Entra administrator confirms it. Startup rejects an unset or placeholder scope, and the API requires that scope in the scp claim for protected routes. The API client ID is the API registration, not the Angular SPA registration. Startup rejects placeholder tenant/client/audience values. The API does not need a client secret merely to validate bearer tokens.
 
 ## Global authorization
 
