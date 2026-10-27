@@ -72,7 +72,8 @@ public sealed class SuiviService(IContexteDonnees db, ServiceAcces acces, Constr
         };
         suivi.Projet.PointsHebdo = PointsHebdoService.Vue(pointsHebdo, nomsPh);
         var json = JsonSerializer.SerializeToNode(suivi, OptionsJson)!.AsObject();
-        if (role == RoleProjet.Consultant) FiltreVueContributeur.Appliquer(json, donnees.Profils, utilisateur.Id);
+        if (role == RoleProjet.Consultant && !acces.VoitTousLesProjets)
+            FiltreVueContributeur.Appliquer(json, donnees.Profils, utilisateur.Id);
         if (!acces.PeutVoirMontants(role)) FiltreMontants.Appliquer(json);
         return (json, modele);
     }
