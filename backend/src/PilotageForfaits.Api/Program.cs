@@ -70,7 +70,7 @@ builder.Services.AddAuthorization(options =>
     var fallback = new AuthorizationPolicyBuilder().RequireAuthenticatedUser();
     if (mode == "EntraId")
     {
-        var scopeRequis = builder.Configuration["AzureAd:RequiredScope"];
+        var scopeRequis = builder.Configuration["AzureAd:RequiredScope"] ?? "";
         if (!EstValeurConfiguree(scopeRequis))
             throw new InvalidOperationException("AzureAd:RequiredScope doit contenir le nom exact de la portée déléguée de l'API exposée par Entra ID.");
 
@@ -175,7 +175,7 @@ static void ValiderConfigurationEntraId(IConfiguration configuration)
             || string.IsNullOrWhiteSpace(audienceUri.Host))))
         throw new InvalidOperationException("AzureAd:Audience doit contenir l'identifiant réel de l'audience de l'API (GUID ou URI absolue), sans valeur de remplacement.");
 
-    if (!EstValeurConfiguree(scopeRequis) || scopeRequis.Contains(" ", StringComparison.Ordinal))
+    if (scopeRequis is null || !EstValeurConfiguree(scopeRequis) || scopeRequis.Contains(" ", StringComparison.Ordinal))
         throw new InvalidOperationException("AzureAd:RequiredScope doit contenir le nom exact d'une portée déléguée de l'API, sans espace ni valeur de remplacement.");
 }
 
