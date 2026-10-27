@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
+using PilotageForfaits.Application.Abstractions;
 
 namespace PilotageForfaits.Api.Authentification;
 
@@ -13,8 +14,7 @@ public sealed class TransformationRolesEntra : IClaimsTransformation
     [
         CapacitesApplication.ProjetsLire,
         CapacitesApplication.ProjetsModifier,
-        CapacitesApplication.ConsommeSaisir,
-        CapacitesApplication.ExportsFinanciers
+        CapacitesApplication.ConsommeSaisir
     ];
 
     private static readonly IReadOnlyDictionary<string, string[]> CapacitesParRole =
@@ -24,7 +24,8 @@ public sealed class TransformationRolesEntra : IClaimsTransformation
             [
                 CapacitesApplication.ProjetsLireTous,
                 CapacitesApplication.ProjetsCreer,
-                CapacitesApplication.ProjetsAffecterUtilisateurs
+                CapacitesApplication.ProjetsAffecterUtilisateurs,
+                CapacitesApplication.ExportsFinanciers
             ],
             [RolesGlobaux.Admin] =
             [
@@ -39,8 +40,7 @@ public sealed class TransformationRolesEntra : IClaimsTransformation
         if (principal.Identity?.IsAuthenticated != true)
             return Task.FromResult(principal);
 
-        // The synthetic development handler is separately restricted to Development/Tests.
-        // Its explicit capabilities remain configurable for deterministic integration tests.
+        // Synthetic development identities have explicit capabilities and are only enabled in Development/Tests.
         if (principal.Identities.Any(identity =>
             identity.IsAuthenticated &&
             string.Equals(identity.AuthenticationType, AuthentificationDev.Schema, StringComparison.Ordinal)))
@@ -65,10 +65,8 @@ public sealed class TransformationRolesEntra : IClaimsTransformation
             .Select(claim => claim.Value)
             .Distinct(StringComparer.Ordinal))
         {
-            if (!CapacitesParRole.TryGetValue(role, out var capacitesRole))
-                continue;
-
-            capacites.UnionWith(capacitesRole);
+            if (CapacitesParRole.TryGetValue(role, out var capacitesRole))
+                capacites.UnionWith(capacitesRole);
         }
 
         foreach (var capacite in capacites.OrderBy(value => value, StringComparer.Ordinal))
