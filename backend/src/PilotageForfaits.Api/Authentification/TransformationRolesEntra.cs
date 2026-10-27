@@ -25,12 +25,14 @@ public sealed class TransformationRolesEntra : IClaimsTransformation
                 CapacitesApplication.ProjetsLireTous,
                 CapacitesApplication.ProjetsCreer,
                 CapacitesApplication.ProjetsAffecterUtilisateurs,
+                CapacitesApplication.UtilisateursLire,
                 CapacitesApplication.ExportsFinanciers
             ],
             [RolesGlobaux.Admin] =
             [
                 CapacitesApplication.ProjetsLireTous,
                 CapacitesApplication.ProjetsAffecterUtilisateurs,
+                CapacitesApplication.UtilisateursLire,
                 CapacitesApplication.UtilisateursAdministrer
             ]
         };
