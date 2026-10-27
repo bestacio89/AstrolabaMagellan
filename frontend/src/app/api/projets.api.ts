@@ -14,6 +14,31 @@ export class ProjetsApi {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.api}/projets`;
 
+  /** Utilisateurs actifs connus de l'application, pour les affectations de projet. */
+  utilisateursAffectables(): Observable<UtilisateurAffectation[]> {
+    return this.http.get<UtilisateurAffectation[]>(`${environment.api}/utilisateurs`);
+  }
+
+  /** Affectations et rôles des utilisateurs sur un projet. */
+  habilitations(id: string): Observable<HabilitationProjet[]> {
+    return this.http.get<HabilitationProjet[]>(`${this.base}/${id}/habilitations`);
+  }
+
+  /** Affecte ou remplace le rôle d'un utilisateur sur un projet. */
+  affecterUtilisateur(id: string, utilisateurId: string, role: RoleProjetApi): Observable<void> {
+    return this.http.put<void>(`${this.base}/${id}/habilitations/${utilisateurId}`, { role });
+  }
+
+  /** Retire l'affectation d'un utilisateur à un projet. */
+  retirerUtilisateur(id: string, utilisateurId: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}/habilitations/${utilisateurId}`);
+  }
+
+  /** Lie un profil de projet à un compte local (clé dérivée de l'identité Entra). */
+  affecterProfil(id: string, profilId: string, utilisateurId: string | null): Observable<void> {
+    return this.http.put<void>(`${this.base}/${id}/habilitations/profils/${profilId}/utilisateur`, { utilisateurId });
+  }
+
   /** Projets visibles ; « archives » : seulement les projets archivés. */
   lister(archives = false): Observable<ProjetResume[]> {
     return this.http.get<ProjetResume[]>(this.base, archives ? { params: { archives: 'true' } } : {});
@@ -76,4 +101,21 @@ export class MoiApi {
 export interface MonAbsence {
   jour: string;
   moment: 'j' | 'm' | 'a';
+}
+
+export type RoleProjetApi = 'ChefDeProjet' | 'Consultant' | 'Lecteur';
+
+export interface UtilisateurAffectation {
+  id: string;
+  prenom: string;
+  nom: string;
+  email: string;
+}
+
+export interface HabilitationProjet {
+  utilisateurId: string;
+  prenom: string;
+  nom: string;
+  email: string;
+  role: RoleProjetApi;
 }
