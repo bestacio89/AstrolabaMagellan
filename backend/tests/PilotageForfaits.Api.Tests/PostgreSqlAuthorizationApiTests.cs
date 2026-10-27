@@ -288,6 +288,7 @@ public sealed class FabriquePostgreSqlApi : IAsyncLifetime
                 new Claim("tid", TenantId),
                 new Claim("oid", objectId),
                 new Claim("name", "Utilisateur PostgreSQL de test"),
+                new Claim("scp", "acces"),
                 new Claim("roles", groupe)
             ],
             notBefore: maintenant.AddMinutes(-1),
@@ -325,6 +326,7 @@ public sealed class FabriquePostgreSqlApi : IAsyncLifetime
                 ["AzureAd:TenantId"] = TenantId,
                 ["AzureAd:ClientId"] = ClientId,
                 ["AzureAd:Audience"] = Audience,
+                ["AzureAd:RequiredScope"] = "acces",
             };
 
             // Minimal hosting reads configuration while Program.cs is executing. Apply host settings
