@@ -220,8 +220,8 @@ public static class FiltreVueContributeur
     {
         if (tasks is null) return;
         var taches = tasks.OfType<JsonObject>().Where(tache => Texte(tache["uid"]) is { } uid && uids.Contains(uid)).ToArray();
-        var axes = taches.Select(tache => Texte(tache["id"])).Where(value => !string.IsNullOrWhiteSpace(value)).ToHashSet(StringComparer.Ordinal);
-        var lots = taches.Select(tache => Texte(tache["lot"])).Where(value => !string.IsNullOrWhiteSpace(value)).ToHashSet(StringComparer.Ordinal);
+        var axes = taches.Select(tache => Texte(tache["id"])).OfType<string>().Where(value => !string.IsNullOrWhiteSpace(value)).ToHashSet(StringComparer.Ordinal);
+        var lots = taches.Select(tache => Texte(tache["lot"])).OfType<string>().Where(value => !string.IsNullOrWhiteSpace(value)).ToHashSet(StringComparer.Ordinal);
         FiltrerObjetParCle(projet["axes"] as JsonObject, axes!);
         FiltrerObjetParCle(projet["lots"] as JsonObject, lots!);
     }
