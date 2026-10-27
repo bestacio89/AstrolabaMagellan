@@ -242,6 +242,45 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
     }
 
     [Fact]
+    public async Task Admin_peut_desactiver_et_reactiver_un_compte_sans_pouvoir_se_desactiver_lui_meme()
+    {
+        var objectIdAdmin = Guid.NewGuid().ToString();
+        using var admin = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(objectIdAdmin, "Admin"));
+        Assert.Equal(HttpStatusCode.OK, (await admin.GetAsync("/api/utilisateurs")).StatusCode);
+
+        var objectIdCible = Guid.NewGuid().ToString();
+        using var cible = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
+            objectIdCible,
+            FabriquePostgreSqlApi.RoleContributeur));
+        Assert.Equal(HttpStatusCode.OK, (await cible.GetAsync("/api/moi/capacites")).StatusCode);
+
+        Guid utilisateurCibleId;
+        using (var scope = _fixture.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<PilotageDbContext>();
+            utilisateurCibleId = (await db.Utilisateurs.SingleAsync(
+                utilisateur => utilisateur.IdentifiantExterne == $"{FabriquePostgreSqlApi.TenantId}:{objectIdCible}")).Id;
+        }
+
+        var desactivation = await admin.PutAsJsonAsync(
+            $"/api/utilisateurs/{utilisateurCibleId}/activation",
+            new { actif = false });
+        Assert.Equal(HttpStatusCode.NoContent, desactivation.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await cible.GetAsync("/api/moi/capacites")).StatusCode);
+
+        var reactivation = await admin.PutAsJsonAsync(
+            $"/api/utilisateurs/{utilisateurCibleId}/activation",
+            new { actif = true });
+        Assert.Equal(HttpStatusCode.NoContent, reactivation.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await cible.GetAsync("/api/moi/capacites")).StatusCode);
+
+        var selfDesactivation = await admin.PutAsJsonAsync(
+            $"/api/utilisateurs/{(await admin.GetFromJsonAsync<JsonObject>("/api/moi"))!["id"]!.GetValue<Guid>()}/activation",
+            new { actif = false });
+        Assert.Equal(HttpStatusCode.BadRequest, selfDesactivation.StatusCode);
+    }
+
+    [Fact]
     public async Task Absences_personnelles_sont_authentifiees_et_limitees_a_la_personne_connectee()
     {
         using var utilisateur = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
