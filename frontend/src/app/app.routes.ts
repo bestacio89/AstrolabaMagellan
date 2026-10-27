@@ -27,7 +27,7 @@ export const routes: Routes = [
   },
   {
     path: 'administration',
-    canMatch: [exigerRoles('Administrateur')],
+    canMatch: [exigerRoles('Admin')],
     loadChildren: () => import('./features/administration/administration.routes').then((m) => m.ROUTES_ADMINISTRATION),
   },
   { path: '**', component: PageIntrouvable, title: 'Page introuvable' },
