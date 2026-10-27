@@ -15,9 +15,9 @@ describe('exigerRoles', () => {
       ],
     });
 
-    const resultat = TestBed.runInInjectionContext(() => exigerRoles('Administrateur', 'Pilotage')({} as Route, [] as UrlSegment[]));
+    const resultat = TestBed.runInInjectionContext(() => exigerRoles('Admin', 'Manager')({} as Route, [] as UrlSegment[]));
     expect(resultat).toBe(true);
-    expect(session.aLeRole).toHaveBeenCalledWith('Administrateur', 'Pilotage');
+    expect(session.aLeRole).toHaveBeenCalledWith('Admin', 'Manager');
     expect(router.createUrlTree).not.toHaveBeenCalled();
   });
 
@@ -32,7 +32,7 @@ describe('exigerRoles', () => {
       ],
     });
 
-    const resultat = TestBed.runInInjectionContext(() => exigerRoles('Administrateur')({} as Route, [] as UrlSegment[]));
+    const resultat = TestBed.runInInjectionContext(() => exigerRoles('Admin')({} as Route, [] as UrlSegment[]));
     expect(resultat).toBe(destination);
     expect(router.createUrlTree).toHaveBeenCalledWith(['/projets']);
   });
