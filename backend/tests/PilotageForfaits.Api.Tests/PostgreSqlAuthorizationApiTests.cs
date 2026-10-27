@@ -309,6 +309,7 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
         Guid utilisateurId;
         Guid profilContributorId = Guid.NewGuid();
         Guid profilAutreId = Guid.NewGuid();
+        Guid tacheContributorId;
         var tacheContributorUid = "r-contributor";
         var tacheAutreUid = "r-other";
         using (var scope = _fixture.Services.CreateScope())
@@ -341,6 +342,7 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
                 EtapeTsp = "ETAPE2", LibelleTsp = "Tâche d'un autre profil", Hypothese = "",
                 MarqueurLivrable = "", EstSection = false, ColonneLivrable = false
             };
+            tacheContributorId = tacheContributor.Id;
             db.Profils.AddRange(profilContributor, profilAutre);
             db.Taches.AddRange(tacheContributor, tacheAutre);
             db.ChargesTache.AddRange(
@@ -378,6 +380,32 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
             $"/api/projets/{projetId}/taches/{tacheAutreUid}/consomme",
             new { profilId = profilAutreId, jour = "2026-11-12", jh = 0.5m });
         Assert.Equal(HttpStatusCode.Forbidden, saisieInterdite.StatusCode);
+
+        // A Project Manager may comment on a task, but neither the Contributor nor another project
+        // member may edit or delete that comment unless they are its author.
+        var commentaireCree = await manager.PostAsJsonAsync(
+            $"/api/projets/{projetId}/commentaires/Tache/{tacheContributorId}",
+            new { texte = "Commentaire rédigé par le Project Manager" });
+        Assert.Equal(HttpStatusCode.OK, commentaireCree.StatusCode);
+
+        Guid commentaireId;
+        using (var scope = _fixture.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<PilotageDbContext>();
+            commentaireId = await db.Commentaires
+                .Where(commentaire => commentaire.ProjetId == projetId && commentaire.CibleType == "Tache" && commentaire.CibleId == tacheContributorId)
+                .Select(commentaire => commentaire.Id)
+                .SingleAsync();
+        }
+
+        Assert.Equal(HttpStatusCode.Forbidden, (await contributor.PutAsJsonAsync(
+            $"/api/projets/{projetId}/commentaires/{commentaireId}",
+            new { texte = "Tentative de modification par un autre auteur" })).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await contributor.DeleteAsync(
+            $"/api/projets/{projetId}/commentaires/{commentaireId}")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await manager.PutAsJsonAsync(
+            $"/api/projets/{projetId}/commentaires/{commentaireId}",
+            new { texte = "Commentaire modifié par son auteur" })).StatusCode);
     }
 
     [Fact]
