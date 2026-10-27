@@ -18,7 +18,7 @@ Hypothèses retenues pour générer le dépôt. Chacune se change facilement : l
 ## Entra ID (avec l'administrateur de l'annuaire)
 
 1. Inscrire **l'API** et exposer la portée déléguée confirmée par l'administrateur Entra. Déclarer les rôles d'application `Manager` et `Admin` sur l'inscription **API**.
-2. Inscrire **l'interface** (application monopage) : adresse de retour = adresse de l'application ; autorisation déléguée sur `api://<id-api>/acces`.
+2. Inscrire **l'interface** (application monopage) : adresse de retour = adresse de l'application ; autorisation déléguée sur la portée exacte exposée par l'API, à confirmer avec l'administrateur Entra (ne pas supposer la valeur `acces`).
 3. Attribuer `Manager` aux responsables opérationnels et `Admin` aux administrateurs d'accès. Ces rôles sont distincts ; les rôles Project Manager et Contributor restent des affectations PostgreSQL au niveau projet.
 4. Renseigner : `appsettings.json` (section `AzureAd`) côté API, `environment.ts` côté interface.
 
@@ -31,7 +31,7 @@ Hypothèses retenues pour générer le dépôt. Chacune se change facilement : l
 ## Fonctionnel (avec les chefs de projet)
 
 - **Droits exacts par rôle**, en particulier la visibilité des montants pour les consultants. Choix cible : Manager = portefeuille, création/affectation et exports financiers ; Admin = portefeuille et administration des utilisateurs/habilitations, sans privilèges financiers implicites ; Project Manager et Contributor = accès délimité par affectation PostgreSQL.
-- **Contributor et son profil** : l'identité Entra doit être liée au profil du projet via `ProfilsProjet.UtilisateurId`. Il faut exposer l'affectation avec autorisation Manager/Admin, puis limiter côté API les tâches, plannings et saisies à ce profil ; un nom ou un e-mail ne constitue pas une clé d'autorisation.
+- **Contributor et son profil** : l'identité Entra doit être liée au profil du projet via `ProfilsProjet.UtilisateurId`. L'API d'affectation est exposée ; il reste l'écran de gestion et la limitation côté API des tâches, plannings et saisies à ce profil ; un nom ou un e-mail ne constitue pas une clé d'autorisation.
 - **Montants cités dans un texte libre** : pour un consultant ou un lecteur, le serveur retire les montants des commentaires (ex. « coût évité 1 200 € » écrit par l'application à l'annulation d'une tâche) et les entrées du journal qui portent sur l'argent. Un montant écrit à la main dans un autre champ libre (motif, hypothèse…) n'est pas détecté.
 - **Mode sombre** du POC : non repris (une seule apparence, claire). À confirmer.
 - Un collaborateur de profil doit-il toujours correspondre à un utilisateur (alertes e-mail, saisie de son propre temps) ?
