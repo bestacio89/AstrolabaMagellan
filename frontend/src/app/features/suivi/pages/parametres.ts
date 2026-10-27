@@ -85,7 +85,7 @@ type CleAlerte = 'alerteActionsJours' | 'alerteAtelierJours' | 'alerteLivrableJo
             <div class="kv">
               <div>Profil</div>
               <div>
-                <select class="in" #profil (change)="choisirProfil(profil)">
+                <select class="in" #profil (change)="choisirProfil(v, profil)">
                   <option value="">Choisir un profil</option>
                   @for (p of v.projet.profiles; track p.id) {
                     <option [value]="p.id" [selected]="p.id === profilSelectionne()">{{ p.nom }} · {{ p.collaborateur }}</option>
@@ -455,9 +455,9 @@ export class Parametres {
       this.roleAffectation.set(el.value);
   }
 
-  protected choisirProfil(el: HTMLSelectElement): void {
+  protected choisirProfil(v: Vue, el: HTMLSelectElement): void {
     this.profilSelectionne.set(el.value);
-    this.actualiserUtilisateurProfil(this.etat.vue() as Vue);
+    this.actualiserUtilisateurProfil(v);
   }
 
   protected choisirUtilisateurProfil(el: HTMLSelectElement): void {
