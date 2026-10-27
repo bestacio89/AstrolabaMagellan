@@ -34,7 +34,7 @@ The API derives the following claims on the server:
 - projets.affecter-utilisateurs: permission identifier reserved for project-assignment operations (Manager and Admin).
 - utilisateurs.administrer: permission identifier reserved for application-user/access administration (Admin).
 - consomme.saisir: consumed-time entry, intersected with the project role.
-- exports.financiers: financial visibility/export capability (Manager); project role checks still apply.
+- exports.financiers: portfolio-wide financial visibility and export capability (Manager). A Project Manager can see financial data on their assigned project, but does not receive portfolio exports.
 
 Capabilities included in a token are not trusted. The API removes incoming capability claims and derives them from the validated roles claim. Unknown roles grant no global privileges. This mapping is code-defined and reviewed with the application, not configured through Entra group object IDs.
 
@@ -47,6 +47,6 @@ Capabilities included in a token are not trusted. The API removes incoming capab
 
 ## Known implementation boundary
 
-The current domain has project assignments and a profile-to-user link, but a full management workflow for assigning users to projects/profiles is not yet exposed as an API/UI feature. The new capability identifiers establish the authorization contract; they must be enforced by any assignment endpoints before such endpoints are released.
+The API now exposes an authorized user directory, project-role assignment endpoints, and project-profile-to-user assignment. A corresponding Angular management workflow is still required before this can be operated from the UI.
 
 Contributor task-level filtering also depends on linking the contributor's Entra identity to a project profile and consistently applying that link to every task/planning response and write. A display name or email match is not an authorization key. Until that data path is implemented and tested, do not claim that task-level isolation is complete.
