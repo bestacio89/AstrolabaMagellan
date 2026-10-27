@@ -66,7 +66,7 @@ public sealed class SuiviService(IContexteDonnees db, ServiceAcces acces, Constr
                 Role = role.ToString(), RoleLibelle = Libelles.De(role), PeutModifier = acces.PeutModifierSurProjet(role) && !archive,
                 PeutSaisirConsomme = acces.PeutSaisirConsommeSurProjet(role) && !archive, VoitMontants = acces.PeutVoirMontants(role),
                 Archive = archive, EstChefDeProjet = acces.PeutModifierSurProjet(role),
-                PeutExporter = acces.PeutVoirMontants(role), Utilisateur = utilisateur.NomComplet, UtilisateurId = utilisateur.Id,
+                PeutExporter = acces.PeutExporter(role), Utilisateur = utilisateur.NomComplet, UtilisateurId = utilisateur.Id,
             },
             Aujourdhui = horloge.Aujourdhui,
         };
