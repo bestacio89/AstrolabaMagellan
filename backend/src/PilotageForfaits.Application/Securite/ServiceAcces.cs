@@ -123,13 +123,17 @@ public sealed class ServiceAcces(IContexteDonnees db, IUtilisateurCourant couran
         return role;
     }
 
-    /// <summary>Un chef de projet voit les montants de son projet ; le pilotage global les voit si sa capacité financière est accordée.</summary>
+    /// <summary>
+    /// Project Managers see financial data for projects they manage. Manager's global financial capability
+    /// applies across the portfolio, even when they also have a narrower project assignment.
+    /// </summary>
     public bool PeutVoirMontants(RoleProjet role) =>
-        role == RoleProjet.ChefDeProjet || (A(CapacitesAcces.ExportsFinanciers) && VoitMontants(role));
+        role == RoleProjet.ChefDeProjet ||
+        (A(CapacitesAcces.ExportsFinanciers) && (VoitTousLesProjets || VoitMontants(role)));
 
-    /// <summary>L'export financier est un privilège global distinct de la lecture financière d'un projet attribué.</summary>
+    /// <summary>Portfolio exports require the explicit global financial capability; Admin does not receive it by default.</summary>
     public bool PeutExporter(RoleProjet role) =>
-        A(CapacitesAcces.ExportsFinanciers) && VoitMontants(role);
+        A(CapacitesAcces.ExportsFinanciers) && (VoitTousLesProjets || VoitMontants(role));
 
     public bool PeutModifierSurProjet(RoleProjet role) =>
         A(CapacitesAcces.ProjetsModifier) && PeutModifier(role);
