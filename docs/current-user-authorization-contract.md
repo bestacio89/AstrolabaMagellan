@@ -32,4 +32,4 @@ Project resources the caller cannot discover may return 404 Not Found. Authentic
 
 The existing GET /api/moi response is unchanged. Capability names are API contracts, not Angular component names. Every newly added capability must be enforced by the corresponding endpoint/service before a UI control relies on it.
 
-Contributor task-level isolation requires a stable link between the Entra identity and a project profile and must filter all task/planning responses and writes. The current contract does not claim that this end-to-end workflow is complete.
+Contributor task-level isolation is enforced server-side using the stable Entra tenant/object identity mapped to a PostgreSQL project profile. The API filters the Contributor follow-up to positively charged tasks for that profile and checks profile/task ownership on consumed-time writes. Comment edits and deletions require the original author. These controls are covered by PostgreSQL-backed integration tests and must remain green in CI.
