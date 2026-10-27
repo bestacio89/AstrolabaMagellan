@@ -17,9 +17,9 @@ Hypothèses retenues pour générer le dépôt. Chacune se change facilement : l
 
 ## Entra ID (avec l'administrateur de l'annuaire)
 
-1. Inscrire **l'API** : exposer une autorisation `acces` (adresse `api://<id-api>/acces`) et déclarer les rôles d'application `ChefDeProjet`, `Pilotage`, `Administrateur`.
+1. Inscrire **l'API** et exposer la portée déléguée confirmée par l'administrateur Entra. Déclarer les rôles d'application `Manager` et `Admin` sur l'inscription **API**.
 2. Inscrire **l'interface** (application monopage) : adresse de retour = adresse de l'application ; autorisation déléguée sur `api://<id-api>/acces`.
-3. Attribuer les rôles aux personnes ou aux groupes.
+3. Attribuer `Manager` aux responsables opérationnels et `Admin` aux administrateurs d'accès. Ces rôles sont distincts ; les rôles Project Manager et Contributor restent des affectations PostgreSQL au niveau projet.
 4. Renseigner : `appsettings.json` (section `AzureAd`) côté API, `environment.ts` côté interface.
 
 ## Environnements et hébergement (avec l’équipe d’hébergement)
@@ -30,15 +30,15 @@ Hypothèses retenues pour générer le dépôt. Chacune se change facilement : l
 
 ## Fonctionnel (avec les chefs de projet)
 
-- **Droits exacts par rôle**, en particulier la visibilité des montants pour les consultants. Choix actuel : consultant = saisie du consommé seulement, sans aucun montant ; lecteur = lecture sans montants ; pilotage = lecture avec montants et exports.
-- **Consultant et « son » profil** : aujourd'hui un consultant peut saisir le consommé de tous les profils de son projet (rien ne relie encore une personne à son profil). La colonne existe (`ProfilsProjet.UtilisateurId`) ; il manque l'écran d'administration qui la renseigne. Une fois fait, la règle « il ne saisit que son consommé » s'ajoute en une ligne dans `SaisiesTachesService.SaisirConsommeAsync`.
+- **Droits exacts par rôle**, en particulier la visibilité des montants pour les consultants. Choix cible : Manager = portefeuille, création/affectation et exports financiers ; Admin = portefeuille et administration des utilisateurs/habilitations, sans privilèges financiers implicites ; Project Manager et Contributor = accès délimité par affectation PostgreSQL.
+- **Contributor et son profil** : l'identité Entra doit être liée au profil du projet via `ProfilsProjet.UtilisateurId`. Il faut exposer l'affectation avec autorisation Manager/Admin, puis limiter côté API les tâches, plannings et saisies à ce profil ; un nom ou un e-mail ne constitue pas une clé d'autorisation.
 - **Montants cités dans un texte libre** : pour un consultant ou un lecteur, le serveur retire les montants des commentaires (ex. « coût évité 1 200 € » écrit par l'application à l'annulation d'une tâche) et les entrées du journal qui portent sur l'argent. Un montant écrit à la main dans un autre champ libre (motif, hypothèse…) n'est pas détecté.
 - **Mode sombre** du POC : non repris (une seule apparence, claire). À confirmer.
 - Un collaborateur de profil doit-il toujours correspondre à un utilisateur (alertes e-mail, saisie de son propre temps) ?
 - Réimport d'un TSP modifié (avenant) : **décidé, ce n'est pas un nouveau projet** (même numéro d'opportunité = même forfait, voir « Unicité des projets » dans `regles-metier.md`). Reste à définir comment une nouvelle version du TSP met à jour le vendu du projet existant (avec les chefs de projet).
 - **Identité d'un projet** : le numéro d'opportunité (« OP » suivi de chiffres) est cherché dans la référence de la proposition. À confirmer : ce numéro figure-t-il toujours dans les TSP, et sous cette forme ? Règle dans `backend/src/PilotageForfaits.Domain/Commun/IdentiteProjet.cs`.
 - Durée de conservation du journal et des projets archivés.
-- **Lien personne ↔ compte** : « Mon travail » relie aujourd'hui une personne à ses tâches par son nom (prénom et nom saisis comme collaborateur d'un profil, ou porteur d'une action). C'est fiable si les noms sont écrits en entier ; un écran d'administration pour relier chaque profil à un compte (`ProfilsProjet.UtilisateurId`) rendra le lien exact. Le seul fichier à changer côté interface : `features/travail/travail.logique.ts`.
+- **Lien personne ↔ compte** : ne pas utiliser le nom affiché pour autoriser les tâches. La liaison doit reposer sur l'identité stable Entra et `ProfilsProjet.UtilisateurId`, puis être vérifiée dans toutes les lectures et écritures de tâches/planning.
 - **Notifications par e-mail ou Teams** : elles sont dans l'application pour l'instant. L'envoi demande un compte d'envoi (SMTP) ou une autorisation Microsoft Graph, à décider avec l'hébergement (Matthieu). La table `Notifications` existe déjà.
 - **Import des frais réels** : le format du fichier de suivi des frais (ou de l'export des frais validés) est à fournir pour écrire l'import.
 - Seuils de lecture de l'atterrissage sur la page d'accueil (« Dans la cible », « À surveiller »…) : `frontend/src/app/shared/format/formats.ts`.
