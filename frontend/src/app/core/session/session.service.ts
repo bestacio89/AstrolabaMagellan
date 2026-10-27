@@ -16,10 +16,9 @@ export class SessionService {
   /** Libellé du rôle global, affiché sous le nom dans l'en-tête. */
   readonly libelleRole = computed(() => {
     const roles = this.moi()?.roles ?? [];
-    if (roles.includes('Administrateur')) return 'Administrateur';
-    if (roles.includes('Pilotage')) return 'Pilotage';
-    if (roles.includes('ChefDeProjet')) return 'Chef de projet';
-    return 'Consultant';
+    if (roles.includes('Admin')) return 'Administrateur';
+    if (roles.includes('Manager')) return 'Manager';
+    return 'Collaborateur';
   });
 
   async charger(): Promise<void> {
