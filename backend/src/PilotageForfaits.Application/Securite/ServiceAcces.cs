@@ -118,12 +118,17 @@ public sealed class ServiceAcces(IContexteDonnees db, IUtilisateurCourant couran
     public async Task<RoleProjet> ExigerExportAsync(Guid projetId, CancellationToken annulation = default)
     {
         var role = await ExigerAccesAsync(projetId, annulation);
-        if (!PeutVoirMontants(role))
-            throw new AccesRefuseException("La capacité d'export financier et un rôle de chef de projet ou pilotage sont requis.");
+        if (!PeutExporter(role))
+            throw new AccesRefuseException("L'export financier est réservé au pilotage global habilité.");
         return role;
     }
 
+    /// <summary>Un chef de projet voit les montants de son projet ; le pilotage global les voit si sa capacité financière est accordée.</summary>
     public bool PeutVoirMontants(RoleProjet role) =>
+        role == RoleProjet.ChefDeProjet || (A(CapacitesAcces.ExportsFinanciers) && VoitMontants(role));
+
+    /// <summary>L'export financier est un privilège global distinct de la lecture financière d'un projet attribué.</summary>
+    public bool PeutExporter(RoleProjet role) =>
         A(CapacitesAcces.ExportsFinanciers) && VoitMontants(role);
 
     public bool PeutModifierSurProjet(RoleProjet role) =>
