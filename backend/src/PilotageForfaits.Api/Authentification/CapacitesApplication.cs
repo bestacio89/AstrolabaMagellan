@@ -1,17 +1,19 @@
+using PilotageForfaits.Application.Abstractions;
+
 namespace PilotageForfaits.Api.Authentification;
 
-/// <summary>Identifiants stables des capacités de l'API, indépendants des écrans Angular.</summary>
+/// <summary>API aliases for stable application capability identifiers; policies and application services share one contract.</summary>
 public static class CapacitesApplication
 {
-    public const string ProjetsLire = "projets.lire";
-    public const string ProjetsLireTous = "projets.lire-tous";
-    public const string ProjetsCreer = "projets.creer";
-    public const string ProjetsModifier = "projets.modifier";
-    public const string ProjetsAffecterUtilisateurs = "projets.affecter-utilisateurs";
-    public const string UtilisateursLire = "utilisateurs.lire";
-    public const string UtilisateursAdministrer = "utilisateurs.administrer";
-    public const string ConsommeSaisir = "consomme.saisir";
-    public const string ExportsFinanciers = "exports.financiers";
+    public const string ProjetsLire = CapacitesAcces.ProjetsLire;
+    public const string ProjetsLireTous = CapacitesAcces.ProjetsLireTous;
+    public const string ProjetsCreer = CapacitesAcces.ProjetsCreer;
+    public const string ProjetsModifier = CapacitesAcces.ProjetsModifier;
+    public const string ProjetsAffecterUtilisateurs = CapacitesAcces.ProjetsAffecterUtilisateurs;
+    public const string UtilisateursLire = CapacitesAcces.UtilisateursLire;
+    public const string UtilisateursAdministrer = CapacitesAcces.UtilisateursAdministrer;
+    public const string ConsommeSaisir = CapacitesAcces.ConsommeSaisir;
+    public const string ExportsFinanciers = CapacitesAcces.ExportsFinanciers;
     public const string TypeClaim = "capability";
 
     public static IReadOnlyList<string> Toutes { get; } =
