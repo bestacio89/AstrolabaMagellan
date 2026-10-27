@@ -38,6 +38,8 @@ The SPA's auth.clientId is the client ID of the Angular registration; auth.autho
 
 ## Project and task authorization
 
-The API scopes project lists and resource operations using PostgreSQL assignments. Inaccessible projects should return 404 to avoid revealing their existence. Financial data must be filtered on the server, not only hidden in Angular.
+The API scopes project lists and resource operations using PostgreSQL assignments. Inaccessible projects return 404 to avoid revealing their existence. Financial data is filtered on the server, not only hidden in Angular.
 
-The existing schema includes a project-profile-to-user link, but complete contributor task-level isolation requires the identity-to-profile assignment workflow and consistent filtering across read models and write operations. That boundary is explicitly tracked in the authorization contract and must be completed before claiming contributor task isolation.
+Project settings provide Manager/Admin controls to assign Project Manager, Contributor, and Reader roles and link a project profile to an application user. Contributor follow-up responses are filtered server-side to tasks charged to linked profiles, with dependent profile/task/planning data filtered consistently. Consumed-time writes must match both the caller's linked profile and a positively charged task. Contributor comments are restricted to accessible tasks; comment edits/deletions require the original author. Shared project planning writes remain Project Manager-only.
+
+The source code and automated tests cannot validate the target organization's actual Entra role assignments, enterprise-application access group, or exact delegated scope. Verify those against the real API access token before rollout. The exact scope remains an architect-provided configuration value and must not be guessed.
