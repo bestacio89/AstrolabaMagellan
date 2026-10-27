@@ -386,6 +386,8 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
         {
             var u = await db.Utilisateurs.FirstAsync(x => x.IdentifiantExterne == "tenant-tests:oid-consultant");
             db.Habilitations.Add(new Habilitation { ProjetId = id, UtilisateurId = u.Id, Role = RoleProjet.Consultant, Depuis = DateTimeOffset.UtcNow });
+            var profil = await db.Profils.Where(x => x.ProjetId == id).OrderBy(x => x.Rang).FirstAsync();
+            profil.UtilisateurId = u.Id;
         });
         JsonObject r;
         try
@@ -582,7 +584,7 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
             date = "2026-09-20", ligne = (int?)null, designation = "Matériel", fournisseur = "Revendeur", qte = 1m, cu = 500m, refacture = 0m, statut = "Reçu",
         });
         await Saisir(chef, HttpMethod.Post, $"/api/projets/{id}/taches/r14/annulation", new { motif = "Doublon", avenant = true, enregistrerDecision = true });
-        // habilitation du consultant (l'écran d'administration des habilitations viendra plus tard)
+        // habilitation du consultant et liaison stable de son profil (écran Angular à venir)
         var consultant = _api.ClientPour("consultant");
         await consultant.GetAsync("/api/moi"); // crée sa fiche
         await ModifierBaseAsync(async db =>
@@ -604,7 +606,7 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
             Assert.DoesNotContain($"\"{champ}\":", texte);
         // aucun montant en euros, même dans un texte (journal, commentaire écrit par l'application) ; le JSON échappe « € » en \u20AC
         Assert.DoesNotContain("€", JsonNode.Parse(texte)!.ToJsonString(new JsonSerializerOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
-        Assert.NotEmpty(suivi["projet"]!["decisions"]!.AsArray()); // la décision d'annulation reste visible, sans ses montants
+        Assert.Empty(suivi["projet"]!["decisions"]!.AsArray()); // les registres hors tâches ne sont pas exposés au contributeur
 
         var profil = suivi["projet"]!["profiles"]!.AsArray()[0]!["id"]!.GetValue<Guid>();
         await Saisir(consultant, HttpMethod.Put, $"/api/projets/{id}/taches/r7/consomme", new { profilId = profil, jour = "2026-09-10", jh = 0.5m });
