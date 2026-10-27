@@ -32,7 +32,7 @@ public sealed class ServiceAcces(IContexteDonnees db, IUtilisateurCourant couran
         u.Nom = courant.Nom;
         u.Email = courant.Email;
         // Conservé pour l'administration locale du compte ; ce drapeau ne donne pas à lui seul accès aux projets.
-        u.Administrateur = courant.Roles.Contains(RolesGlobaux.Administrateur);
+        u.Administrateur = courant.Roles.Contains(RolesGlobaux.Admin);
         if (u.DerniereConnexion is null || horloge.Maintenant - u.DerniereConnexion > TimeSpan.FromHours(1))
             u.DerniereConnexion = horloge.Maintenant;
         await db.SaveChangesAsync(annulation);
