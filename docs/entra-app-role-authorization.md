@@ -10,7 +10,7 @@ Declare these exact role values as app roles on the API registration and assign 
 | Admin | Application and access administration | Read all projects, assign users to projects, administer application users/access |
 | No global role | Project-level user | Read assigned projects and perform only operations allowed by the user's PostgreSQL project role |
 
-The two global roles are intentionally distinct. Admin does not implicitly receive financial export, project creation, or project-editing capabilities. Manager does not implicitly receive application-user administration.
+The two global roles are intentionally distinct. Admin does not receive financial export or project creation. Project editing still requires the relevant project-level role. Manager does not implicitly receive application-user administration.
 
 ## Project roles in PostgreSQL
 
@@ -47,6 +47,6 @@ Capabilities included in a token are not trusted. The API removes incoming capab
 
 ## Known implementation boundary
 
-The API now exposes an authorized user directory, project-role assignment endpoints, and project-profile-to-user assignment. A corresponding Angular management workflow is still required before this can be operated from the UI.
+The API now exposes an authorized user directory, project-role assignment endpoints, and project-profile-to-user assignment. A corresponding Angular management workflow is still required before this can be operated from the UI. Contributor task-level read filtering remains incomplete and is a release blocker.
 
 Contributor task-level filtering also depends on linking the contributor's Entra identity to a project profile and consistently applying that link to every task/planning response and write. A display name or email match is not an authorization key. Until that data path is implemented and tested, do not claim that task-level isolation is complete.
