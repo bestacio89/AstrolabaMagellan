@@ -283,6 +283,104 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
     }
 
     [Fact]
+    public async Task Contributor_ne_voit_et_ne_saisit_que_les_taches_de_son_profil()
+    {
+        using var manager = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
+            Guid.NewGuid().ToString(), FabriquePostgreSqlApi.RoleManager));
+
+        var reference = "TASKS-" + Guid.NewGuid().ToString("N")[..8];
+        var creation = await manager.PostAsJsonAsync("/api/projets", new
+        {
+            client = "Client confidentialité",
+            nom = "Projet tâches " + reference,
+            reference,
+            debut = "2026-11-02",
+            finContractuelle = "2027-02-26",
+            typeContrat = "Forfait"
+        });
+        Assert.Equal(HttpStatusCode.Created, creation.StatusCode);
+        var projetId = (await creation.Content.ReadFromJsonAsync<JsonObject>())!["id"]!.GetValue<Guid>();
+
+        var objectIdContributor = Guid.NewGuid().ToString();
+        using var contributor = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
+            objectIdContributor, FabriquePostgreSqlApi.RoleContributeur));
+        Assert.Equal(HttpStatusCode.OK, (await contributor.GetAsync("/api/moi/capacites")).StatusCode);
+
+        Guid utilisateurId;
+        Guid profilContributorId = Guid.NewGuid();
+        Guid profilAutreId = Guid.NewGuid();
+        var tacheContributorUid = "r-contributor";
+        var tacheAutreUid = "r-other";
+        using (var scope = _fixture.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<PilotageDbContext>();
+            utilisateurId = (await db.Utilisateurs.SingleAsync(
+                utilisateur => utilisateur.IdentifiantExterne == $"{FabriquePostgreSqlApi.TenantId}:{objectIdContributor}")).Id;
+
+            var profilContributor = new ProfilProjet
+            {
+                Id = profilContributorId, ProjetId = projetId, Rang = 0, Nom = "Profil contributeur",
+                Entite = "FO", Tjm = 0, Cjm = 0, Frais = 0, Collaborateur = "Contributeur"
+            };
+            var profilAutre = new ProfilProjet
+            {
+                Id = profilAutreId, ProjetId = projetId, Rang = 1, Nom = "Autre profil",
+                Entite = "FO", Tjm = 0, Cjm = 0, Frais = 0, Collaborateur = "Autre personne"
+            };
+            var tacheContributor = new Tache
+            {
+                Id = Guid.NewGuid(), ProjetId = projetId, Repere = tacheContributorUid, Position = 0,
+                LigneTsp = 1, CodeAxeTsp = "AXE1", LotTsp = "LOT1", PhaseTsp = "PHASE1",
+                EtapeTsp = "ETAPE1", LibelleTsp = "Tâche du contributeur", Hypothese = "",
+                MarqueurLivrable = "", EstSection = false, ColonneLivrable = false
+            };
+            var tacheAutre = new Tache
+            {
+                Id = Guid.NewGuid(), ProjetId = projetId, Repere = tacheAutreUid, Position = 1,
+                LigneTsp = 2, CodeAxeTsp = "AXE2", LotTsp = "LOT2", PhaseTsp = "PHASE2",
+                EtapeTsp = "ETAPE2", LibelleTsp = "Tâche d'un autre profil", Hypothese = "",
+                MarqueurLivrable = "", EstSection = false, ColonneLivrable = false
+            };
+            db.Profils.AddRange(profilContributor, profilAutre);
+            db.Taches.AddRange(tacheContributor, tacheAutre);
+            db.ChargesTache.AddRange(
+                new ChargeTache
+                {
+                    Id = Guid.NewGuid(), ProjetId = projetId, TacheId = tacheContributor.Id,
+                    ProfilProjetId = profilContributorId, ChargeVendue = 1
+                },
+                new ChargeTache
+                {
+                    Id = Guid.NewGuid(), ProjetId = projetId, TacheId = tacheAutre.Id,
+                    ProfilProjetId = profilAutreId, ChargeVendue = 1
+                });
+            await db.SaveChangesAsync();
+        }
+
+        Assert.Equal(HttpStatusCode.NoContent, (await manager.PutAsJsonAsync(
+            $"/api/projets/{projetId}/habilitations/{utilisateurId}", new { role = "Consultant" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await manager.PutAsJsonAsync(
+            $"/api/projets/{projetId}/habilitations/profils/{profilContributorId}/utilisateur",
+            new { utilisateurId })).StatusCode);
+
+        var suivi = await contributor.GetFromJsonAsync<JsonObject>($"/api/projets/{projetId}/suivi");
+        var tachesVisibles = suivi!["projet"]!["tasks"]!.AsArray()
+            .Select(tache => tache!["uid"]!.GetValue<string>()).ToArray();
+        Assert.Contains(tacheContributorUid, tachesVisibles);
+        Assert.DoesNotContain(tacheAutreUid, tachesVisibles);
+
+        var saisieAutorisee = await contributor.PutAsJsonAsync(
+            $"/api/projets/{projetId}/taches/{tacheContributorUid}/consomme",
+            new { profilId = profilContributorId, jour = "2026-11-12", jh = 0.5m });
+        Assert.Equal(HttpStatusCode.OK, saisieAutorisee.StatusCode);
+
+        var saisieInterdite = await contributor.PutAsJsonAsync(
+            $"/api/projets/{projetId}/taches/{tacheAutreUid}/consomme",
+            new { profilId = profilAutreId, jour = "2026-11-12", jh = 0.5m });
+        Assert.Equal(HttpStatusCode.Forbidden, saisieInterdite.StatusCode);
+    }
+
+    [Fact]
     public async Task Absences_personnelles_sont_authentifiees_et_limitees_a_la_personne_connectee()
     {
         using var utilisateur = _fixture.ClientPour(FabriquePostgreSqlApi.CreerJeton(
