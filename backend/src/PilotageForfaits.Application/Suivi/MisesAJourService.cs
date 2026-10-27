@@ -21,6 +21,15 @@ public sealed class MisesAJourService(SaisieOutils o)
     {
         var u = await o.ExigerSaisieConsommeAsync(projetId, a);
         var (type, libelle) = await ExigerCibleAsync(projetId, cibleType, cibleId, a);
+        if (type != "Tache" && await EstContributeurAsync(projetId, u.Id, a))
+            throw new AccesRefuseException("Un contributeur ne peut commenter que les tâches qui lui sont affectées.");
+        if (type == "Tache")
+        {
+            var uid = await o.Db.Taches.Where(tache => tache.ProjetId == projetId && tache.Id == cibleId)
+                .Select(tache => tache.Repere).FirstOrDefaultAsync(a)
+                ?? throw new IntrouvableException("Tâche introuvable.");
+            await o.ExigerTacheAccessibleAuContributeurAsync(projetId, uid, u.Id, a);
+        }
         var texte = ValiderTexte(c.Texte);
         var commentaire = new Commentaire
         {
@@ -41,6 +50,7 @@ public sealed class MisesAJourService(SaisieOutils o)
         var u = await o.ExigerSaisieConsommeAsync(projetId, a);
         var commentaire = await o.Db.Commentaires.FirstOrDefaultAsync(x => x.ProjetId == projetId && x.Id == commentaireId, a)
             ?? throw new IntrouvableException("Commentaire introuvable.");
+        await ExigerCommentaireAccessibleAuContributeurAsync(projetId, commentaire, u.Id, a);
         if (commentaire.AuteurId != u.Id) throw new AccesRefuseException("Seul l’auteur peut modifier ce commentaire.");
         var texte = ValiderTexte(c.Texte);
         var ancien = commentaire.Texte;
@@ -56,11 +66,28 @@ public sealed class MisesAJourService(SaisieOutils o)
         var u = await o.ExigerSaisieConsommeAsync(projetId, a);
         var commentaire = await o.Db.Commentaires.FirstOrDefaultAsync(x => x.ProjetId == projetId && x.Id == commentaireId, a)
             ?? throw new IntrouvableException("Commentaire introuvable.");
+        await ExigerCommentaireAccessibleAuContributeurAsync(projetId, commentaire, u.Id, a);
         if (commentaire.AuteurId != u.Id) throw new AccesRefuseException("Seul l’auteur peut supprimer ce commentaire.");
         var libelle = await LibelleCibleAsync(projetId, commentaire.CibleType, commentaire.CibleId, a);
         o.Db.Commentaires.Remove(commentaire);
         o.Noter(projetId, u, "Commentaire", commentaire.Id, $"Commentaire supprimé — {libelle}", commentaire.Texte, null);
         return await o.TerminerAsync(projetId, new List<MessageDto> { new("Commentaire supprimé.", "succes") }, a);
+    }
+
+    private async Task<bool> EstContributeurAsync(Guid projetId, Guid utilisateurId, CancellationToken a) =>
+        await o.Db.Habilitations.AnyAsync(habilitation =>
+            habilitation.ProjetId == projetId &&
+            habilitation.UtilisateurId == utilisateurId &&
+            habilitation.Role == RoleProjet.Consultant, a);
+
+    private async Task ExigerCommentaireAccessibleAuContributeurAsync(
+        Guid projetId, Commentaire commentaire, Guid utilisateurId, CancellationToken a)
+    {
+        if (commentaire.CibleType != "Tache") return;
+        var uid = await o.Db.Taches.Where(tache => tache.ProjetId == projetId && tache.Id == commentaire.CibleId)
+            .Select(tache => tache.Repere).FirstOrDefaultAsync(a)
+            ?? throw new IntrouvableException("Tâche introuvable.");
+        await o.ExigerTacheAccessibleAuContributeurAsync(projetId, uid, utilisateurId, a);
     }
 
     private static string ValiderTexte(string? valeur)
