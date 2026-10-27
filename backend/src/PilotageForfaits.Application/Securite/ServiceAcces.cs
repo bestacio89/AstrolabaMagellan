@@ -8,7 +8,7 @@ namespace PilotageForfaits.Application.Securite;
 
 /// <summary>
 /// Central enforcement of effective capabilities and project assignments.
-/// A group-derived capability is necessary but does not replace project membership;
+/// A server-derived capability is necessary but does not replace project membership;
 /// project membership is necessary but does not grant capabilities by itself.
 /// </summary>
 public sealed class ServiceAcces(IContexteDonnees db, IUtilisateurCourant courant, IHorloge horloge)
