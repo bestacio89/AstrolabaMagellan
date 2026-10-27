@@ -11,7 +11,7 @@ export const environment = {
     mode: 'entra' as 'entra' | 'dev',
     clientId: 'a45e69e5-a929-4491-945c-82b2caf7f097',
     authority: 'https://login.microsoftonline.com/91a30855-a777-43a6-8fad-66854b9a4d1b',
-    scopeApi: 'api://0e3a6b58-3a85-49ae-915b-e0f5b15e9483/acces',
+    scopeApi: 'api://0e3a6b58-3a85-49ae-915b-e0f5b15e9483/user.access',
   },
 };
 
