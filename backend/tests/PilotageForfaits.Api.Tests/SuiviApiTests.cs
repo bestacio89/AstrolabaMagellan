@@ -610,6 +610,14 @@ public sealed class SuiviApiTests : IClassFixture<FabriqueApi>
 
         var profil = suivi["projet"]!["profiles"]!.AsArray()[0]!["id"]!.GetValue<Guid>();
         await Saisir(consultant, HttpMethod.Put, $"/api/projets/{id}/taches/r7/consomme", new { profilId = profil, jour = "2026-09-10", jh = 0.5m });
+        Guid profilNonAffecte;
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<PilotageDbContext>();
+            profilNonAffecte = await db.Profils.Where(x => x.ProjetId == id && x.Id != profil).Select(x => x.Id).FirstAsync();
+        }
+        await Refuser(consultant, HttpMethod.Put, $"/api/projets/{id}/taches/r7/consomme",
+            new { profilId = profilNonAffecte, jour = "2026-09-10", jh = 0.5m }, HttpStatusCode.Forbidden);
         await Refuser(consultant, HttpMethod.Put, $"/api/projets/{id}/taches/r7/statut", new { statut = "Validé" }, HttpStatusCode.Forbidden);
         await Refuser(consultant, HttpMethod.Post, $"/api/projets/{id}/exports/copil", null, HttpStatusCode.Forbidden);
     }
