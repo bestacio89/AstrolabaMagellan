@@ -1,0 +1,198 @@
+# Manually run deployment pipeline. Use a self-hosted agent with private VNet connectivity.
+trigger: none
+pr: none
+
+parameters:
+- name: environment
+  displayName: Target environment
+  type: string
+  default: test
+  values:
+  - test
+  - production
+
+variables:
+  azureServiceConnection: 'REPLACE_WITH_AZURE_SERVICE_CONNECTION'
+  RESOURCE_GROUP_NAME: 'REPLACE_WITH_RESOURCE_GROUP'
+  FRONTEND_APP_NAME: 'REPLACE_WITH_FRONTEND_APP_NAME'
+  BACKEND_APP_NAME: 'REPLACE_WITH_BACKEND_APP_NAME'
+  POSTGRES_SERVER_NAME: 'REPLACE_WITH_POSTGRES_SERVER_NAME'
+  POSTGRES_DATABASE_NAME: 'pilotageforfaits'
+  POSTGRES_ADMIN_LOGIN: 'astrolabaadmin'
+  POSTGRES_APP_LOGIN: 'astrolaba_app'
+  KEY_VAULT_NAME: 'REPLACE_WITH_KEYVAULT_NAME'
+  location: 'westeurope'
+  privateAgentPool: 'AstrolabaPrivateAgents'
+  buildConfiguration: 'Release'
+  backendProject: 'backend/src/PilotageForfaits.Api/PilotageForfaits.Api.csproj'
+  backendInfrastructureProject: 'backend/src/PilotageForfaits.Infrastructure/PilotageForfaits.Infrastructure.csproj'
+  backendSolution: 'backend/PilotageForfaits.sln'
+  frontendDirectory: 'frontend'
+
+stages:
+- stage: Preflight
+  displayName: Validate deployment and preview infrastructure changes
+  jobs:
+  - job: WhatIf
+    pool:
+      name: $(privateAgentPool)
+    steps:
+    - checkout: self
+    - task: AzureCLI@2
+      displayName: Validate parameters and run Bicep what-if
+      inputs:
+        azureSubscription: $(azureServiceConnection)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -euo pipefail
+          test -n "$(RESOURCE_GROUP_NAME)"
+          az account show --output table
+          az group show --name "$(RESOURCE_GROUP_NAME)" --output table
+          PARAM_FILE="infra/parameters/${{ parameters.environment }}.bicepparam"
+          az bicep build --file infra/main.bicep
+          # Reuse the credential stored in Key Vault. Generate one only when both
+          # the vault secret and PostgreSQL server are absent (first deployment).
+          read -r ASTROLABA_POSTGRES_ADMIN_PASSWORD < <(scripts/resolve-postgres-admin-password.sh preflight)
+          export ASTROLABA_POSTGRES_ADMIN_PASSWORD
+          az deployment group what-if \
+            --resource-group "$(RESOURCE_GROUP_NAME)" \
+            --template-file infra/main.bicep \
+            --parameters "$PARAM_FILE" \
+              frontendAppName="$(FRONTEND_APP_NAME)" \
+              backendAppName="$(BACKEND_APP_NAME)" \
+              postgresServerName="$(POSTGRES_SERVER_NAME)" \
+              keyVaultName="$(KEY_VAULT_NAME)" \
+              postgresAdminLogin="$(POSTGRES_ADMIN_LOGIN)" \
+              postgresDatabaseName="$(POSTGRES_DATABASE_NAME)"
+          unset ASTROLABA_POSTGRES_ADMIN_PASSWORD
+      env:
+        RESOURCE_GROUP_NAME: $(RESOURCE_GROUP_NAME)
+        POSTGRES_SERVER_NAME: $(POSTGRES_SERVER_NAME)
+        KEY_VAULT_NAME: $(KEY_VAULT_NAME)
+
+- stage: DeployInfrastructure
+  displayName: Deploy private Azure infrastructure
+  dependsOn: Preflight
+  condition: succeeded()
+  jobs:
+  - deployment: Infrastructure
+    displayName: Apply Bicep template
+    environment: 'Astrolaba-${{ parameters.environment }}-Infrastructure'
+    pool:
+      name: $(privateAgentPool)
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          - task: AzureCLI@2
+            displayName: Apply infrastructure
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                PARAM_FILE="infra/parameters/${{ parameters.environment }}.bicepparam"
+                # Idempotent credential handling: no manually-created pipeline secret is needed.
+                read -r ASTROLABA_POSTGRES_ADMIN_PASSWORD < <(scripts/resolve-postgres-admin-password.sh deploy)
+                export ASTROLABA_POSTGRES_ADMIN_PASSWORD
+                az deployment group create \
+                  --name "astrolaba-${{ parameters.environment }}-$(Build.BuildId)" \
+                  --resource-group "$(RESOURCE_GROUP_NAME)" \
+                  --template-file infra/main.bicep \
+                  --parameters "$PARAM_FILE" \
+                    frontendAppName="$(FRONTEND_APP_NAME)" \
+                    backendAppName="$(BACKEND_APP_NAME)" \
+                    postgresServerName="$(POSTGRES_SERVER_NAME)" \
+                    keyVaultName="$(KEY_VAULT_NAME)" \
+                    postgresAdminLogin="$(POSTGRES_ADMIN_LOGIN)" \
+                    postgresDatabaseName="$(POSTGRES_DATABASE_NAME)"
+                # Let the provisioning script consume the non-secret Bicep outputs.
+                export BICEP_DEPLOYMENT_NAME="astrolaba-${{ parameters.environment }}-$(Build.BuildId)"
+                export EXPECTED_DATABASE_NAME="$(POSTGRES_DATABASE_NAME)"
+                export RESOURCE_GROUP_NAME="$(RESOURCE_GROUP_NAME)"
+                export POSTGRES_SERVER_NAME="$(POSTGRES_SERVER_NAME)"
+                export POSTGRES_DATABASE_NAME="$(POSTGRES_DATABASE_NAME)"
+                export POSTGRES_ADMIN_LOGIN="$(POSTGRES_ADMIN_LOGIN)"
+                export POSTGRES_APP_LOGIN="$(POSTGRES_APP_LOGIN)"
+                export KEY_VAULT_NAME="$(KEY_VAULT_NAME)"
+                scripts/provision-postgres-secrets.sh
+                unset ASTROLABA_POSTGRES_ADMIN_PASSWORD
+            env:
+              RESOURCE_GROUP_NAME: $(RESOURCE_GROUP_NAME)
+              POSTGRES_SERVER_NAME: $(POSTGRES_SERVER_NAME)
+              POSTGRES_DATABASE_NAME: $(POSTGRES_DATABASE_NAME)
+              POSTGRES_ADMIN_LOGIN: $(POSTGRES_ADMIN_LOGIN)
+              POSTGRES_APP_LOGIN: $(POSTGRES_APP_LOGIN)
+              KEY_VAULT_NAME: $(KEY_VAULT_NAME)
+
+- stage: DeployApplications
+  displayName: Migrate database and deploy applications
+  dependsOn: DeployInfrastructure
+  condition: succeeded()
+  jobs:
+  - deployment: ApplicationDeployment
+    displayName: Deploy backend and frontend
+    environment: 'Astrolaba-${{ parameters.environment }}'
+    pool:
+      name: $(privateAgentPool)
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          - task: UseDotNet@2
+            inputs:
+              packageType: sdk
+              version: '10.0.x'
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '22.x'
+          - task: AzureCLI@2
+            displayName: Build, migrate and deploy over private network
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: bash
+              scriptLocation: scriptPath
+              scriptPath: scripts/deploy-application.sh
+              arguments: '${{ parameters.environment }}'
+              workingDirectory: $(Build.SourcesDirectory)
+            env:
+              RESOURCE_GROUP_NAME: $(RESOURCE_GROUP_NAME)
+              FRONTEND_APP_NAME: $(FRONTEND_APP_NAME)
+              BACKEND_APP_NAME: $(BACKEND_APP_NAME)
+              POSTGRES_SERVER_NAME: $(POSTGRES_SERVER_NAME)
+              POSTGRES_DATABASE_NAME: $(POSTGRES_DATABASE_NAME)
+              POSTGRES_ADMIN_LOGIN: $(POSTGRES_ADMIN_LOGIN)
+              POSTGRES_APP_LOGIN: $(POSTGRES_APP_LOGIN)
+              KEY_VAULT_NAME: $(KEY_VAULT_NAME)
+
+- stage: SmokeTests
+  displayName: Verify private application endpoints
+  dependsOn: DeployApplications
+  condition: succeeded()
+  jobs:
+  - job: Smoke
+    pool:
+      name: $(privateAgentPool)
+    steps:
+    - checkout: self
+    - task: AzureCLI@2
+      displayName: Verify private DNS, TLS and health endpoint
+      inputs:
+        azureSubscription: $(azureServiceConnection)
+        scriptType: bash
+        scriptLocation: scriptPath
+        scriptPath: scripts/verify-private-networking.sh
+        arguments: '${{ parameters.environment }}'
+        workingDirectory: $(Build.SourcesDirectory)
+      env:
+        FRONTEND_APP_NAME: $(FRONTEND_APP_NAME)
+        BACKEND_APP_NAME: $(BACKEND_APP_NAME)
+        POSTGRES_SERVER_NAME: $(POSTGRES_SERVER_NAME)
+        KEY_VAULT_NAME: $(KEY_VAULT_NAME)
+
+# IMPORTANT: Configure approvals/checks on the Azure DevOps environments in the UI.
+# YAML alone is not a security boundary. Production should require human approval.

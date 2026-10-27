@@ -1,0 +1,88 @@
+# Continuous integration only. This pipeline does not deploy resources or applications.
+trigger: none
+pr:
+  branches:
+    include:
+      - main
+      - develop
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  buildConfiguration: Release
+  dotnetSdkVersion: '10.0.x'
+  nodeVersion: '22.x'
+
+stages:
+- stage: Validate
+  displayName: Validate source and infrastructure
+  jobs:
+  - job: Backend
+    displayName: Build and test .NET backend
+    steps:
+    - task: UseDotNet@2
+      displayName: Install .NET SDK
+      inputs:
+        packageType: sdk
+        version: $(dotnetSdkVersion)
+    - task: DotNetCoreCLI@2
+      displayName: Restore solution
+      inputs:
+        command: restore
+        projects: backend/PilotageForfaits.sln
+    - task: DotNetCoreCLI@2
+      displayName: Build solution
+      inputs:
+        command: build
+        projects: backend/PilotageForfaits.sln
+        arguments: '--configuration $(buildConfiguration) --no-restore'
+    - task: DotNetCoreCLI@2
+      displayName: Run tests
+      inputs:
+        command: test
+        projects: backend/PilotageForfaits.sln
+        arguments: '--configuration $(buildConfiguration) --no-build --logger "trx;LogFileName=backend-tests.trx"'
+        publishTestResults: true
+
+  - job: Frontend
+    displayName: Install, test and build Angular frontend
+    steps:
+    - task: NodeTool@0
+      displayName: Install Node.js
+      inputs:
+        versionSpec: $(nodeVersion)
+    - script: npm ci
+      displayName: Install locked npm dependencies
+      workingDirectory: frontend
+    # Angular test command depends on the repository's test runner. This common command
+    # works with Angular CLI/Karma; adjust only if package.json uses a different runner.
+    - script: npm run test -- --watch=false
+      displayName: Run frontend tests
+      workingDirectory: frontend
+      continueOnError: false
+    - script: npm run build -- --configuration production
+      displayName: Build production frontend
+      workingDirectory: frontend
+    - task: PublishPipelineArtifact@1
+      displayName: Publish frontend build output
+      inputs:
+        targetPath: frontend/dist
+        artifact: frontend-dist
+        publishLocation: pipeline
+
+  - job: Infrastructure
+    displayName: Validate Bicep templates
+    steps:
+    - task: AzureCLI@2
+      displayName: Build Bicep template
+      inputs:
+        azureSubscription: 'REPLACE_WITH_NONPROD_AZURE_SERVICE_CONNECTION'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -euo pipefail
+          az bicep build --file infra/main.bicep
+      # Configure this service connection with workload identity federation.
+      # If you do not want CI to authenticate to Azure, install Bicep CLI and replace
+      # this task with `az bicep build` on an agent that already has Azure CLI.

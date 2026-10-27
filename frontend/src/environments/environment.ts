@@ -4,13 +4,15 @@
  */
 export const environment = {
   production: true,
+
   /** Adresse de l'API (même domaine que l'application en production). */
   api: '/api',
   auth: {
     mode: 'entra' as 'entra' | 'dev',
-    clientId: 'A_RENSEIGNER',
-    authority: 'https://login.microsoftonline.com/A_RENSEIGNER',
-    /** Autorisation demandée pour appeler l'API (déclarée dans l'inscription de l'API dans Entra ID). */
-    scopeApi: 'api://A_RENSEIGNER/acces',
+    clientId: 'a45e69e5-a929-4491-945c-82b2caf7f097',
+    authority: 'https://login.microsoftonline.com/91a30855-a777-43a6-8fad-66854b9a4d1b',
+    scopeApi: 'api://0e3a6b58-3a85-49ae-915b-e0f5b15e9483/acces',
   },
 };
+
+
