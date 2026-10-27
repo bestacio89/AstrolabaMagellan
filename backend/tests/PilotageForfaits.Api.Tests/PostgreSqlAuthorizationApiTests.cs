@@ -279,7 +279,7 @@ public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePost
         var selfDesactivation = await admin.PutAsJsonAsync(
             $"/api/utilisateurs/{adminId}/activation",
             new { actif = false });
-        Assert.Equal(HttpStatusCode.BadRequest, selfDesactivation.StatusCode);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, selfDesactivation.StatusCode);
     }
 
     [Fact]
