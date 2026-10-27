@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Suivi } from '../suivi/api/modeles';
-import { designe, dimanche, elementsDuProjet, joursDeLaSemaine, lignesSemaine, notificationsDuProjet, parPeriode } from './travail.logique';
+import { designe, dimanche, elementsDuProjet, joursDeLaSemaine, lignesSemaine, mesProfils, notificationsDuProjet, parPeriode } from './travail.logique';
 
 const moi = { prenom: 'Camille', nom: 'Lefèvre' };
 
@@ -48,6 +48,17 @@ function suivi(): Suivi {
 }
 
 describe('Mon travail', () => {
+  it('uses the stable account-to-profile link for Contributors instead of matching display names', () => {
+    const s = suivi();
+    s.droits.role = 'Consultant';
+    s.droits.utilisateurId = 'u-camille';
+    s.projet.profiles = [
+      { id: 'p0', utilisateurId: 'u-autre', collaborateur: 'Camille Lefèvre' },
+      { id: 'p1', utilisateurId: 'u-camille', collaborateur: 'Nom différent' },
+    ] as unknown as typeof s.projet.profiles;
+    expect(mesProfils(s, moi)).toEqual([1]);
+  });
+
   it('reconnaît la personne par son prénom et son nom, sans accents ni majuscules', () => {
     expect(designe('Camille LEFEVRE', moi)).toBe(true);
     expect(designe('Lefèvre Camille (consultante)', moi)).toBe(true);
