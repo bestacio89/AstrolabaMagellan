@@ -21,14 +21,16 @@ public sealed class MisesAJourService(SaisieOutils o)
     {
         var u = await o.ExigerSaisieConsommeAsync(projetId, a);
         var (type, libelle) = await ExigerCibleAsync(projetId, cibleType, cibleId, a);
-        if (type != "Tache" && await EstContributeurAsync(projetId, u.Id, a))
+        var estContributeur = await EstContributeurAsync(projetId, u.Id, a);
+        if (type != "Tache" && estContributeur)
             throw new AccesRefuseException("Un contributeur ne peut commenter que les tâches qui lui sont affectées.");
         if (type == "Tache")
         {
             var uid = await o.Db.Taches.Where(tache => tache.ProjetId == projetId && tache.Id == cibleId)
                 .Select(tache => tache.Repere).FirstOrDefaultAsync(a)
                 ?? throw new IntrouvableException("Tâche introuvable.");
-            await o.ExigerTacheAccessibleAuContributeurAsync(projetId, uid, u.Id, a);
+            if (estContributeur)
+                await o.ExigerTacheAccessibleAuContributeurAsync(projetId, uid, u.Id, a);
         }
         var texte = ValiderTexte(c.Texte);
         var commentaire = new Commentaire
