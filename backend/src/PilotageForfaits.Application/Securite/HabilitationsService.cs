@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using PilotageForfaits.Application.Abstractions;
 using PilotageForfaits.Application.Commun;
 using PilotageForfaits.Domain.Commun;
@@ -15,7 +16,8 @@ public sealed class HabilitationsService(
     IUtilisateurCourant courant,
     ServiceAcces acces,
     IHorloge horloge,
-    ServiceJournal journal)
+    ServiceJournal journal,
+    ILogger<HabilitationsService> traces)
 {
     public async Task<IReadOnlyList<UtilisateurAffectationDto>> ListerUtilisateursAsync(CancellationToken annulation = default)
     {
@@ -44,6 +46,25 @@ public sealed class HabilitationsService(
                 habilitation.Utilisateur.Email,
                 habilitation.Role))
             .ToListAsync(annulation);
+    }
+
+    public async Task DefinirActifAsync(Guid utilisateurId, bool actif, CancellationToken annulation = default)
+    {
+        if (!courant.Capacites.Contains(CapacitesApplication.UtilisateursAdministrer, StringComparer.Ordinal))
+            throw new AccesRefuseException("Seul un administrateur de l'application peut activer ou désactiver un compte.");
+
+        var cible = await db.Utilisateurs.FirstOrDefaultAsync(utilisateur => utilisateur.Id == utilisateurId, annulation)
+            ?? throw new IntrouvableException("Utilisateur introuvable.");
+        var acteur = await acces.UtilisateurAsync(annulation);
+        if (!actif && cible.Id == acteur.Id)
+            throw new RegleMetierException("Vous ne pouvez pas désactiver votre propre compte.");
+
+        if (cible.Actif == actif) return;
+        cible.Actif = actif;
+        await db.SaveChangesAsync(annulation);
+        traces.LogWarning(
+            "Accès applicatif {Action} pour l'utilisateur {UtilisateurId}, modifié par {ActeurId}.",
+            actif ? "activé" : "désactivé", cible.Id, acteur.Id);
     }
 
     public async Task AffecterAsync(
