@@ -11,21 +11,19 @@ public interface IUtilisateurCourant
     string Prenom { get; }
     string Nom { get; }
     string Email { get; }
-    /// <summary>Rôles Entra conservés à titre de profil d'identité, pas comme décision d'accès aux ressources.</summary>
+    /// <summary>Rôles globaux présents dans le jeton d'accès de l'API.</summary>
     IReadOnlyCollection<string> Roles { get; }
-    /// <summary>Capacités applicatives calculées côté serveur à partir de la configuration d'autorisation.</summary>
+    /// <summary>Capacités calculées côté serveur depuis les rôles globaux et les règles applicatives.</summary>
     IReadOnlyCollection<string> Capacites { get; }
 }
 
-/// <summary>Noms des rôles globaux déclarés dans l'inscription de l'application Entra ID.</summary>
+/// <summary>Valeurs exactes des rôles d'application globaux à déclarer sur l'inscription Entra de l'API.</summary>
 public static class RolesGlobaux
 {
-    /// <summary>Peut créer des projets (il en devient chef de projet).</summary>
-    public const string ChefDeProjet = "ChefDeProjet";
-    /// <summary>Voit tous les projets en lecture, montants compris.</summary>
-    public const string Pilotage = "Pilotage";
-    /// <summary>Administre l'application (utilisateurs, habilitations).</summary>
-    public const string Administrateur = "Administrateur";
+    /// <summary>Supervision opérationnelle du portefeuille et affectation des utilisateurs aux projets.</summary>
+    public const string Manager = "Manager";
+    /// <summary>Administration des utilisateurs et des habilitations, sans privilèges financiers implicites.</summary>
+    public const string Admin = "Admin";
 }
 
 /// <summary>Identifiants de capacités utilisés par les cas d'usage applicatifs.</summary>
@@ -35,6 +33,8 @@ public static class CapacitesAcces
     public const string ProjetsLireTous = "projets.lire-tous";
     public const string ProjetsCreer = "projets.creer";
     public const string ProjetsModifier = "projets.modifier";
+    public const string ProjetsAffecterUtilisateurs = "projets.affecter-utilisateurs";
+    public const string UtilisateursAdministrer = "utilisateurs.administrer";
     public const string ConsommeSaisir = "consomme.saisir";
     public const string ExportsFinanciers = "exports.financiers";
 }
