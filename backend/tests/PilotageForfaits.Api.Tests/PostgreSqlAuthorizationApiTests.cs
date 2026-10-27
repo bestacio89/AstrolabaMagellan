@@ -24,7 +24,7 @@ namespace PilotageForfaits.Api.Tests;
 
 /// <summary>
 /// End-to-end security test against an isolated PostgreSQL schema. It exercises real JWT validation,
-/// group-to-capability transformation, the versioned contract, and project assignment enforcement.
+/// app-role capability transformation, the versioned contract, and project assignment enforcement.
 /// </summary>
 public sealed class PostgreSqlAuthorizationApiTests : IClassFixture<FabriquePostgreSqlApi>
 {
@@ -230,8 +230,8 @@ public sealed class FabriquePostgreSqlApi : IAsyncLifetime
     public const string ClientId = "22222222-2222-4222-8222-222222222222";
     public const string Audience = "api://22222222-2222-4222-8222-222222222222";
     public const string Issuer = "https://login.microsoftonline.com/" + TenantId + "/v2.0";
-    public const string GroupeChef = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
-    public const string GroupeLecteur = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+    public const string GroupeChef = "Manager";
+    public const string GroupeLecteur = "Contributor";
     private const string CleTest = "only-for-tests-signing-key-never-use-in-production-2026";
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:18")
         .WithDatabase("pilotage_forfaits_tests")
@@ -288,7 +288,7 @@ public sealed class FabriquePostgreSqlApi : IAsyncLifetime
                 new Claim("tid", TenantId),
                 new Claim("oid", objectId),
                 new Claim("name", "Utilisateur PostgreSQL de test"),
-                new Claim("groups", groupe)
+                new Claim("roles", groupe)
             ],
             notBefore: maintenant.AddMinutes(-1),
             expires: maintenant.AddMinutes(5),
@@ -325,12 +325,6 @@ public sealed class FabriquePostgreSqlApi : IAsyncLifetime
                 ["AzureAd:TenantId"] = TenantId,
                 ["AzureAd:ClientId"] = ClientId,
                 ["AzureAd:Audience"] = Audience,
-                [$"AutorisationEntra:GroupesCapacites:{GroupeChef}:0"] = "projets.lire",
-                [$"AutorisationEntra:GroupesCapacites:{GroupeChef}:1"] = "projets.creer",
-                [$"AutorisationEntra:GroupesCapacites:{GroupeChef}:2"] = "projets.modifier",
-                [$"AutorisationEntra:GroupesCapacites:{GroupeChef}:3"] = "consomme.saisir",
-                [$"AutorisationEntra:GroupesCapacites:{GroupeChef}:4"] = "exports.financiers",
-                [$"AutorisationEntra:GroupesCapacites:{GroupeLecteur}:0"] = "projets.lire"
             };
 
             // Minimal hosting reads configuration while Program.cs is executing. Apply host settings
@@ -354,7 +348,7 @@ public sealed class FabriquePostgreSqlApi : IAsyncLifetime
                     options.MetadataAddress = null;
                     options.ConfigurationManager = null;
                     // Keep the exact Entra claim names used by the signed test tokens. This makes the
-                    // group-to-capability mapping exercise the raw tid/oid/groups contract without
+                    // app-role transformation exercise the raw tid/oid/roles contract without
                     // relying on framework inbound claim remapping.
                     options.MapInboundClaims = false;
                     options.TokenValidationParameters = new TokenValidationParameters
