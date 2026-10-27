@@ -46,6 +46,6 @@ describe('SessionService', () => {
 
     expect(session.moi()).toBeNull();
     expect(session.nomComplet()).toBe('');
-    expect(session.libelleRole()).toBe('Consultant');
+    expect(session.libelleRole()).toBe('Collaborateur');
   });
 });
