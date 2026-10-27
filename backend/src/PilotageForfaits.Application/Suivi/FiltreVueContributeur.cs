@@ -246,8 +246,11 @@ public static class FiltreVueContributeur
 
     private static bool Entier(JsonNode? node, out int valeur)
     {
-        try { return node is not null && node.AsValue().TryGetValue(out valeur); }
-        catch (InvalidOperationException) { valeur = 0; return false; }
+        valeur = 0;
+        if (node is null) return false;
+
+        try { return node.AsValue().TryGetValue(out valeur); }
+        catch (InvalidOperationException) { return false; }
     }
 
     private static decimal Nombre(JsonNode? node)
