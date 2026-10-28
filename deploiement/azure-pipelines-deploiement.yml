@@ -1,0 +1,307 @@
+# Déploiement d'Astrolabe sur Azure — environnement de développement (RG-AstroLabe-Dev).
+#
+#   1. Infrastructure : crée ou met à jour PostgreSQL, l'App Service de l'API et le stockage du site (main.bicep),
+#                       puis active le site web statique.
+#   2. Compilation    : publie l'API, prépare les migrations de la base, compile l'interface Angular
+#                       avec l'adresse de l'API.
+#   3. Déploiement    : applique les migrations, déploie l'API, dépose l'interface, vérifie que tout répond.
+#
+# Prérequis (une seule fois) : la variable secrète POSTGRES_ADMIN_PASSWORD (voir deploiement/LISEZMOI.md).
+# Lancement : à la main (« Run pipeline »). Pour déployer à chaque push sur main, remplacer « trigger: none » par :
+#   trigger:
+#     branches:
+#       include: [main]
+
+trigger: none
+pr: none
+
+variables:
+  connexionAzure: 'sc-azurerm-astrolabe'
+  groupeRessources: 'RG-AstroLabe-Dev'
+  imageAgent: 'ubuntu-24.04'
+
+stages:
+  # ---------------------------------------------------------------------------
+  - stage: Infrastructure
+    displayName: Ressources Azure
+    jobs:
+      - job: Infra
+        displayName: Créer ou mettre à jour les ressources
+        pool:
+          vmImage: $(imageAgent)
+        steps:
+          - checkout: self
+
+          - task: AzureCLI@2
+            name: sorties
+            displayName: Déployer main.bicep et activer le site statique
+            inputs:
+              azureSubscription: $(connexionAzure)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+
+                if [ -z "${POSTGRES_ADMIN_PASSWORD:-}" ] || [[ "$POSTGRES_ADMIN_PASSWORD" == '$('* ]]; then
+                  echo "##vso[task.logissue type=error]La variable secrète POSTGRES_ADMIN_PASSWORD n'existe pas. Créez-la : Pipelines › ce pipeline › Edit › Variables (voir deploiement/LISEZMOI.md)."
+                  exit 1
+                fi
+
+                az deployment group create \
+                  --resource-group "$GROUPE" \
+                  --name "astrolabe-$NUMERO" \
+                  --parameters deploiement/infra/dev.bicepparam \
+                  --query properties.outputs \
+                  --output json > sorties.json
+
+                valeur() { jq -r --arg cle "$1" '.[$cle].value' sorties.json; }
+                for cle in nomApi urlApi nomStockage urlFront hotePostgres nomBase postgresAdminLogin; do
+                  echo "##vso[task.setvariable variable=$cle;isOutput=true]$(valeur "$cle")"
+                done
+
+                NOM_STOCKAGE="$(valeur nomStockage)"
+                CLE=$(az storage account keys list --resource-group "$GROUPE" --account-name "$NOM_STOCKAGE" --query "[0].value" --output tsv)
+                echo "##vso[task.setvariable variable=cleStockage;issecret=true]$CLE"
+                az storage blob service-properties update \
+                  --account-name "$NOM_STOCKAGE" --account-key "$CLE" \
+                  --static-website --index-document index.html --404-document index.html \
+                  --output none
+
+                echo "API       : $(valeur urlApi)"
+                echo "Interface : $(valeur urlFront)"
+            env:
+              GROUPE: $(groupeRessources)
+              NUMERO: $(Build.BuildNumber)
+              POSTGRES_ADMIN_PASSWORD: $(POSTGRES_ADMIN_PASSWORD)
+
+  # ---------------------------------------------------------------------------
+  - stage: Compilation
+    displayName: Compilation
+    dependsOn: Infrastructure
+    variables:
+      urlApi: $[ stageDependencies.Infrastructure.Infra.outputs['sorties.urlApi'] ]
+    jobs:
+      - job: Api
+        displayName: API .NET et migrations
+        pool:
+          vmImage: $(imageAgent)
+        steps:
+          - checkout: self
+
+          - task: UseDotNet@2
+            displayName: Installer le SDK .NET (global.json)
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              workingDirectory: backend
+
+          - script: dotnet publish src/PilotageForfaits.Api/PilotageForfaits.Api.csproj --configuration Release --output "$(Build.ArtifactStagingDirectory)/api"
+            displayName: Publier l'API
+            workingDirectory: backend
+
+          # Un exécutable autonome qui applique les migrations EF Core (« efbundle »). La chaîne ci-dessous ne sert
+          # qu'à la construction : aucune base n'est contactée à cette étape.
+          - script: |
+              set -euo pipefail
+              dotnet tool restore
+              dotnet ef migrations bundle \
+                --project src/PilotageForfaits.Infrastructure \
+                --startup-project src/PilotageForfaits.Api \
+                --configuration Release \
+                --self-contained --target-runtime linux-x64 \
+                --output "$(Build.ArtifactStagingDirectory)/migrations/efbundle" \
+                --force
+              cp src/PilotageForfaits.Api/appsettings.json "$(Build.ArtifactStagingDirectory)/migrations/"
+            displayName: Préparer les migrations de la base
+            workingDirectory: backend
+            env:
+              ConnectionStrings__Pilotage: 'Host=localhost;Database=construction;Username=construction;Password=construction'
+
+          - publish: $(Build.ArtifactStagingDirectory)/api
+            artifact: api
+            displayName: Conserver l'API
+
+          - publish: $(Build.ArtifactStagingDirectory)/migrations
+            artifact: migrations
+            displayName: Conserver les migrations
+
+      - job: Front
+        displayName: Interface Angular
+        pool:
+          vmImage: $(imageAgent)
+        steps:
+          - checkout: self
+
+          - task: UseNode@1
+            displayName: Installer Node.js 22
+            inputs:
+              version: '22.x'
+
+          # En production, l'interface appelle l'API à son adresse Azure (et non /api sur le même site).
+          - script: |
+              set -euo pipefail
+              f=src/environments/environment.ts
+              if ! grep -q "api: '/api'," "$f"; then
+                echo "##vso[task.logissue type=error]La ligne « api: '/api', » est introuvable dans frontend/$f : adapter cette étape."
+                exit 1
+              fi
+              sed -i "s#api: '/api',#api: '${URL_API}/api',#" "$f"
+              grep -n "api:" "$f"
+            displayName: Renseigner l'adresse de l'API
+            workingDirectory: frontend
+            env:
+              URL_API: $(urlApi)
+
+          - script: npm install --no-audit --no-fund
+            displayName: Installer les paquets
+            workingDirectory: frontend
+
+          # Sur les agents Azure DevOps, « ng build » a déjà fini son travail (« Output location ») sans rendre la main.
+          # Cette étape surveille la compilation : une fois les fichiers produits, elle laisse 30 s à la commande pour
+          # se terminer, puis l'arrête au lieu d'attendre la limite de 60 minutes. Une vraie erreur reste une erreur.
+          - script: |
+              set -uo pipefail
+              journal=build.log
+              index=dist/pilotage-forfaits/browser/index.html
+              rm -f "$journal"
+              setsid npm run build -- --configuration production > "$journal" 2>&1 &
+              pid=$!
+              tail -n +1 -f "$journal" --pid="$pid" &
+
+              code=""
+              for _ in {1..120}; do                      # 120 × 10 s = 20 minutes au plus
+                if ! kill -0 "$pid" 2>/dev/null; then
+                  wait "$pid"; code=$?
+                  break
+                fi
+                if grep -q "Output location:" "$journal" && [ -s "$index" ]; then
+                  for _ in {1..6}; do
+                    kill -0 "$pid" 2>/dev/null || break
+                    sleep 5
+                  done
+                  if kill -0 "$pid" 2>/dev/null; then
+                    echo "##vso[task.logissue type=warning]Compilation terminée mais « ng build » ne rendait pas la main : commande arrêtée."
+                    kill -TERM -- "-$pid" 2>/dev/null || true
+                    sleep 2
+                    kill -KILL -- "-$pid" 2>/dev/null || true
+                    code=0
+                  else
+                    wait "$pid"; code=$?
+                  fi
+                  break
+                fi
+                sleep 10
+              done
+
+              if [ -z "$code" ]; then
+                echo "##vso[task.logissue type=error]La compilation de l'interface n'a pas abouti en 20 minutes."
+                kill -KILL -- "-$pid" 2>/dev/null || true
+                exit 1
+              fi
+              sleep 1
+              if [ "$code" -ne 0 ]; then
+                echo "##vso[task.logissue type=error]La compilation de l'interface a échoué (code $code) : voir le journal ci-dessus."
+                exit "$code"
+              fi
+              test -s "$index" || { echo "##vso[task.logissue type=error]$index est absent."; exit 1; }
+              echo "Interface compilée."
+            displayName: Compiler l'interface
+            workingDirectory: frontend
+
+          - publish: frontend/dist/pilotage-forfaits/browser
+            artifact: front
+            displayName: Conserver l'interface
+
+  # ---------------------------------------------------------------------------
+  - stage: Deploiement
+    displayName: Déploiement
+    dependsOn:
+      - Infrastructure
+      - Compilation
+    variables:
+      nomApi: $[ stageDependencies.Infrastructure.Infra.outputs['sorties.nomApi'] ]
+      urlApi: $[ stageDependencies.Infrastructure.Infra.outputs['sorties.urlApi'] ]
+      nomStockage: $[ stageDependencies.Infrastructure.Infra.outputs['sorties.nomStockage'] ]
+      urlFront: $[ stageDependencies.Infrastructure.Infra.outputs['sorties.urlFront'] ]
+      hotePostgres: $[ stageDependencies.Infrastructure.Infra.outputs['sorties.hotePostgres'] ]
+      nomBase: $[ stageDependencies.Infrastructure.Infra.outputs['sorties.nomBase'] ]
+      postgresAdminLogin: $[ stageDependencies.Infrastructure.Infra.outputs['sorties.postgresAdminLogin'] ]
+    jobs:
+      - job: Deployer
+        displayName: Base, API et interface
+        pool:
+          vmImage: $(imageAgent)
+        steps:
+          - checkout: none
+          - download: current
+            displayName: Récupérer l'API, les migrations et l'interface
+
+          # L'API refuse de démarrer si la base n'est pas à jour : les migrations passent avant elle.
+          - script: |
+              set -euo pipefail
+              cd "$(Pipeline.Workspace)/migrations"
+              chmod +x efbundle
+              export ConnectionStrings__Pilotage="Host=${HOTE};Port=5432;Database=${BASE};Username=${UTILISATEUR};Password=${POSTGRES_ADMIN_PASSWORD};SSL Mode=Require"
+              ./efbundle
+            displayName: Mettre la base à jour (migrations)
+            env:
+              HOTE: $(hotePostgres)
+              BASE: $(nomBase)
+              UTILISATEUR: $(postgresAdminLogin)
+              POSTGRES_ADMIN_PASSWORD: $(POSTGRES_ADMIN_PASSWORD)
+
+          - task: AzureWebApp@1
+            displayName: Déployer l'API
+            inputs:
+              azureSubscription: $(connexionAzure)
+              appType: webAppLinux
+              appName: $(nomApi)
+              package: $(Pipeline.Workspace)/api
+
+          - task: AzureCLI@2
+            displayName: Déposer l'interface sur le site statique
+            inputs:
+              azureSubscription: $(connexionAzure)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                CLE=$(az storage account keys list --resource-group "$GROUPE" --account-name "$NOM_STOCKAGE" --query "[0].value" --output tsv)
+                echo "##vso[task.setvariable variable=cleStockage;issecret=true]$CLE"
+                az storage blob upload-batch \
+                  --account-name "$NOM_STOCKAGE" --account-key "$CLE" \
+                  --destination '$web' --source "$DOSSIER" --overwrite --output none
+                # index.html ne doit pas rester en cache : c'est lui qui pointe vers la dernière version.
+                az storage blob update \
+                  --account-name "$NOM_STOCKAGE" --account-key "$CLE" \
+                  --container-name '$web' --name index.html \
+                  --content-cache-control "no-cache" --output none
+            env:
+              GROUPE: $(groupeRessources)
+              NOM_STOCKAGE: $(nomStockage)
+              DOSSIER: $(Pipeline.Workspace)/front
+
+          - script: |
+              set -euo pipefail
+              for essai in {1..20}; do
+                if curl -fsS --max-time 20 "${URL_API}/api/sante"; then
+                  echo
+                  echo "API : OK"
+                  break
+                fi
+                if [ "$essai" -eq 20 ]; then
+                  echo "##vso[task.logissue type=error]L'API ne répond pas sur ${URL_API}/api/sante. Voir le portail Azure : App Service › Flux de journaux."
+                  exit 1
+                fi
+                echo "L'API démarre… nouvel essai dans 15 s"
+                sleep 15
+              done
+              curl -fsS --max-time 20 -o /dev/null "${URL_FRONT}/"
+              echo "Interface : OK"
+              echo
+              echo "Interface : ${URL_FRONT}"
+              echo "API       : ${URL_API}"
+            displayName: Vérifier que l'API et l'interface répondent
+            env:
+              URL_API: $(urlApi)
+              URL_FRONT: $(urlFront)

@@ -17,7 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 // ---------- Couches de l'application ----------
 builder.Services.AjouterApplication();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddTransient<IClaimsTransformation, TransformationGroupesEntra>();
+builder.Services.AddTransient<IClaimsTransformation, TransformationRolesEntra>();
 builder.Services.AddScoped<IUtilisateurCourant, UtilisateurCourantHttp>();
 
 // ---------- Authentification : compte d'entreprise (Entra ID), ou utilisateurs fictifs en développement ----------
@@ -56,7 +56,6 @@ if (mode == "Dev")
 else
 {
     ValiderConfigurationEntraId(builder.Configuration);
-    TransformationGroupesEntra.ValiderConfiguration(builder.Configuration);
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 }
@@ -93,6 +92,22 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GestionnaireErreurs>();
 builder.Services.AddOpenApi(); // description de l'API : /openapi/v1.json (sert à générer le client Angular)
 
+// ---------- CORS : l'interface est servie depuis une autre adresse que l'API (site statique Azure) ----------
+// Liste vide (développement local, tests) : aucune origine externe autorisée, comportement inchangé.
+var originesAutorisees = builder.Configuration.GetSection("Cors:OriginesAutorisees").Get<string[]>()?
+    .Where(origine => !string.IsNullOrWhiteSpace(origine))
+    .Select(origine => origine.TrimEnd('/'))
+    .ToArray() ?? [];
+if (originesAutorisees.Length > 0)
+{
+    builder.Services.AddCors(options => options.AddDefaultPolicy(politique => politique
+        .WithOrigins(originesAutorisees)
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        // Nom des fichiers exportés (Excel…), lu par l'interface lors des téléchargements.
+        .WithExposedHeaders("Content-Disposition")));
+}
+
 var app = builder.Build();
 
 app.UseExceptionHandler();
@@ -107,6 +122,8 @@ else if (!app.Environment.IsEnvironment("Tests"))
     await VerifierMigrationsAppliqueesAsync(app);
 }
 app.UseHttpsRedirection();
+if (originesAutorisees.Length > 0)
+    app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
