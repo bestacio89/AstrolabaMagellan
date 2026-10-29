@@ -184,3 +184,26 @@ jobs:
           for f in "$RUNNER_TEMP"/reference/*.json; do
             diff -q "$f" "backend/tests/Donnees/$(basename "$f")"
           done
+
+  delivery-contracts:
+    name: Azure delivery contracts (Bicep and shell)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate deployment script syntax and referenced paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          for script in AstrolabaMagellan-Azure-Delivery/scripts/*.sh; do bash -n "$script"; done
+          test -f AstrolabaMagellan-Azure-Delivery/infra/main.bicep
+          test -f AstrolabaMagellan-Azure-Delivery/infra/parameters/test.bicepparam
+          test -f AstrolabaMagellan-Azure-Delivery/infra/parameters/production.bicepparam
+          grep -Fq 'scriptPath: AstrolabaMagellan-Azure-Delivery/scripts/deploy-application.sh' AstrolabaMagellan-Azure-Delivery/azure-pipelines-deploy.yml
+          grep -Fq 'scriptPath: AstrolabaMagellan-Azure-Delivery/scripts/verify-private-networking.sh' AstrolabaMagellan-Azure-Delivery/azure-pipelines-deploy.yml
+          grep -Fq '/api/sante' AstrolabaMagellan-Azure-Delivery/scripts/verify-private-networking.sh
+      - name: Compile Bicep template
+        shell: bash
+        run: |
+          set -euo pipefail
+          az bicep build --file AstrolabaMagellan-Azure-Delivery/infra/main.bicep

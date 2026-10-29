@@ -14,6 +14,12 @@ using PilotageForfaits.Infrastructure.Donnees;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Enable request/dependency/exception telemetry only when an explicit production connection is configured.
+if (!string.IsNullOrWhiteSpace(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]))
+{
+    builder.Services.AddApplicationInsightsTelemetry();
+}
+
 // ---------- Couches de l'application ----------
 builder.Services.AjouterApplication();
 builder.Services.AddHttpContextAccessor();
