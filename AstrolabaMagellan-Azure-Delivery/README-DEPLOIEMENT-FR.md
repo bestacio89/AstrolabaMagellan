@@ -27,7 +27,7 @@ Ce dossier fournit une base d'infrastructure et de pipelines Azure DevOps pour d
 
 - `azure-pipelines-ci.yml` : validation PR, compilation/tests .NET et Angular, validation Bicep.
 - `azure-pipelines-deploy.yml` : déploiement manuel, what-if, déploiement infra, création automatique des secrets et du rôle PostgreSQL, migration et déploiement applicatif, smoke tests.
-- `infra/main.bicep` : ressources Azure.
+- `infra/main.bicep` : ressources Azure, workspace Log Analytics et Application Insights.
 - `infra/parameters/test.bicepparam` et `production.bicepparam` : paramètres par environnement. Remplacer tous les noms `REPLACE_WITH_...`.
 - `scripts/resolve-postgres-admin-password.sh` : réutilise le secret administrateur existant ou génère un mot de passe uniquement lors d'une première création.
 - `scripts/provision-postgres-secrets.sh` : enregistre les secrets dans Key Vault, crée/met à jour le compte PostgreSQL applicatif et génère la chaîne Npgsql.
@@ -72,6 +72,10 @@ Le compte applicatif est distinct du compte administrateur. Le pipeline exécute
 - Key Vault réseau privé : https://learn.microsoft.com/azure/key-vault/general/private-link-service
 - Azure DevOps approvals/checks : https://learn.microsoft.com/azure/devops/pipelines/process/approvals
 
+
+## Observabilité et alertes
+
+L'API active Application Insights uniquement lorsqu'une chaîne `APPLICATIONINSIGHTS_CONNECTION_STRING` est fournie. Bicep crée un workspace Log Analytics avec une rétention de 30 jours en test et 90 jours en production. Avant la production, configurer dans Azure Monitor des alertes d'indisponibilité, de taux d'erreurs et d'échecs de dépendances, avec un groupe d'action opérationnel.
 
 ## Retour arrière et reprise
 

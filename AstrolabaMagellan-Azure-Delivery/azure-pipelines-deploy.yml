@@ -168,6 +168,9 @@ stages:
               POSTGRES_ADMIN_LOGIN: $(POSTGRES_ADMIN_LOGIN)
               POSTGRES_APP_LOGIN: $(POSTGRES_APP_LOGIN)
               KEY_VAULT_NAME: $(KEY_VAULT_NAME)
+          - script: mkdir -p "$(Build.SourcesDirectory)/.deploy"
+            displayName: Ensure rollback artifact directory exists
+            condition: always()
           - task: PublishPipelineArtifact@1
             displayName: Retain application packages for rollback
             condition: always()

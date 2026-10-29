@@ -10,7 +10,7 @@ See [`README-DEPLOIEMENT-FR.md`](README-DEPLOIEMENT-FR.md) for the French operat
 
 - `azure-pipelines-ci.yml` — PR validation.
 - `azure-pipelines-deploy.yml` — manually invoked deployment pipeline.
-- `infra/main.bicep` — VNet, App Services, Key Vault, PostgreSQL Flexible Server, private endpoints, private DNS, managed identity RBAC.
+- `infra/main.bicep` — VNet, App Services, Key Vault, PostgreSQL Flexible Server, private endpoints, private DNS, managed identity RBAC, Log Analytics and workspace-based Application Insights.
 - `infra/parameters/` — test and production parameter files with placeholders.
 - `scripts/` — deployment, automatic PostgreSQL credential bootstrap, Key Vault secret provisioning, and private-network smoke-check scripts.
 
@@ -21,7 +21,7 @@ See [`README-DEPLOIEMENT-FR.md`](README-DEPLOIEMENT-FR.md) for the French operat
 3. Confirm EF Core migration project/DbContext and Angular output path against the current repository.
 4. Resolve Angular `/api` routing: separate App Services do not automatically make relative `/api` calls reach the backend. Add a reverse proxy/BFF or configure a private API URL and narrowly scoped CORS.
 5. The deployment pipeline automatically generates/reuses PostgreSQL credentials, provisions a least-privilege `astrolaba_app` role, and writes `AstrolabaPostgresConnectionString` to Key Vault. Successful or partially completed deployment runs retain any generated application packages as pipeline artifacts for rollback/recovery. If a previous first deployment partially created PostgreSQL but failed before storing the admin secret, the deployment run rotates the admin password and stores the replacement; the what-if stage does not rotate credentials. The private agent must have `psql`, `openssl`, Azure CLI and private DNS/network access.
-6. Configure production approvals/checks in Azure DevOps UI. The Azure DevOps service connection needs permissions to deploy resources/role assignments and write Key Vault secrets.
+6. Application Insights captures API request, dependency and exception telemetry in the environment's Log Analytics workspace (30-day test retention, 90-day production retention). Configure Azure Monitor alert rules and action groups for availability, error rate and dependency failures before production. The Azure DevOps service connection needs permissions to deploy resources/role assignments and write Key Vault secrets.
 
 ## Run CI
 
