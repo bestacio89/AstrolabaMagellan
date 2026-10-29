@@ -2,7 +2,7 @@
 
 A private-network Azure deployment starter for the AstrolabaMagellan application.
 
-**This is a template, not a verified deployment.** Before using it in production, review the Bicep deployment with `what-if`, confirm all repository paths and application settings, and test in a non-production subscription/environment.
+**This is a template, not a verified deployment.** Green application CI does not validate this Azure DevOps pipeline. Before using it in production, validate the pipeline in Azure DevOps, review the Bicep deployment with `what-if`, confirm all repository paths and application settings, and test in a non-production subscription/environment.
 
 See [`README-DEPLOIEMENT-FR.md`](README-DEPLOIEMENT-FR.md) for the French operational guide.
 
@@ -20,13 +20,21 @@ See [`README-DEPLOIEMENT-FR.md`](README-DEPLOIEMENT-FR.md) for the French operat
 2. Create a self-hosted Azure DevOps agent with private VNet connectivity; the deployment must reach private endpoints and App Service SCM/Kudu.
 3. Confirm EF Core migration project/DbContext and Angular output path against the current repository.
 4. Resolve Angular `/api` routing: separate App Services do not automatically make relative `/api` calls reach the backend. Add a reverse proxy/BFF or configure a private API URL and narrowly scoped CORS.
-5. The deployment pipeline automatically generates/reuses PostgreSQL credentials, provisions the `astrolaba_app` role, and writes `AstrolabaPostgresConnectionString` to Key Vault. If a previous first deployment partially created PostgreSQL but failed before storing the admin secret, the deployment run rotates the admin password and stores the replacement; the what-if stage does not rotate credentials. The private agent must have `psql`, `openssl`, Azure CLI and private DNS/network access.
+5. The deployment pipeline automatically generates/reuses PostgreSQL credentials, provisions a least-privilege `astrolaba_app` role, and writes `AstrolabaPostgresConnectionString` to Key Vault. Successful or partially completed deployment runs retain any generated application packages as pipeline artifacts for rollback/recovery. If a previous first deployment partially created PostgreSQL but failed before storing the admin secret, the deployment run rotates the admin password and stores the replacement; the what-if stage does not rotate credentials. The private agent must have `psql`, `openssl`, Azure CLI and private DNS/network access.
 6. Configure production approvals/checks in Azure DevOps UI. The Azure DevOps service connection needs permissions to deploy resources/role assignments and write Key Vault secrets.
 
 ## Run CI
 
-Create a pipeline in Azure DevOps pointing to `azure-pipelines-ci.yml`. Replace the service connection placeholder if using the AzureCLI Bicep validation task. Configure workload identity federation and minimum required permissions.
+Create a pipeline in Azure DevOps pointing to `AstrolabaMagellan-Azure-Delivery/azure-pipelines-ci.yml`. The Bicep compile stage does not require Azure credentials; infrastructure deployment permissions belong only in the deployment pipeline.
 
 ## Run deployment
 
-Create a separate pipeline pointing to `azure-pipelines-deploy.yml`, set the pipeline variables documented in the YAML, and use a private self-hosted agent pool. Run the `test` environment first. Inspect `what-if` output before allowing deployment. Configure environment approvals in the Azure DevOps UI.
+Create a separate pipeline pointing to `AstrolabaMagellan-Azure-Delivery/azure-pipelines-deploy.yml`, set the pipeline variables documented in the YAML, and use a private self-hosted agent pool. Run the `test` environment first. Inspect `what-if` output before allowing deployment. Configure environment approvals in the Azure DevOps UI.
+
+
+## Rollback and recovery
+
+- The deployment pipeline publishes the generated ZIP packages as `deployment-packages-<BuildId>`, including on failure when the package directory exists. Retain successful release runs according to the operational retention policy.
+- To roll back application code, download the backend and frontend ZIP artifacts from the last known-good deployment run and deploy them to their corresponding App Services from the private agent using `az webapp deploy`. Re-run the private smoke checks afterward.
+- Database migrations are not automatically reversed. Use additive/expand-contract migrations for production releases. If data/schema recovery is required, restore PostgreSQL to a **new** server using the supported point-in-time restore workflow, validate the restored database, and only then plan the application connection switch. Never assume restoring an older application package also rolls back the database.
+- Before production use, perform a timed restore exercise and record the recovery point objective (RPO) and recovery time objective (RTO). Backup retention alone is not proof that restoration works.

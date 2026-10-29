@@ -39,9 +39,9 @@ Ce dossier fournit une base d'infrastructure et de pipelines Azure DevOps pour d
 
 Ne jamais enregistrer le mot de passe PostgreSQL ni la chaîne de connexion dans Git, dans un fichier `.bicepparam`, ou dans les logs de pipeline. Le pipeline gère automatiquement les secrets : lors du premier déploiement, il génère un mot de passe administrateur aléatoire, puis stocke `AstrolabaPostgresAdminPassword` dans Key Vault. Lors des exécutions suivantes, il réutilise ce secret au lieu de réinitialiser le mot de passe du serveur. Si un premier déploiement partiel a créé PostgreSQL sans enregistrer le secret, l’étape de déploiement (pas le `what-if`) régénère et réinitialise le mot de passe, puis l’enregistre dans Key Vault.
 
-Après la création de l'infrastructure, le pipeline récupère le FQDN PostgreSQL depuis Azure, génère ou réutilise le mot de passe du compte `astrolaba_app`, crée/met à jour ce rôle et lui attribue la propriété de la base et du schéma `public` afin que les migrations EF Core puissent s'exécuter. Il enregistre ensuite `AstrolabaPostgresApplicationPassword` et `AstrolabaPostgresConnectionString` dans Key Vault. Aucun secret n'est passé dans les sorties Bicep ni affiché dans les logs. Les mots de passe générés respectent les catégories de complexité Azure PostgreSQL. Le backend utilise déjà la référence Key Vault dans `ConnectionStrings__DefaultConnection`.
+Après la création de l'infrastructure, le pipeline récupère le FQDN PostgreSQL depuis Azure et crée/met à jour le compte `astrolaba_app` avec des droits limités aux opérations applicatives. Le pipeline exécute les migrations avec le compte administrateur ; le compte applicatif n'est pas propriétaire des objets de la base. Il enregistre ensuite `AstrolabaPostgresApplicationPassword` et `AstrolabaPostgresConnectionString` dans Key Vault. Aucun secret n'est passé dans les sorties Bicep ni affiché dans les logs. Les mots de passe générés respectent les catégories de complexité Azure PostgreSQL. Le backend utilise la référence Key Vault dans `ConnectionStrings__Pilotage`.
 
-Le compte applicatif est distinct du compte administrateur. Dans ce modèle, il possède la base/le schéma pour permettre les migrations depuis le pipeline ; une séparation supplémentaire entre identité de migration et identité d'exécution pourra être ajoutée si l'application doit appliquer un modèle de moindre privilège plus strict. La chaîne utilise le FQDN PostgreSQL normal, résolu en IP privée, et `SSL Mode=VerifyFull`.
+Le compte applicatif est distinct du compte administrateur. Le pipeline exécute les migrations avec l'identité administrateur ; le compte `astrolaba_app` reçoit uniquement les droits DML sur les tables et l'usage des séquences. Les privilèges par défaut couvrent les tables et séquences créées par les migrations futures. La chaîne utilise le FQDN PostgreSQL normal, résolu en IP privée, et `SSL Mode=VerifyFull`.
 
 ## Étapes manuelles obligatoires avant le premier déploiement
 
@@ -71,3 +71,11 @@ Le compte applicatif est distinct du compte administrateur. Dans ce modèle, il 
 - Désactiver l'accès public PostgreSQL : https://learn.microsoft.com/en-us/azure/postgresql/network/how-to-networking-servers-deployed-public-access-disable-public-access
 - Key Vault réseau privé : https://learn.microsoft.com/azure/key-vault/general/private-link-service
 - Azure DevOps approvals/checks : https://learn.microsoft.com/azure/devops/pipelines/process/approvals
+
+
+## Retour arrière et reprise
+
+- Le pipeline publie les ZIP générés dans l'artefact `deployment-packages-<BuildId>`, y compris en cas d'échec si le répertoire de paquets existe. Conserver les exécutions réussies selon la politique de rétention.
+- Pour revenir au code applicatif précédent, récupérer les ZIP backend et frontend de la dernière exécution saine et les redéployer sur les App Services correspondants depuis l'agent privé, puis relancer les smoke tests.
+- Les migrations PostgreSQL ne sont pas annulées automatiquement. En production, privilégier des migrations additives/expand-contract. Si une reprise de schéma ou de données est nécessaire, restaurer PostgreSQL vers un **nouveau** serveur via la restauration à un instant donné, valider la base restaurée, puis planifier le changement de connexion. Le redéploiement d'un ancien binaire ne restaure pas la base.
+- Avant la production, exécuter un exercice chronométré de restauration et documenter les objectifs RPO/RTO. La présence de sauvegardes ne prouve pas que la restauration fonctionne.
