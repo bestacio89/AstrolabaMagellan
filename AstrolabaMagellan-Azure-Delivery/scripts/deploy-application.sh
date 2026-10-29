@@ -46,7 +46,7 @@ az webapp deploy --resource-group "$RESOURCE_GROUP_NAME" --name "$BACKEND_APP_NA
 
 # Angular must be configured to call the private backend API origin. Relative /api URLs
 # require a reverse proxy/BFF or an equivalent rewrite, which this infrastructure does not create.
-(cd frontend && npm ci && npm run build -- --configuration production)
+(cd frontend && npm install --no-audit --no-fund && npm run build -- --configuration production)
 DIST_DIR="$(find frontend/dist -mindepth 1 -maxdepth 2 -type d -name browser -o -name dist | head -n 1)"
 if [[ -z "$DIST_DIR" ]]; then
   DIST_DIR="$(find frontend/dist -mindepth 1 -maxdepth 1 -type d | head -n 1)"
