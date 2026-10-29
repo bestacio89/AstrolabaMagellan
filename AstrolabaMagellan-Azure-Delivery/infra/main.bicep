@@ -86,6 +86,30 @@ resource appPlan 'Microsoft.Web/serverfarms@2024-04-01' = {
   properties: { reserved: true }
 }
 
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
+  name: 'law-astrolaba-${suffix}'
+  location: location
+  properties: {
+    sku: { name: 'PerGB2018' }
+    retentionInDays: environmentName == 'production' ? 90 : 30
+    features: {
+      searchVersion: 1
+      enableLogAccessUsingOnlyResourcePermissions: true
+    }
+  }
+}
+
+resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: 'appi-astrolaba-${suffix}'
+  location: location
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    IngestionMode: 'LogAnalytics'
+    WorkspaceResourceId: logAnalytics.id
+  }
+}
+
 resource backendApp 'Microsoft.Web/sites@2024-04-01' = {
   name: backendAppName
   location: location
@@ -108,6 +132,7 @@ resource backendApp 'Microsoft.Web/sites@2024-04-01' = {
         { name: 'WEBSITE_VNET_ROUTE_ALL', value: '1' }
         { name: 'ConnectionStrings__Pilotage', value: '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.vault.azure.net/secrets/AstrolabaPostgresConnectionString/)' }
         { name: 'Cors__OriginesAutorisees__0', value: 'https://${frontendAppName}.azurewebsites.net' }
+        { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsights.properties.ConnectionString }
       ]
     }
   }

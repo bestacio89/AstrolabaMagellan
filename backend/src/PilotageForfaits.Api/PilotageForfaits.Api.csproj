@@ -11,6 +11,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Microsoft.Identity.Web" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" />
     <!-- Nécessaire pour la commande « dotnet ef migrations add » lancée depuis ce projet. -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <PrivateAssets>all</PrivateAssets>
