@@ -20,7 +20,7 @@ if [[ -z "$CONNECTION_STRING" || "$CONNECTION_STRING" == *REPLACE_* ]]; then
   echo 'Key Vault secret AstrolabaPostgresConnectionString is missing or still a placeholder.' >&2
   exit 10
 fi
-export ConnectionStrings__DefaultConnection="$CONNECTION_STRING"
+export ConnectionStrings__Pilotage="$CONNECTION_STRING"
 
 # Publish backend into a clean staging directory.
 rm -rf .deploy/backend .deploy/frontend
