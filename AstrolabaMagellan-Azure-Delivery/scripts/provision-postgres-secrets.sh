@@ -91,16 +91,36 @@ WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '$POSTGRES_APP_LOGIN')
 \gexec
 SELECT format('ALTER ROLE %I WITH LOGIN PASSWORD %L', '$POSTGRES_APP_LOGIN', '$APP_PASSWORD')
 \gexec
-SELECT format('ALTER DATABASE %I OWNER TO %I', '$POSTGRES_DATABASE_NAME', '$POSTGRES_APP_LOGIN')
+SELECT format('GRANT CONNECT ON DATABASE %I TO %I', '$POSTGRES_DATABASE_NAME', '$POSTGRES_APP_LOGIN')
+\gexec
+-- Temporarily grant membership so this script can take ownership away from older runtime deployments.
+SELECT format('GRANT %I TO %I', '$POSTGRES_APP_LOGIN', '$POSTGRES_ADMIN_LOGIN')
+\gexec
+SELECT format('ALTER DATABASE %I OWNER TO %I', '$POSTGRES_DATABASE_NAME', '$POSTGRES_ADMIN_LOGIN')
 \gexec
 SQL
 psql "host=$POSTGRES_FQDN port=5432 dbname=postgres user=$POSTGRES_ADMIN_LOGIN sslmode=verify-full connect_timeout=15" \
   --no-psqlrc --set=ON_ERROR_STOP=1 --file "$ROLE_SQL"
 
-# Make the application role the owner of the public schema so EF migrations can run.
+# Keep ownership/migrations with the administrator. The runtime identity receives only DML.
+# Reset ownership as well, so rerunning this script hardens deployments created by older versions.
 cat > "$SCHEMA_SQL" <<SQL
 \o /dev/null
-SELECT format('ALTER SCHEMA public OWNER TO %I', '$POSTGRES_APP_LOGIN')
+SELECT format('REASSIGN OWNED BY %I TO %I', '$POSTGRES_APP_LOGIN', '$POSTGRES_ADMIN_LOGIN')
+\gexec
+SELECT format('REVOKE %I FROM %I', '$POSTGRES_APP_LOGIN', '$POSTGRES_ADMIN_LOGIN')
+\gexec
+SELECT format('ALTER SCHEMA public OWNER TO %I', '$POSTGRES_ADMIN_LOGIN')
+\gexec
+SELECT format('GRANT USAGE ON SCHEMA public TO %I', '$POSTGRES_APP_LOGIN')
+\gexec
+SELECT format('GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO %I', '$POSTGRES_APP_LOGIN')
+\gexec
+SELECT format('GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO %I', '$POSTGRES_APP_LOGIN')
+\gexec
+SELECT format('ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO %I', '$POSTGRES_ADMIN_LOGIN', '$POSTGRES_APP_LOGIN')
+\gexec
+SELECT format('ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA public GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO %I', '$POSTGRES_ADMIN_LOGIN', '$POSTGRES_APP_LOGIN')
 \gexec
 SQL
 psql "host=$POSTGRES_FQDN port=5432 dbname=$POSTGRES_DATABASE_NAME user=$POSTGRES_ADMIN_LOGIN sslmode=verify-full connect_timeout=15" \
