@@ -106,7 +106,7 @@ resource backendApp 'Microsoft.Web/sites@2024-04-01' = {
       appSettings: [
         { name: 'ASPNETCORE_ENVIRONMENT', value: environmentName == 'production' ? 'Production' : 'Staging' }
         { name: 'WEBSITE_VNET_ROUTE_ALL', value: '1' }
-        { name: 'ConnectionStrings__DefaultConnection', value: '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.vault.azure.net/secrets/AstrolabaPostgresConnectionString/)' }
+        { name: 'ConnectionStrings__Pilotage', value: '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.vault.azure.net/secrets/AstrolabaPostgresConnectionString/)' }
       ]
     }
   }
