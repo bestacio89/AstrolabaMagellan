@@ -74,8 +74,17 @@ stages:
         publishLocation: pipeline
 
   - job: Infrastructure
-    displayName: Validate Bicep templates
+    displayName: Validate Bicep and deployment scripts
     steps:
+    - script: |
+        set -euo pipefail
+        for script in AstrolabaMagellan-Azure-Delivery/scripts/*.sh; do bash -n "$script"; done
+        test -f AstrolabaMagellan-Azure-Delivery/infra/main.bicep
+        test -f AstrolabaMagellan-Azure-Delivery/infra/parameters/test.bicepparam
+        test -f AstrolabaMagellan-Azure-Delivery/infra/parameters/production.bicepparam
+        grep -Fq 'scriptPath: AstrolabaMagellan-Azure-Delivery/scripts/deploy-application.sh' AstrolabaMagellan-Azure-Delivery/azure-pipelines-deploy.yml
+        grep -Fq 'scriptPath: AstrolabaMagellan-Azure-Delivery/scripts/verify-private-networking.sh' AstrolabaMagellan-Azure-Delivery/azure-pipelines-deploy.yml
+      displayName: Validate deployment scripts and paths
     - script: |
         set -euo pipefail
         az bicep build --file AstrolabaMagellan-Azure-Delivery/infra/main.bicep
