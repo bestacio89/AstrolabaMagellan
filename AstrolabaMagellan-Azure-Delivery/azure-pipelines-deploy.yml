@@ -50,7 +50,7 @@ stages:
           az account show --output table
           az group show --name "$(RESOURCE_GROUP_NAME)" --output table
           PARAM_FILE="AstrolabaMagellan-Azure-Delivery/infra/parameters/${{ parameters.environment }}.bicepparam"
-          az bicep build --file infra/main.bicep
+          az bicep build --file AstrolabaMagellan-Azure-Delivery/infra/main.bicep
           # Reuse the credential stored in Key Vault. Generate one only when both
           # the vault secret and PostgreSQL server are absent (first deployment).
           read -r ASTROLABA_POSTGRES_ADMIN_PASSWORD < <(AstrolabaMagellan-Azure-Delivery/scripts/resolve-postgres-admin-password.sh preflight)
