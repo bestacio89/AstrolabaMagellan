@@ -26,12 +26,13 @@ jobs:
           global-json-file: backend/global.json
       - run: dotnet restore PilotageForfaits.sln
       - run: dotnet build PilotageForfaits.sln --no-restore --configuration Release
-      - run: dotnet test PilotageForfaits.sln --no-build --configuration Release --logger "trx;LogFileName=resultats.trx" --results-directory resultats-tests
+      - run: dotnet test PilotageForfaits.sln --no-build --configuration Release --collect:"XPlat Code Coverage" --logger "trx;LogFileName=resultats.trx" --results-directory resultats-tests
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: resultats-tests-serveur
+          name: resultats-tests-et-couverture-serveur
           path: backend/resultats-tests
+          if-no-files-found: warn
 
   interface-build:
     name: Interface Angular (compilation de production)
