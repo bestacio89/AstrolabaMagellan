@@ -542,7 +542,7 @@ public sealed class FabriquePostgreSqlApi : IAsyncLifetime
                 ["AzureAd:TenantId"] = TenantId,
                 ["AzureAd:ClientId"] = ClientId,
                 ["AzureAd:Audience"] = Audience,
-                ["AzureAd:RequiredScope"] = "acces",
+                ["AzureAd:Scopes"] = "acces",
             };
 
             // Minimal hosting reads configuration while Program.cs is executing. Apply host settings
