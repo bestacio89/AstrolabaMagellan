@@ -53,7 +53,7 @@ stages:
           az bicep build --file AstrolabaMagellan-Azure-Delivery/infra/main.bicep
           # Reuse the credential stored in Key Vault. Generate one only when both
           # the vault secret and PostgreSQL server are absent (first deployment).
-          read -r ASTROLABA_POSTGRES_ADMIN_PASSWORD < <(AstrolabaMagellan-Azure-Delivery/scripts/resolve-postgres-admin-password.sh preflight)
+          ASTROLABA_POSTGRES_ADMIN_PASSWORD="$(AstrolabaMagellan-Azure-Delivery/scripts/resolve-postgres-admin-password.sh preflight)"
           export ASTROLABA_POSTGRES_ADMIN_PASSWORD
           az deployment group what-if \
             --resource-group "$(RESOURCE_GROUP_NAME)" \
@@ -94,14 +94,14 @@ stages:
               scriptLocation: inlineScript
               inlineScript: |
                 set -euo pipefail
-                PARAM_FILE="infra/parameters/${{ parameters.environment }}.bicepparam"
+                PARAM_FILE="AstrolabaMagellan-Azure-Delivery/infra/parameters/${{ parameters.environment }}.bicepparam"
                 # Idempotent credential handling: no manually-created pipeline secret is needed.
-                read -r ASTROLABA_POSTGRES_ADMIN_PASSWORD < <(scripts/resolve-postgres-admin-password.sh deploy)
+                ASTROLABA_POSTGRES_ADMIN_PASSWORD="$(AstrolabaMagellan-Azure-Delivery/scripts/resolve-postgres-admin-password.sh deploy)"
                 export ASTROLABA_POSTGRES_ADMIN_PASSWORD
                 az deployment group create \
                   --name "astrolaba-${{ parameters.environment }}-$(Build.BuildId)" \
                   --resource-group "$(RESOURCE_GROUP_NAME)" \
-                  --template-file infra/main.bicep \
+                  --template-file AstrolabaMagellan-Azure-Delivery/infra/main.bicep \
                   --parameters "$PARAM_FILE" \
                     frontendAppName="$(FRONTEND_APP_NAME)" \
                     backendAppName="$(BACKEND_APP_NAME)" \
@@ -168,6 +168,13 @@ stages:
               POSTGRES_ADMIN_LOGIN: $(POSTGRES_ADMIN_LOGIN)
               POSTGRES_APP_LOGIN: $(POSTGRES_APP_LOGIN)
               KEY_VAULT_NAME: $(KEY_VAULT_NAME)
+          - task: PublishPipelineArtifact@1
+            displayName: Retain application packages for rollback
+            condition: always()
+            inputs:
+              targetPath: $(Build.SourcesDirectory)/.deploy
+              artifact: deployment-packages-$(Build.BuildId)
+              publishLocation: pipeline
 
 - stage: SmokeTests
   displayName: Verify private application endpoints

@@ -38,7 +38,6 @@ var appPlanName = 'asp-astrolaba-${suffix}'
 var privateDnsPostgresName = 'privatelink.postgres.database.azure.com'
 var privateDnsWebName = 'privatelink.azurewebsites.net'
 var privateDnsVaultName = 'privatelink.vaultcore.azure.net'
-var backendHost = '${backendAppName}.azurewebsites.net'
 
 resource vnet 'Microsoft.Network/virtualNetworks@2024-05-01' = {
   name: vnetName
@@ -100,6 +99,7 @@ resource backendApp 'Microsoft.Web/sites@2024-04-01' = {
     siteConfig: {
       linuxFxVersion: 'DOTNETCORE|10.0'
       alwaysOn: true
+      healthCheckPath: '/api/sante'
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
       http20Enabled: true
@@ -107,10 +107,10 @@ resource backendApp 'Microsoft.Web/sites@2024-04-01' = {
         { name: 'ASPNETCORE_ENVIRONMENT', value: environmentName == 'production' ? 'Production' : 'Staging' }
         { name: 'WEBSITE_VNET_ROUTE_ALL', value: '1' }
         { name: 'ConnectionStrings__Pilotage', value: '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.vault.azure.net/secrets/AstrolabaPostgresConnectionString/)' }
+        { name: 'Cors__OriginesAutorisees__0', value: 'https://${frontendAppName}.azurewebsites.net' }
       ]
     }
   }
-  dependsOn: [vnet]
 }
 
 resource frontendApp 'Microsoft.Web/sites@2024-04-01' = {
@@ -135,7 +135,6 @@ resource frontendApp 'Microsoft.Web/sites@2024-04-01' = {
       ]
     }
   }
-  dependsOn: [vnet]
 }
 
 resource vault 'Microsoft.KeyVault/vaults@2023-07-01' = {
@@ -157,13 +156,13 @@ resource vault 'Microsoft.KeyVault/vaults@2023-07-01' = {
 resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
   name: postgresServerName
   location: location
+  sku: { name: postgresSkuName, tier: 'GeneralPurpose' }
   properties: {
     administratorLogin: postgresAdminLogin
     administratorLoginPassword: postgresAdminPassword
     version: '16'
     storage: { storageSizeGB: postgresStorageSizeGB, autoGrow: 'Enabled', tier: 'P10' }
-    sku: { name: postgresSkuName, tier: 'GeneralPurpose' }
-    backup: { backupRetentionDays: 14, geoRedundantBackup: 'Disabled' }
+    backup: { backupRetentionDays: environmentName == 'production' ? 35 : 14, geoRedundantBackup: environmentName == 'production' ? 'Enabled' : 'Disabled' }
     network: { publicNetworkAccess: 'Disabled' }
     authConfig: { activeDirectoryAuth: 'Disabled', passwordAuth: 'Enabled', tenantId: subscription().tenantId }
     highAvailability: { mode: environmentName == 'production' ? 'ZoneRedundant' : 'Disabled' }
@@ -271,7 +270,7 @@ resource postgresZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGro
 }
 
 resource backendVaultSecretsRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(vault.id, backendApp.identity.principalId, 'KeyVaultSecretsUser')
+  name: guid(vault.id, backendApp.name, 'KeyVaultSecretsUser')
   scope: vault
   properties: {
     principalId: backendApp.identity.principalId
