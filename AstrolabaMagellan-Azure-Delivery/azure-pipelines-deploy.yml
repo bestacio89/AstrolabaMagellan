@@ -49,15 +49,15 @@ stages:
           test -n "$(RESOURCE_GROUP_NAME)"
           az account show --output table
           az group show --name "$(RESOURCE_GROUP_NAME)" --output table
-          PARAM_FILE="infra/parameters/${{ parameters.environment }}.bicepparam"
+          PARAM_FILE="AstrolabaMagellan-Azure-Delivery/infra/parameters/${{ parameters.environment }}.bicepparam"
           az bicep build --file infra/main.bicep
           # Reuse the credential stored in Key Vault. Generate one only when both
           # the vault secret and PostgreSQL server are absent (first deployment).
-          read -r ASTROLABA_POSTGRES_ADMIN_PASSWORD < <(scripts/resolve-postgres-admin-password.sh preflight)
+          read -r ASTROLABA_POSTGRES_ADMIN_PASSWORD < <(AstrolabaMagellan-Azure-Delivery/scripts/resolve-postgres-admin-password.sh preflight)
           export ASTROLABA_POSTGRES_ADMIN_PASSWORD
           az deployment group what-if \
             --resource-group "$(RESOURCE_GROUP_NAME)" \
-            --template-file infra/main.bicep \
+            --template-file AstrolabaMagellan-Azure-Delivery/infra/main.bicep \
             --parameters "$PARAM_FILE" \
               frontendAppName="$(FRONTEND_APP_NAME)" \
               backendAppName="$(BACKEND_APP_NAME)" \
@@ -118,7 +118,7 @@ stages:
                 export POSTGRES_ADMIN_LOGIN="$(POSTGRES_ADMIN_LOGIN)"
                 export POSTGRES_APP_LOGIN="$(POSTGRES_APP_LOGIN)"
                 export KEY_VAULT_NAME="$(KEY_VAULT_NAME)"
-                scripts/provision-postgres-secrets.sh
+                AstrolabaMagellan-Azure-Delivery/scripts/provision-postgres-secrets.sh
                 unset ASTROLABA_POSTGRES_ADMIN_PASSWORD
             env:
               RESOURCE_GROUP_NAME: $(RESOURCE_GROUP_NAME)
@@ -156,7 +156,7 @@ stages:
               azureSubscription: $(azureServiceConnection)
               scriptType: bash
               scriptLocation: scriptPath
-              scriptPath: scripts/deploy-application.sh
+              scriptPath: AstrolabaMagellan-Azure-Delivery/scripts/deploy-application.sh
               arguments: '${{ parameters.environment }}'
               workingDirectory: $(Build.SourcesDirectory)
             env:
@@ -185,7 +185,7 @@ stages:
         azureSubscription: $(azureServiceConnection)
         scriptType: bash
         scriptLocation: scriptPath
-        scriptPath: scripts/verify-private-networking.sh
+        scriptPath: AstrolabaMagellan-Azure-Delivery/scripts/verify-private-networking.sh
         arguments: '${{ parameters.environment }}'
         workingDirectory: $(Build.SourcesDirectory)
       env:
