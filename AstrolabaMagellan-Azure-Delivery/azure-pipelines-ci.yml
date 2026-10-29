@@ -76,15 +76,7 @@ stages:
   - job: Infrastructure
     displayName: Validate Bicep templates
     steps:
-    - task: AzureCLI@2
+    - script: |
+        set -euo pipefail
+        az bicep build --file AstrolabaMagellan-Azure-Delivery/infra/main.bicep
       displayName: Build Bicep template
-      inputs:
-        azureSubscription: 'REPLACE_WITH_NONPROD_AZURE_SERVICE_CONNECTION'
-        scriptType: bash
-        scriptLocation: inlineScript
-        inlineScript: |
-          set -euo pipefail
-          az bicep build --file AstrolabaMagellan-Azure-Delivery/infra/main.bicep
-      # Configure this service connection with workload identity federation.
-      # If you do not want CI to authenticate to Azure, install Bicep CLI and replace
-      # this task with `az bicep build` on an agent that already has Azure CLI.
