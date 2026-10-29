@@ -33,9 +33,15 @@ The production bundle is validated as a build artifact. Unit tests should not im
 2. Restore dependencies before building; build before running .NET tests with `--no-build`.
 3. Run Angular production build and assert `frontend/dist/pilotage-forfaits/browser/index.html` exists before running Angular unit tests.
 4. Fail CI when build or test commands fail; do not convert missing configuration into a passing test.
+5. Collect .NET Cobertura coverage alongside TRX results and publish both as a workflow artifact, including when tests fail.
 5. Run PostgreSQL integration tests only with a CI-provided `POSTGRES_TEST_CONNECTION`; skip them explicitly when that variable is absent for local runs.
 6. Keep generated reference scenarios in sync with the checked-in expected JSON.
-7. Review coverage and test gaps by behavior and risk, not by percentage alone.
+7. Treat coverage as diagnostic evidence, not as a quality gate by itself; establish a verified baseline before setting thresholds.
+8. Review coverage and test gaps by behavior and risk, not by percentage alone.
+
+## Coverage reporting
+
+The backend CI test command uses the installed `coverlet.collector` package through `--collect:"XPlat Code Coverage"`. The workflow publishes the test-results directory as an artifact, including TRX test reports and Cobertura coverage files. This makes coverage inspectable without introducing an arbitrary percentage threshold before the baseline has been measured. Coverage artifacts must be reviewed alongside test outcomes and the behaviors covered.
 
 ## Current follow-up work
 
