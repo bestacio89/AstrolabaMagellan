@@ -45,8 +45,8 @@ Le compte applicatif est distinct du compte administrateur. Le pipeline exécute
 
 ## Étapes manuelles obligatoires avant le premier déploiement
 
-1. Confirmer les chemins de projets, le DbContext, l'assembly de migrations EF Core et les commandes Angular réels dans le dépôt. Le script utilise des chemins attendus, qui peuvent nécessiter un ajustement.
-2. Adapter le routage API Angular. L'application Angular utilise actuellement des URL relatives `/api`. Deux App Services séparés ne partagent pas automatiquement la même origine HTTP. Choisir une solution explicite : (a) un reverse proxy/BFF accessible via le frontend, ou (b) une URL d'API privée absolue et une politique CORS limitée à l'origine du frontend. Le modèle ne configure pas un reverse proxy.
+1. Les chemins de projets et l'assembly de migrations EF Core sont définis dans le script : `PilotageForfaits.Infrastructure` contient le DbContext et les migrations ; la sortie Angular est vérifiée après compilation.
+2. Le script de déploiement injecte temporairement l'origine privée de l'API dans l'environnement Angular de production, compile les assets puis restaure le fichier suivi par Git. Bicep autorise uniquement l'origine du frontend dans CORS ; les utilisateurs doivent être connectés au réseau/VPN privé.
 3. Déployer d'abord en environnement de test. Examiner entièrement le résultat de `what-if` avant toute application.
 4. Le pipeline crée automatiquement les secrets Key Vault et le rôle PostgreSQL applicatif après le déploiement Bicep. L'agent privé doit disposer de `psql`, `openssl`, Azure CLI, d'un accès DNS/réseau privé au serveur et de droits Key Vault pour créer/modifier les secrets. Aucune saisie manuelle de chaîne de connexion n'est requise.
 5. Vérifier que les App Services, Key Vault et PostgreSQL sont réellement accessibles uniquement via les Private Endpoints. Les paramètres de contrôle d'accès doivent être inspectés dans Azure après déploiement.
@@ -59,9 +59,9 @@ Le compte applicatif est distinct du compte administrateur. Le pipeline exécute
 - Le sous-réseau d'intégration App Service doit être distinct du sous-réseau Private Endpoint.
 - Les App Services privés nécessitent une connectivité privée vers leurs endpoints, y compris le site SCM/Kudu utilisé pour certaines opérations de déploiement. Tester la méthode de déploiement depuis l'agent privé.
 - L'accès privé aux App Services signifie qu'un navigateur hors réseau d'entreprise/VPN ne pourra pas ouvrir l'application. C'est intentionnel pour le besoin interne.
-- Le script de smoke test suppose que l'API expose `/health`. Modifier ce chemin si l'API expose un autre endpoint ou si l'endpoint requiert une authentification.
+- Le smoke test vérifie l'endpoint réel et anonyme `/api/sante`, les adresses DNS privées et le pré-vol CORS.
 - Le rôle `Key Vault Secrets User` est accordé à l'identité managée du backend. Si l'API utilise une autre identité ou un autre coffre, ajuster le RBAC.
-- La disponibilité zonale et les SKU PostgreSQL dépendent de la région et des capacités du service. Vérifier les SKU réellement disponibles dans la région avant production.
+- La disponibilité zonale et les SKU PostgreSQL dépendent de la région et des capacités du service. Vérifier les SKU réellement disponibles dans la région avant production. L'activation de la sauvegarde géoredondante peut nécessiter un nouveau serveur si le serveur existant a été créé sans cette option ; valider ce changement via `what-if` et la documentation Azure avant d'appliquer.
 
 ## Documentation Microsoft
 
